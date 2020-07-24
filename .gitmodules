@@ -1,0 +1,3 @@
+[submodule "dep/argvparse"]
+	path = dep/argvparse
+	url = https://github.com/sillydan1/argvparse
