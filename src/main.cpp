@@ -21,8 +21,10 @@
 
 int print_help_message(const char* const* argv, int return_val = EXIT_SUCCESS);
 std::vector<option_t> my_cli_options = {
-        {"input",  'i', argument_requirement::REQUIRE_ARG , "Input file"},
-        {"output", 'o', argument_requirement::REQUIRE_ARG,  "Output file. Will be created, if not already exists"}
+        {"input",  'i', argument_requirement::REQUIRE_ARG ,"Input file"},
+        {"output", 'o', argument_requirement::REQUIRE_ARG, "Output file. Will be created, if not already exists"},
+        {"in-type",'n', argument_requirement::REQUIRE_ARG, "The type of input modelling language"},
+        {"out-type",'u', argument_requirement::REQUIRE_ARG,"The type of output modelling language"}
 };
 
 int main(int argc, char** argv) {

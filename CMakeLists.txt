@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with mave.  If not, see <https://www.gnu.org/licenses/>.
+cmake_minimum_required(VERSION 3.10)
 project(mave)
 
 include_directories(
