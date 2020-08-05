@@ -19,9 +19,11 @@
 #include "CLIConfig.h"
 #include <algorithm>
 #include <iostream>
+#include <optional>
 
 CLIConfig::CLIConfig() {
-    cli_options = {
+    /// Add/Remove Command Line options here.
+    cliOptions = {
             { option_requirement::REQUIRE,
               {"input",  'i', argument_requirement::REQUIRE_ARG ,
                 "Input file"} },
@@ -40,22 +42,22 @@ CLIConfig::CLIConfig() {
 
 void CLIConfig::ParseCLIOptionsAndCheckForRequirements(int argc, char** argv) {
     auto cliOpts = GetCLIOptionsOnly();
-    auto providedOptions = get_arguments(cliOpts, argc, argv);
-    EnsureRequiredOptionsAreSpecified(providedOptions);
+    providedOptions = get_arguments(cliOpts, argc, argv);
+    EnsureRequiredOptionsAreSpecified();
 }
 
 std::vector<option_t> CLIConfig::GetCLIOptionsOnly() {
     std::vector<option_t> output{};
-    output.reserve(cli_options.size());
-    std::transform(cli_options.begin(), cli_options.end(),
+    output.reserve(cliOptions.size());
+    std::transform(cliOptions.begin(), cliOptions.end(),
                    std::back_inserter(output),
                    [](std::pair<option_requirement, option_t> element) -> option_t { return element.second; });
     return output;
 }
 
-void CLIConfig::EnsureRequiredOptionsAreSpecified(providedOptions_t& providedOptions) {
-    auto b = std::any_of(cli_options.begin(), cli_options.end(),
-            [&providedOptions] (auto el) -> bool
+void CLIConfig::EnsureRequiredOptionsAreSpecified() {
+    auto b = std::any_of(cliOptions.begin(), cliOptions.end(),
+            [this] (auto el) -> bool
             {
                 if(el.first == option_requirement::REQUIRE) {
                     return !providedOptions[el.second.long_option];
@@ -82,4 +84,8 @@ void CLIConfig::PrintHelpMessage(const char *const *argv) {
                             "    You should have received a copy of the GNU General Public License\n"
                             "    along with this program.  If not, see <https://www.gnu.org/licenses/>.\n";
     print_argument_help(GetCLIOptionsOnly());
+}
+
+bool CLIConfig::operator[](const std::string &lookup) {
+    return providedOptions[lookup].operator bool();
 }

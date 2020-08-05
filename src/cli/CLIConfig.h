@@ -29,15 +29,17 @@ class CLIConfig {
     typedef std::vector<std::pair<option_requirement, option_t>> optionCollection_t;
     typedef std::map<std::string, argument_t> providedOptions_t;
 
-    optionCollection_t cli_options;
+    optionCollection_t cliOptions;
+    providedOptions_t providedOptions;
     int status_code;
-    void EnsureRequiredOptionsAreSpecified(providedOptions_t& providedOptions);
+    void EnsureRequiredOptionsAreSpecified();
     std::vector<option_t> GetCLIOptionsOnly();
 public:
     CLIConfig();
     void ParseCLIOptionsAndCheckForRequirements(int argc, char** argv);
     void PrintHelpMessage(const char* const* argv);
     int GetStatusCode() const { return status_code; }
+    bool operator[](const std::string& lookup);
 };
 
 #endif //MAVE_CLICONFIG_H
