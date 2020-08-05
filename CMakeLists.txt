@@ -23,8 +23,8 @@ include_directories(
 add_subdirectory(dep/argvparse/)
 
 add_executable(mave
-        src/main.cpp
-        )
+        src/cli/main.cpp
+        src/cli/CLIConfig.cpp)
 
 target_link_libraries(mave
         argvparse

@@ -16,33 +16,56 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <argvparse.h>
+#include "CLIConfig.h"
+#include <algorithm>
 #include <iostream>
 
-int print_help_message(const char* const* argv, int return_val = EXIT_SUCCESS);
-std::vector<option_t> my_cli_options = {
-        {"input",  'i', argument_requirement::REQUIRE_ARG ,"Input file"},
-        {"output", 'o', argument_requirement::REQUIRE_ARG, "Output file. Will be created, if not already exists"},
-        {"in-type",'n', argument_requirement::REQUIRE_ARG, "The type of input modelling language"},
-        {"out-type",'u', argument_requirement::REQUIRE_ARG,"The type of output modelling language"}
-};
-
-int main(int argc, char** argv) {
-    // Then call get_arguments
-    auto cli_arguments = get_arguments(my_cli_options, argc, argv);
-    // If the help flag was provided, print out the help message
-    if(cli_arguments["help"])
-        return print_help_message(argv);
-
-    if(cli_arguments["input"]) {
-
-    } else
-        return print_help_message(argv, EXIT_FAILURE);
-
-    return EXIT_SUCCESS;
+CLIConfig::CLIConfig() {
+    cli_options = {
+            { option_requirement::REQUIRE,
+              {"input",  'i', argument_requirement::REQUIRE_ARG ,
+                "Input file"} },
+            { option_requirement::REQUIRE,
+              {"output", 'o', argument_requirement::REQUIRE_ARG,
+                "Output file. Will be created, if not already exists"} },
+            { option_requirement::REQUIRE,
+              {"in-type",'n', argument_requirement::REQUIRE_ARG,
+                "The type of input modelling language"} },
+            { option_requirement::REQUIRE,
+              {"out-type",'u', argument_requirement::REQUIRE_ARG,
+                "The type of output modelling language"} }
+    };
+    status_code = EXIT_SUCCESS;
 }
 
-int print_help_message(const char* const* argv, int return_val) {
+void CLIConfig::ParseCLIOptionsAndCheckForRequirements(int argc, char** argv) {
+    auto cliOpts = GetCLIOptionsOnly();
+    auto providedOptions = get_arguments(cliOpts, argc, argv);
+    EnsureRequiredOptionsAreSpecified(providedOptions);
+}
+
+std::vector<option_t> CLIConfig::GetCLIOptionsOnly() {
+    std::vector<option_t> output{};
+    output.reserve(cli_options.size());
+    std::transform(cli_options.begin(), cli_options.end(),
+                   std::back_inserter(output),
+                   [](std::pair<option_requirement, option_t> element) -> option_t { return element.second; });
+    return output;
+}
+
+void CLIConfig::EnsureRequiredOptionsAreSpecified(providedOptions_t& providedOptions) {
+    auto b = std::any_of(cli_options.begin(), cli_options.end(),
+            [&providedOptions] (auto el) -> bool
+            {
+                if(el.first == option_requirement::REQUIRE) {
+                    return !providedOptions[el.second.long_option];
+                } return false;
+            });
+    if(b)
+        status_code = EXIT_FAILURE;
+}
+
+void CLIConfig::PrintHelpMessage(const char *const *argv) {
     std::cout << argv[0] << " is a program that translates Modelling languages to other modelling languages."
                             " Below are the possible options.\nCopyright (C) 2020  Asger Gitz-Johansen\n"
                             "\n"
@@ -58,6 +81,5 @@ int print_help_message(const char* const* argv, int return_val) {
                             "\n"
                             "    You should have received a copy of the GNU General Public License\n"
                             "    along with this program.  If not, see <https://www.gnu.org/licenses/>.\n";
-    print_argument_help(my_cli_options);
-    return return_val;
+    print_argument_help(GetCLIOptionsOnly());
 }
