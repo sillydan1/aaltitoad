@@ -19,6 +19,7 @@
 #include "TTAParser.h"
 
 TTAIR_t TTAParser::ParseToIntermediateRep(const std::string& filepath) {
+    /// NOTE: Look at the "dep/rapidjson/example/simplereader" example for how to parse this.
     
     return {};
 }

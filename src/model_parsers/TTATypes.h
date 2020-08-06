@@ -35,7 +35,7 @@ struct TTAIR_t {
     struct Component {
         std::vector<Edge> edges;
         std::vector<SubComponent> subComponents;
-        
+
     };
 
     // List of folded components

@@ -20,6 +20,7 @@ project(mave)
 
 include_directories(
         dep/argvparse/include
+        dep/rapidjson/include
         src
 )
 
