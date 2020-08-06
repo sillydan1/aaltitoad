@@ -18,7 +18,7 @@
  */
 #ifndef MAVE_CLICONFIG_H
 #define MAVE_CLICONFIG_H
-#include <vector>
+#include <mavepch.h>
 #include <argvparse.h>
 
 class CLIConfig {

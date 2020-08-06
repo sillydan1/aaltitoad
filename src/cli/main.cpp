@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <iostream>
+#include <mavepch.h>
 #include "CLIConfig.h"
 
 int main(int argc, char** argv) {

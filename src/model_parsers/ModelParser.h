@@ -18,7 +18,7 @@
  */
 #ifndef MAVE_MODELPARSER_H
 #define MAVE_MODELPARSER_H
-#include <string>
+#include <mavepch.h>
 
 template<typename ModelType, typename IntermediateRep>
 class ModelParser {

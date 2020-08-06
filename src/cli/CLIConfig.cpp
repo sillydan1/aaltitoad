@@ -17,8 +17,6 @@
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "CLIConfig.h"
-#include <algorithm>
-#include <iostream>
 
 CLIConfig::CLIConfig() {
     /// Add/Remove Command Line options here.
