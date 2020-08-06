@@ -13,11 +13,14 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with mave.  If not, see <https://www.gnu.org/licenses/>.
-cmake_minimum_required(VERSION 3.10)
+
+# 3.16+ because of "target_precompile_headers"
+cmake_minimum_required(VERSION 3.16)
 project(mave)
 
 include_directories(
         dep/argvparse/include
+        src
 )
 
 add_subdirectory(dep/argvparse/)
@@ -29,3 +32,8 @@ add_executable(mave
 target_link_libraries(mave
         argvparse
         )
+
+target_precompile_headers(
+        mave PUBLIC
+        src/mavepch.h
+)
