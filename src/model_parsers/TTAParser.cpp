@@ -20,10 +20,13 @@
 
 TTAIR_t TTAParser::ParseToIntermediateRep(const std::string& filepath) {
     /// NOTE: Look at the "dep/rapidjson/example/simplereader" example for how to parse this.
-    
     return {};
 }
 
 TTA_t TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
     return {};
+}
+
+TTAJsonTypeHandler::TTAJsonTypeHandler()  {
+    SetDefaultReturnValue(false); // Fail by default.
 }

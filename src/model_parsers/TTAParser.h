@@ -20,6 +20,11 @@
 #define MAVE_TTAPARSER_H
 #include "ModelParser.h"
 #include "TTATypes.h"
+#include "json/BaseJsonTypeHandler.h"
+
+struct TTAJsonTypeHandler : BaseJsonTypeHandler {
+    TTAJsonTypeHandler();
+};
 
 class TTAParser : ModelParser<TTA_t, TTAIR_t> {
 protected:
