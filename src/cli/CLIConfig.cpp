@@ -19,7 +19,6 @@
 #include "CLIConfig.h"
 #include <algorithm>
 #include <iostream>
-#include <optional>
 
 CLIConfig::CLIConfig() {
     /// Add/Remove Command Line options here.
@@ -43,7 +42,7 @@ CLIConfig::CLIConfig() {
 void CLIConfig::ParseCLIOptionsAndCheckForRequirements(int argc, char** argv) {
     auto cliOpts = GetCLIOptionsOnly();
     providedOptions = get_arguments(cliOpts, argc, argv);
-    EnsureRequiredOptionsAreSpecified();
+    EnsureRequiredOptionsAreProvided();
 }
 
 std::vector<option_t> CLIConfig::GetCLIOptionsOnly() {
@@ -55,15 +54,15 @@ std::vector<option_t> CLIConfig::GetCLIOptionsOnly() {
     return output;
 }
 
-void CLIConfig::EnsureRequiredOptionsAreSpecified() {
-    auto b = std::any_of(cliOptions.begin(), cliOptions.end(),
+void CLIConfig::EnsureRequiredOptionsAreProvided() {
+    auto aRequiredOptionNotThere = std::any_of(cliOptions.begin(), cliOptions.end(),
             [this] (auto el) -> bool
             {
                 if(el.first == option_requirement::REQUIRE) {
                     return !providedOptions[el.second.long_option];
                 } return false;
             });
-    if(b)
+    if(aRequiredOptionNotThere)
         status_code = EXIT_FAILURE;
 }
 

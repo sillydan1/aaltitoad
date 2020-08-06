@@ -32,7 +32,7 @@ class CLIConfig {
     optionCollection_t cliOptions;
     providedOptions_t providedOptions;
     int status_code;
-    void EnsureRequiredOptionsAreSpecified();
+    void EnsureRequiredOptionsAreProvided();
     std::vector<option_t> GetCLIOptionsOnly();
 public:
     CLIConfig();
