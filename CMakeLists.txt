@@ -24,7 +24,7 @@ add_subdirectory(dep/argvparse/)
 
 add_executable(mave
         src/cli/main.cpp
-        src/cli/CLIConfig.cpp)
+        src/cli/CLIConfig.cpp src/model_parsers/TTAParser.cpp)
 
 target_link_libraries(mave
         argvparse
