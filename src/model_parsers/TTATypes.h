@@ -18,13 +18,33 @@
  */
 #ifndef MAVE_TTATYPES_H
 #define MAVE_TTATYPES_H
+#include <mavepch.h>
 
 struct TTAIR_t {
+    struct Edge {
+        std::string sourceLocationName;
+        std::string targetLocationName;
+        std::string guardExpression;
+        std::string updateExpression;
+        std::string parentComponentNamePrefix;
+    };
+    struct SubComponent {
+        std::string name;
+        std::string parentComponentName;
+    };
+    struct Component {
+        std::vector<Edge> edges;
+        std::vector<SubComponent> subComponents;
+        
+    };
 
+    // List of folded components
+    // List of folded symbols
 };
 
 struct TTA_t {
-
+    // List of reduced and unfolded components
+    // list of unfolded symbols
 };
 
 #endif //MAVE_TTATYPES_H
