@@ -52,16 +52,17 @@ std::vector<option_t> CLIConfig::GetCLIOptionsOnly() {
     return output;
 }
 
+bool CLIConfig::isElementRequiredAndMissing(const std::pair<option_requirement, option_t>& el) {
+    return el.first == option_requirement::REQUIRE && !providedOptions[el.second.long_option];
+}
+
 void CLIConfig::EnsureRequiredOptionsAreProvided() {
-    auto aRequiredOptionNotThere = std::any_of(cliOptions.begin(), cliOptions.end(),
-            [this] (auto el) -> bool
-            {
-                if(el.first == option_requirement::REQUIRE) {
-                    return !providedOptions[el.second.long_option];
-                } return false;
-            });
-    if(aRequiredOptionNotThere)
-        status_code = EXIT_FAILURE;
+    for(auto& el : cliOptions) {
+        if(isElementRequiredAndMissing(el)) {
+            status_code = EXIT_FAILURE;
+            return;
+        }
+    }
 }
 
 void CLIConfig::PrintHelpMessage(const char *const *argv) {
@@ -83,6 +84,6 @@ void CLIConfig::PrintHelpMessage(const char *const *argv) {
     print_argument_help(GetCLIOptionsOnly());
 }
 
-bool CLIConfig::operator[](const std::string &lookup) {
-    return providedOptions[lookup].operator bool();
+argument_t CLIConfig::operator[](const std::string &lookup) {
+    return providedOptions[lookup];
 }

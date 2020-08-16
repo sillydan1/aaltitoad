@@ -39,7 +39,9 @@ public:
     void ParseCLIOptionsAndCheckForRequirements(int argc, char** argv);
     void PrintHelpMessage(const char* const* argv);
     int GetStatusCode() const { return status_code; }
-    bool operator[](const std::string& lookup);
+    argument_t operator[](const std::string& lookup);
+
+    bool isElementRequiredAndMissing(const std::pair<option_requirement, option_t> &el);
 };
 
 #endif //MAVE_CLICONFIG_H
