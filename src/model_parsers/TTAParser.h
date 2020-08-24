@@ -26,7 +26,12 @@ struct TTAJsonTypeHandler : BaseJsonTypeHandler {
     TTAJsonTypeHandler();
 };
 
+/// This TTAParser parses TTA's modelled in the H-UPPAAL tool
 class TTAParser : ModelParser<TTA_t, TTAIR_t> {
+public:
+    TTA_t ParseFromFile(const std::string& filepath) override {
+        return ConvertToModelType(ParseToIntermediateRep(filepath));
+    }
 protected:
     TTA_t   ConvertToModelType(const TTAIR_t& intermediateRep) override;
     TTAIR_t ParseToIntermediateRep(const std::string& filepath) override;

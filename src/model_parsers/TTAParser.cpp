@@ -16,11 +16,30 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include <rapidjson/reader.h>
 #include "TTAParser.h"
+#include <fstream>
+#include <sstream>
+#include <model_parsers/json/RapidJsonReaderStringStreamWrapper.h>
 
 TTAIR_t TTAParser::ParseToIntermediateRep(const std::string& filepath) {
     /// NOTE: Look at the "dep/rapidjson/example/simplereader" example for how to parse this.
-    return {};
+    // Open the file as a stringstream if it exists
+    std::ifstream file{filepath};
+    if(file) {
+        std::stringstream filestream{};
+        filestream << file.rdbuf();
+        RapidJsonReaderStringStreamWrapper wrapper{std::move(filestream)};
+        // Initialize a rapidjson::Reader reader class
+        MyHandler h{};
+        rapidjson::Reader reader{};
+        // Parse.
+        reader.Parse(wrapper, h);
+        // TODO: Do more...
+        file.close();
+    }
+    // If doesnt exist, error
+    return {}; // TODO: Implement the TTAJsonTypeHandler
 }
 
 TTA_t TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
