@@ -27,6 +27,7 @@
 #include <utility>
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
 // Data structures
 #include <map>

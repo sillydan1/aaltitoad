@@ -29,11 +29,14 @@ TTAIR_t TTAParser::ParseToIntermediateRep(const std::string &path) {
             "IgnoreMe.json"
     };
     // Find all the .json files in the filepath
-    
-    // Parse all of the components TODO: Decide on what to do with subcomponents.
-
+    TTAIR_t ttair{}; // TODO: Symbols.
+    for (const auto & entry : std::filesystem::directory_iterator(path)) {
+        auto parsedComponent = ParseComponent(entry.path().generic_string());
+        if(parsedComponent)
+            ttair.AddComponent(std::move(parsedComponent.value()));
+    }
     // Structure the TTAIR_t element
-    return TTAIR_t();
+    return ttair;
 }
 
 std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &filepath) {
@@ -57,10 +60,6 @@ std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &f
     return {};
 }
 
-std::vector<TTAIR_t::Component> TTAParser::ParseComponents(std::vector<std::string> filepaths) {
-    return std::vector<TTAIR_t::Component>();
-}
-
 std::vector<TTAIR_t::Edge> TTAParser::ParseEdges(const rapidjson::Document::ValueType &edgeList) {
     std::vector<TTAIR_t::Edge> edges{};
     for(auto edge = edgeList.Begin(); edge != edgeList.End(); edge++)
@@ -76,7 +75,8 @@ TTAIR_t::Edge TTAParser::ParseEdge(const rapidjson::Document::ValueType &edge) {
 }
 
 TTA_t TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
-    return {};
+    spdlog::critical("ConvertToModelType is not implemented yet!");
+    return {}; // TODO: Implement this!
 }
 
 rapidjson::Document TTAParser::ParseDocumentDOMStyle(const std::ifstream &file) {
@@ -89,6 +89,7 @@ rapidjson::Document TTAParser::ParseDocumentDOMStyle(const std::ifstream &file) 
 }
 
 bool TTAParser::IsDocumentAProperTTA(const rapidjson::Document &document) {
+    spdlog::critical("IsDocumentAProperTTA is not implemented yet!");
     return false;
 }
 

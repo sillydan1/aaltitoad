@@ -27,6 +27,7 @@ include_directories(
 
 set (CMAKE_CXX_STANDARD 17)
 set (SPDLOG_BUILD_SHARED)
+set (CMAKE_CXX_STANDARD_LIBRARIES -lstdc++fs)
 
 add_subdirectory(dep/argvparse/)
 add_subdirectory(dep/spdlog)

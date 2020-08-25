@@ -33,7 +33,6 @@ public:
 protected:
     TTA_t   ConvertToModelType(const TTAIR_t& intermediateRep) override;
     TTAIR_t ParseToIntermediateRep(const std::string& path) override;
-    std::vector<TTAIR_t::Component> ParseComponents(std::vector<std::string> filepaths);
     std::optional<TTAIR_t::Component> ParseComponent(const std::string& filepath);
 private:
     rapidjson::Document ParseDocumentDOMStyle(const std::ifstream& file);
