@@ -20,28 +20,45 @@
 #include "TTAParser.h"
 #include <model_parsers/json/RapidJsonReaderStringStreamWrapper.h>
 #include <rapidjson/document.h>
+#include <spdlog/spdlog.h>
 
-TTAIR_t TTAParser::ParseToIntermediateRep(const std::string& filepath) {
+TTAIR_t TTAParser::ParseToIntermediateRep(const std::string &path) {
+    // Some json files are important to ignore, so Ignore-list:
+    std::vector<std::string> ignore_list = {
+            "Queries.json",
+            "IgnoreMe.json"
+    };
+    // Find all the .json files in the filepath
+    
+    // Parse all of the components TODO: Decide on what to do with subcomponents.
+
+    // Structure the TTAIR_t element
+    return TTAIR_t();
+}
+
+std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &filepath) {
     std::ifstream file{filepath};
     if(file) {
         auto dom_document = ParseDocumentDOMStyle(file);
         // Ensure existence of required high-level members
-
-        // Convert to TTAIR_t
-
-        auto x = d.FindMember("edges");
-        if(x == d.MemberEnd())
-            std::cout << "No edges!" << std::endl;
-        else if(x->value.IsArray()) {
-            auto xx = ParseEdges(x->value);
-        } else {
-            std::cout << "Error!" << std::endl;
-        }
-        // TODO: Do more...
+        if(IsDocumentAProperTTA(dom_document)) {
+            return std::optional(TTAIR_t::Component{
+                    .initialLocation = dom_document["initial_location"].GetString(),
+                    .endLocation     = dom_document["final_location"].GetString(),
+                    .edges = ParseEdges(dom_document["edges"]),
+                    .isMain = dom_document["isMain"].GetBool()
+            });
+        } else
+            spdlog::error("File '{0}' is improper", filepath);
         file.close();
+        return {};
     }
-    // If the file doesnt exist -> error
+    spdlog::error("File '{0}' does not exist", filepath);
     return {};
+}
+
+std::vector<TTAIR_t::Component> TTAParser::ParseComponents(std::vector<std::string> filepaths) {
+    return std::vector<TTAIR_t::Component>();
 }
 
 std::vector<TTAIR_t::Edge> TTAParser::ParseEdges(const rapidjson::Document::ValueType &edgeList) {
@@ -70,3 +87,8 @@ rapidjson::Document TTAParser::ParseDocumentDOMStyle(const std::ifstream &file) 
     d.Parse(filestream.str().c_str());
     return d;
 }
+
+bool TTAParser::IsDocumentAProperTTA(const rapidjson::Document &document) {
+    return false;
+}
+

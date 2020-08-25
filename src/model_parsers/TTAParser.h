@@ -32,9 +32,12 @@ public:
     }
 protected:
     TTA_t   ConvertToModelType(const TTAIR_t& intermediateRep) override;
-    TTAIR_t ParseToIntermediateRep(const std::string& filepath) override;
+    TTAIR_t ParseToIntermediateRep(const std::string& path) override;
+    std::vector<TTAIR_t::Component> ParseComponents(std::vector<std::string> filepaths);
+    std::optional<TTAIR_t::Component> ParseComponent(const std::string& filepath);
 private:
     rapidjson::Document ParseDocumentDOMStyle(const std::ifstream& file);
+    bool IsDocumentAProperTTA(const rapidjson::Document& document);
     std::vector<TTAIR_t::Edge> ParseEdges(const rapidjson::Document::ValueType& edgeList);
     TTAIR_t::Edge ParseEdge(const rapidjson::Document::ValueType& edge);
 

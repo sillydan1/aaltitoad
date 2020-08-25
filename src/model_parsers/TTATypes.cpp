@@ -16,23 +16,22 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <mavepch.h>
-#include "CLIConfig.h"
-#include "model_parsers/TTAParser.h"
+#include "TTATypes.h"
+#include <spdlog/spdlog.h>
 
-int main(int argc, char** argv) {
-    // Initialize CLI configuration (based on CLI Args)
-    CLIConfig config{};
-    config.ParseCLIOptionsAndCheckForRequirements(argc, argv);
-    if(config.GetStatusCode() != EXIT_SUCCESS) {
-        config.PrintHelpMessage(argv);
-        return config.GetStatusCode();
+std::optional<std::vector<TTAIR_t::Component>::const_iterator> TTAIR_t::FindMainComponent() const {
+    for(auto component_itr = components.begin(); component_itr != components.end(); component_itr++) {
+        if(component_itr->isMain)
+            return component_itr;
     }
-    // Call the engine(s)
+    return {};
+}
 
-    TTAParser ttaParser{};
-    ttaParser.ParseFromFile(config["input"].as_string());
-
-    // Return the exit code.
-    return config.GetStatusCode();
+void TTAIR_t::AddComponent(TTAIR_t::Component&& component) {
+    components.emplace_back(component);
+    if(component.isMain) {
+        if(hasMainComponentBeenAdded)
+            spdlog::warn("Multiple main components are being parsed");
+        hasMainComponentBeenAdded = true;
+    }
 }

@@ -27,24 +27,28 @@ struct TTAIR_t {
         std::string guardExpression;
         std::string updateExpression;
     };
-    struct SubComponent {
-        std::string name;
-        std::string parentComponentName;
-    };
     struct Component {
+        std::string initialLocation;
+        std::string endLocation;
         std::vector<Edge> edges;
-        std::vector<SubComponent> subComponents;
         bool isMain = false;
+    };
+    struct Symbol {
+        std::string identifier;
+        std::string dataType;
+        std::string initialValue;
     };
 
     // List of top-level components
-    std::vector<Component> rootComponents;
-    std::vector<Edge> edges;
-    std::optional<std::vector<Component>::iterator> GetMainComponent() const {
-        return {};
-    }
-    // List of folded symbols
+    std::vector<Component> components = {};
+    // List of symbols
 
+    // Helper functions
+    [[nodiscard]] std::optional<std::vector<Component>::const_iterator> FindMainComponent() const;
+    void AddComponent(Component&& component);
+
+private:
+    bool hasMainComponentBeenAdded = false;
 };
 
 struct TTA_t {

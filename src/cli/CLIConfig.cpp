@@ -24,13 +24,13 @@ CLIConfig::CLIConfig() {
             { option_requirement::REQUIRE,
               {"input",  'i', argument_requirement::REQUIRE_ARG ,
                 "Input file"} },
-            { option_requirement::REQUIRE,
+            { option_requirement::OPTIONAL,
               {"output", 'o', argument_requirement::REQUIRE_ARG,
                 "Output file. Will be created, if not already exists"} },
-            { option_requirement::REQUIRE,
+            { option_requirement::OPTIONAL,
               {"in-type",'n', argument_requirement::REQUIRE_ARG,
                 "The type of input modelling language"} },
-            { option_requirement::REQUIRE,
+            { option_requirement::OPTIONAL,
               {"out-type",'u', argument_requirement::REQUIRE_ARG,
                 "The type of output modelling language"} }
     };
