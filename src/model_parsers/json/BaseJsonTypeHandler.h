@@ -22,23 +22,23 @@
 typedef unsigned SizeType;
 class BaseJsonTypeHandler {
 public:
-    bool virtual Null() { return default_value; }
-    bool virtual Bool(bool b) { return default_value; }
-    bool virtual Int(int i) { return default_value; }
-    bool virtual Uint(unsigned u) { return default_value; }
-    bool virtual Int64(int64_t i) { return default_value; }
-    bool virtual Uint64(uint64_t u) { return default_value; }
-    bool virtual Double(double d) { return default_value; }
-    bool virtual RawNumber(const char* str, SizeType length, bool copy) { return default_value; }
-    bool virtual String(const char* str, SizeType length, bool copy) { return default_value; }
-    bool virtual StartObject() { return default_value; }
-    bool virtual Key(const char* str, SizeType length, bool copy) { return default_value; }
-    bool virtual EndObject(SizeType memberCount) { return default_value; }
-    bool virtual StartArray() { return default_value; }
-    bool virtual EndArray(SizeType elementCount) { return default_value; }
+    virtual bool Null() { return default_value; }
+    virtual bool Bool(bool b) { return default_value; }
+    virtual bool Int(int i) { return default_value; }
+    virtual bool Uint(unsigned u) { return default_value; }
+    virtual bool Int64(int64_t i) { return default_value; }
+    virtual bool Uint64(uint64_t u) { return default_value; }
+    virtual bool Double(double d) { return default_value; }
+    virtual bool RawNumber(const char* str, SizeType length, bool copy) { return default_value; }
+    virtual bool String(const char* str, SizeType length, bool copy) { return default_value; }
+    virtual bool StartObject() { return default_value; }
+    virtual bool Key(const char* str, SizeType length, bool copy) { return default_value; }
+    virtual bool EndObject(SizeType memberCount) { return default_value; }
+    virtual bool StartArray() { return default_value; }
+    virtual bool EndArray(SizeType elementCount) { return default_value; }
 
 protected:
-    bool default_value = true;
+    bool default_value = true; // Should we fail (false) or succeed (true) by default?
     void SetDefaultReturnValue(bool newval) { default_value = newval; }
 };
 
