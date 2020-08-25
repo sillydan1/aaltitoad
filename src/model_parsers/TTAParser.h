@@ -18,13 +18,11 @@
  */
 #ifndef MAVE_TTAPARSER_H
 #define MAVE_TTAPARSER_H
+
+#include <rapidjson/pointer.h>
 #include "ModelParser.h"
 #include "TTATypes.h"
 #include "json/BaseJsonTypeHandler.h"
-
-struct TTAJsonTypeHandler : BaseJsonTypeHandler {
-    TTAJsonTypeHandler();
-};
 
 /// This TTAParser parses TTA's modelled in the H-UPPAAL tool
 class TTAParser : ModelParser<TTA_t, TTAIR_t> {
@@ -35,6 +33,11 @@ public:
 protected:
     TTA_t   ConvertToModelType(const TTAIR_t& intermediateRep) override;
     TTAIR_t ParseToIntermediateRep(const std::string& filepath) override;
+private:
+    rapidjson::Document ParseDocumentDOMStyle(const std::ifstream& file);
+    std::vector<TTAIR_t::Edge> ParseEdges(const rapidjson::Document::ValueType& edgeList);
+    TTAIR_t::Edge ParseEdge(const rapidjson::Document::ValueType& edge);
+
 };
 
 #endif //MAVE_TTAPARSER_H

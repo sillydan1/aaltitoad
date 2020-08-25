@@ -26,7 +26,6 @@ struct TTAIR_t {
         std::string targetLocationName;
         std::string guardExpression;
         std::string updateExpression;
-        std::string parentComponentNamePrefix;
     };
     struct SubComponent {
         std::string name;
@@ -35,11 +34,17 @@ struct TTAIR_t {
     struct Component {
         std::vector<Edge> edges;
         std::vector<SubComponent> subComponents;
-
+        bool isMain = false;
     };
 
-    // List of folded components
+    // List of top-level components
+    std::vector<Component> rootComponents;
+    std::vector<Edge> edges;
+    std::optional<std::vector<Component>::iterator> GetMainComponent() const {
+        return {};
+    }
     // List of folded symbols
+
 };
 
 struct TTA_t {

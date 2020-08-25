@@ -28,15 +28,17 @@ set (CMAKE_CXX_STANDARD 17)
 
 add_subdirectory(dep/argvparse/)
 
+add_library(ttaparse
+        src/model_parsers/TTAParser.cpp
+        )
+
 add_executable(mave
         src/cli/main.cpp
-        src/cli/CLIConfig.cpp src/model_parsers/TTAParser.cpp)
+        src/cli/CLIConfig.cpp)
 
 target_link_libraries(mave
         argvparse
-        )
+        ttaparse)
 
-target_precompile_headers(
-        mave PUBLIC
-        src/mavepch.h
-)
+target_precompile_headers(mave PUBLIC src/mavepch.h)
+target_precompile_headers(ttaparse PUBLIC src/mavepch.h)

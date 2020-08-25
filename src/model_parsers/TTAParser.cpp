@@ -16,36 +16,57 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <rapidjson/reader.h>
+#include <mavepch.h>
 #include "TTAParser.h"
-#include <fstream>
-#include <sstream>
 #include <model_parsers/json/RapidJsonReaderStringStreamWrapper.h>
+#include <rapidjson/document.h>
 
 TTAIR_t TTAParser::ParseToIntermediateRep(const std::string& filepath) {
-    /// NOTE: Look at the "dep/rapidjson/example/simplereader" example for how to parse this.
-    // Open the file as a stringstream if it exists
     std::ifstream file{filepath};
     if(file) {
-        std::stringstream filestream{};
-        filestream << file.rdbuf();
-        RapidJsonReaderStringStreamWrapper wrapper{std::move(filestream)};
-        // Initialize a rapidjson::Reader reader class
-        MyHandler h{};
-        rapidjson::Reader reader{};
-        // Parse.
-        reader.Parse(wrapper, h);
+        auto dom_document = ParseDocumentDOMStyle(file);
+        // Ensure existence of required high-level members
+
+        // Convert to TTAIR_t
+
+        auto x = d.FindMember("edges");
+        if(x == d.MemberEnd())
+            std::cout << "No edges!" << std::endl;
+        else if(x->value.IsArray()) {
+            auto xx = ParseEdges(x->value);
+        } else {
+            std::cout << "Error!" << std::endl;
+        }
         // TODO: Do more...
         file.close();
     }
-    // If doesnt exist, error
-    return {}; // TODO: Implement the TTAJsonTypeHandler
+    // If the file doesnt exist -> error
+    return {};
+}
+
+std::vector<TTAIR_t::Edge> TTAParser::ParseEdges(const rapidjson::Document::ValueType &edgeList) {
+    std::vector<TTAIR_t::Edge> edges{};
+    for(auto edge = edgeList.Begin(); edge != edgeList.End(); edge++)
+        edges.push_back(ParseEdge(*edge));
+    return edges;
+}
+
+TTAIR_t::Edge TTAParser::ParseEdge(const rapidjson::Document::ValueType &edge) {
+    return {edge["source_location"].GetString(),
+            edge["target_location"].GetString(),
+            edge["guard"].GetString(),
+            edge["update"].GetString()};
 }
 
 TTA_t TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
     return {};
 }
 
-TTAJsonTypeHandler::TTAJsonTypeHandler()  {
-    SetDefaultReturnValue(false); // Fail by default.
+rapidjson::Document TTAParser::ParseDocumentDOMStyle(const std::ifstream &file) {
+    // Parse the file (DOM)
+    std::stringstream filestream{};
+    filestream << file.rdbuf();
+    rapidjson::Document d;
+    d.Parse(filestream.str().c_str());
+    return d;
 }
