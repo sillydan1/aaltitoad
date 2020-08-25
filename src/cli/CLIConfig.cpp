@@ -83,6 +83,7 @@ void CLIConfig::PrintHelpMessage(const char *const *argv) {
     print_argument_help(GetCLIOptionsOnly());
 }
 
-bool CLIConfig::operator[](const std::string &lookup) {
-    return providedOptions[lookup].operator bool();
+argument_t CLIConfig::operator[](const std::string &lookup) {
+    auto obj = providedOptions[lookup];
+    return obj;
 }
