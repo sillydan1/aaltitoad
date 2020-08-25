@@ -4,3 +4,6 @@
 [submodule "dep/rapidjson"]
 	path = dep/rapidjson
 	url = https://github.com/Tencent/rapidjson/
+[submodule "dep/spdlog"]
+	path = dep/spdlog
+	url = https://github.com/gabime/spdlog
