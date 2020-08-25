@@ -2,6 +2,7 @@
 (Model Agnostic Verification Engine) - This is a work in progress. I will likely abandon this project in 2 days.
 
 ## Compile
+First, make sure that you have initialized all git submodules.
 ```
 mkdir build && cd build
 cmake ..

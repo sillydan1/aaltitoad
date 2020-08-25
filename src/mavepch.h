@@ -25,6 +25,8 @@
 #include <functional>
 #include <memory>
 #include <utility>
+#include <fstream>
+#include <sstream>
 
 // Data structures
 #include <map>
@@ -32,5 +34,6 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <optional>
 
 #endif //MAVE_MAVEPCH_H
