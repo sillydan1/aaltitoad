@@ -89,7 +89,23 @@ rapidjson::Document TTAParser::ParseDocumentDOMStyle(const std::ifstream &file) 
 }
 
 bool TTAParser::IsDocumentAProperTTA(const rapidjson::Document &document) {
-    spdlog::critical("IsDocumentAProperTTA is not implemented yet!");
-    return false;
+    return  DoesMemberExistAndIsObject(document, "initial_location") &&
+            DoesMemberExistAndIsObject(document, "final_location") &&
+            DoesMemberExistAndIsArray( document, "edges") &&
+            DoesMemberExistAndIsBool(  document, "isMain");
 }
 
+bool TTAParser::DoesMemberExistAndIsObject(const rapidjson::Document &document, const std::string &membername) {
+    auto memberIterator = document.FindMember(membername.c_str());
+    return memberIterator != document.MemberEnd() && memberIterator->value.IsObject();
+}
+
+bool TTAParser::DoesMemberExistAndIsArray(const rapidjson::Document &document, const std::string &membername) {
+    auto memberIterator = document.FindMember(membername.c_str());
+    return memberIterator != document.MemberEnd() && memberIterator->value.IsArray();
+}
+
+bool TTAParser::DoesMemberExistAndIsBool(const rapidjson::Document &document, const std::string &membername) {
+    auto memberIterator = document.FindMember(membername.c_str());
+    return memberIterator != document.MemberEnd() && memberIterator->value.IsBool();
+}

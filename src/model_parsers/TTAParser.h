@@ -39,7 +39,9 @@ private:
     bool IsDocumentAProperTTA(const rapidjson::Document& document);
     std::vector<TTAIR_t::Edge> ParseEdges(const rapidjson::Document::ValueType& edgeList);
     TTAIR_t::Edge ParseEdge(const rapidjson::Document::ValueType& edge);
-
+    bool DoesMemberExistAndIsObject(const rapidjson::Document &document, const std::string &membername);
+    bool DoesMemberExistAndIsArray(const rapidjson::Document &document, const std::string &membername);
+    bool DoesMemberExistAndIsBool(const rapidjson::Document &document, const std::string &membername);
 };
 
 #endif //MAVE_TTAPARSER_H
