@@ -46,7 +46,6 @@ struct TTAIR_t {
     // Helper functions
     [[nodiscard]] std::optional<std::vector<Component>::const_iterator> FindMainComponent() const;
     void AddComponent(Component&& component);
-
 private:
     bool hasMainComponentBeenAdded = false;
 };

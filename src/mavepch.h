@@ -43,6 +43,6 @@
 // Debug files
 #ifndef NDEBUG
 #include <debug/mave_debug.h>
-#endif // Debug
+#endif // NDEBUG
 
 #endif //MAVE_MAVEPCH_H

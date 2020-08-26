@@ -27,6 +27,6 @@
 //          TD<MyTemplate> t;
 template<typename T> struct TD;
 
-#endif // Debug
+#endif // NDEBUG
 
 #endif //MAVE_MAVE_DEBUG_H
