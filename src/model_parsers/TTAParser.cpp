@@ -18,7 +18,6 @@
  */
 #include <mavepch.h>
 #include "TTAParser.h"
-#include <rapidjson/document.h>
 
 // Some json files are important to ignore, so Ignore-list:
 std::vector<std::string> ignore_list = { // NOLINT(cert-err58-cpp)

@@ -17,7 +17,6 @@
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "TTATypes.h"
-#include <spdlog/spdlog.h>
 
 std::optional<std::vector<TTAIR_t::Component>::const_iterator> TTAIR_t::FindMainComponent() const {
     for(auto component_itr = components.begin(); component_itr != components.end(); component_itr++) {

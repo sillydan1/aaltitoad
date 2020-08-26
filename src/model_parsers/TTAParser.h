@@ -18,8 +18,7 @@
  */
 #ifndef MAVE_TTAPARSER_H
 #define MAVE_TTAPARSER_H
-
-#include <rapidjson/pointer.h>
+#include <rapidjson/document.h>
 #include "ModelParser.h"
 #include "TTATypes.h"
 
