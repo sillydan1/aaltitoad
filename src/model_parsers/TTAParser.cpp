@@ -20,27 +20,29 @@
 #include "TTAParser.h"
 #include <model_parsers/json/RapidJsonReaderStringStreamWrapper.h>
 #include <rapidjson/document.h>
-#include <spdlog/spdlog.h>
+
+// Some json files are important to ignore, so Ignore-list:
+std::vector<std::string> ignore_list = { // NOLINT(cert-err58-cpp)
+        "IgnoreMe",     // ignore all files that want to be ignored
+        "ignoreme",     // ignore all files that want to be ignored
+        "Queries.json", // Queries are not component- or symbol-files
+        ".parts",       // ignore all parts files
+};
+
+bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry) {
+    return std::any_of(ignore_list.begin(), ignore_list.end(),
+                       [&entry] (auto& el) { return entry.path().generic_string().find(el) != std::string::npos; });
+}
 
 TTAIR_t TTAParser::ParseToIntermediateRep(const std::string &path) {
-    // Some json files are important to ignore, so Ignore-list:
-    std::vector<std::string> ignore_list = {
-            "IgnoreMe",     // ignore all files that want to be ignored
-            "ignoreme",     // ignore all files that want to be ignored
-            "Queries.json", // Queries are not component- or symbol-files
-            ".parts",       // ignore all parts files
-    };
     // Find all the .json files in the filepath
     TTAIR_t ttair{}; // TODO: Symbols.
     for (const auto & entry : std::filesystem::directory_iterator(path)) {
-        bool should_skip = std::any_of(ignore_list.begin(), ignore_list.end(),
-                      [&entry] (auto& el) { return entry.path().generic_string().find(el) != std::string::npos; });
-        if(should_skip) continue;
+        if(ShouldSkipEntry(entry)) continue;
         auto parsedComponent = ParseComponent(entry.path().generic_string());
         if(parsedComponent)
             ttair.AddComponent(std::move(parsedComponent.value()));
     }
-    // Structure the TTAIR_t element
     return ttair;
 }
 
