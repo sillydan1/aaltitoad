@@ -33,15 +33,16 @@ public:
 protected:
     TTA_t   ConvertToModelType(const TTAIR_t& intermediateRep) override;
     TTAIR_t ParseToIntermediateRep(const std::string& path) override;
-    std::optional<TTAIR_t::Component> ParseComponent(const std::string& filepath);
+    static std::optional<TTAIR_t::Component> ParseComponent(const std::string& filepath);
 private:
-    rapidjson::Document ParseDocumentDOMStyle(const std::ifstream& file);
-    bool IsDocumentAProperTTA(const rapidjson::Document& document);
-    std::vector<TTAIR_t::Edge> ParseEdges(const rapidjson::Document::ValueType& edgeList);
-    TTAIR_t::Edge ParseEdge(const rapidjson::Document::ValueType& edge);
-    bool DoesMemberExistAndIsObject(const rapidjson::Document &document, const std::string &membername);
-    bool DoesMemberExistAndIsArray(const rapidjson::Document &document, const std::string &membername);
-    bool DoesMemberExistAndIsBool(const rapidjson::Document &document, const std::string &membername);
+    static std::vector<TTAIR_t::Edge> ParseEdges(const rapidjson::Document::ValueType& edgeList);
+    static TTAIR_t::Edge ParseEdge(const rapidjson::Document::ValueType& edge);
+    static rapidjson::Document ParseDocumentDOMStyle(const std::ifstream& file);
+    static bool IsDocumentAProperTTA(const rapidjson::Document& document);
+    static bool DoesMemberExistAndIsObject(const rapidjson::Document::ValueType& document, const std::string& membername);
+    static bool DoesMemberExistAndIsArray(const rapidjson::Document::ValueType& document, const std::string& membername);
+    static bool DoesMemberExistAndIsBool(const rapidjson::Document::ValueType& document, const std::string& membername);
+    static bool DoesMemberExistAndIsString(const rapidjson::Document::ValueType& document, const std::string& membername);
 };
 
 #endif //MAVE_TTAPARSER_H

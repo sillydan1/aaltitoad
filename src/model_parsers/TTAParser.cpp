@@ -25,12 +25,17 @@
 TTAIR_t TTAParser::ParseToIntermediateRep(const std::string &path) {
     // Some json files are important to ignore, so Ignore-list:
     std::vector<std::string> ignore_list = {
-            "Queries.json",
-            "IgnoreMe.json"
+            "IgnoreMe",     // ignore all files that want to be ignored
+            "ignoreme",     // ignore all files that want to be ignored
+            "Queries.json", // Queries are not component- or symbol-files
+            ".parts",       // ignore all parts files
     };
     // Find all the .json files in the filepath
     TTAIR_t ttair{}; // TODO: Symbols.
     for (const auto & entry : std::filesystem::directory_iterator(path)) {
+        bool should_skip = std::any_of(ignore_list.begin(), ignore_list.end(),
+                      [&entry] (auto& el) { return entry.path().generic_string().find(el) != std::string::npos; });
+        if(should_skip) continue;
         auto parsedComponent = ParseComponent(entry.path().generic_string());
         if(parsedComponent)
             ttair.AddComponent(std::move(parsedComponent.value()));
@@ -46,10 +51,10 @@ std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &f
         // Ensure existence of required high-level members
         if(IsDocumentAProperTTA(dom_document)) {
             return std::optional(TTAIR_t::Component{
-                    .initialLocation = dom_document["initial_location"].GetString(),
-                    .endLocation     = dom_document["final_location"].GetString(),
+                    .initialLocation = dom_document["initial_location"]["id"].GetString(),
+                    .endLocation     = dom_document["final_location"]["id"].GetString(),
                     .edges = ParseEdges(dom_document["edges"]),
-                    .isMain = dom_document["isMain"].GetBool()
+                    .isMain = dom_document["main"].GetBool()
             });
         } else
             spdlog::error("File '{0}' is improper", filepath);
@@ -89,23 +94,31 @@ rapidjson::Document TTAParser::ParseDocumentDOMStyle(const std::ifstream &file) 
 }
 
 bool TTAParser::IsDocumentAProperTTA(const rapidjson::Document &document) {
-    return  DoesMemberExistAndIsObject(document, "initial_location") &&
+    return  document.IsObject() &&
+            DoesMemberExistAndIsObject(document, "initial_location") &&
+            DoesMemberExistAndIsString(document["initial_location"], "id") &&
             DoesMemberExistAndIsObject(document, "final_location") &&
+            DoesMemberExistAndIsString(document["final_location"], "id") &&
             DoesMemberExistAndIsArray( document, "edges") &&
-            DoesMemberExistAndIsBool(  document, "isMain");
+            DoesMemberExistAndIsBool(  document, "main");
 }
 
-bool TTAParser::DoesMemberExistAndIsObject(const rapidjson::Document &document, const std::string &membername) {
+bool TTAParser::DoesMemberExistAndIsObject(const rapidjson::Document::ValueType &document, const std::string &membername) {
     auto memberIterator = document.FindMember(membername.c_str());
     return memberIterator != document.MemberEnd() && memberIterator->value.IsObject();
 }
 
-bool TTAParser::DoesMemberExistAndIsArray(const rapidjson::Document &document, const std::string &membername) {
+bool TTAParser::DoesMemberExistAndIsArray(const rapidjson::Document::ValueType &document, const std::string &membername) {
     auto memberIterator = document.FindMember(membername.c_str());
     return memberIterator != document.MemberEnd() && memberIterator->value.IsArray();
 }
 
-bool TTAParser::DoesMemberExistAndIsBool(const rapidjson::Document &document, const std::string &membername) {
+bool TTAParser::DoesMemberExistAndIsBool(const rapidjson::Document::ValueType &document, const std::string &membername) {
     auto memberIterator = document.FindMember(membername.c_str());
     return memberIterator != document.MemberEnd() && memberIterator->value.IsBool();
+}
+
+bool TTAParser::DoesMemberExistAndIsString(const rapidjson::Document::ValueType &document, const std::string &membername) {
+    auto memberIterator = document.FindMember(membername.c_str());
+    return memberIterator != document.MemberEnd() && memberIterator->value.IsString();
 }
