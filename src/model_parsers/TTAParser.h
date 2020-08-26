@@ -22,7 +22,6 @@
 #include <rapidjson/pointer.h>
 #include "ModelParser.h"
 #include "TTATypes.h"
-#include "json/BaseJsonTypeHandler.h"
 
 /// This TTAParser parses TTA's modelled in the H-UPPAAL tool
 class TTAParser : ModelParser<TTA_t, TTAIR_t> {

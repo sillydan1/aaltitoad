@@ -18,7 +18,6 @@
  */
 #include <mavepch.h>
 #include "TTAParser.h"
-#include <model_parsers/json/RapidJsonReaderStringStreamWrapper.h>
 #include <rapidjson/document.h>
 
 // Some json files are important to ignore, so Ignore-list:
@@ -30,12 +29,12 @@ std::vector<std::string> ignore_list = { // NOLINT(cert-err58-cpp)
 };
 
 bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry) {
-    return std::any_of(ignore_list.begin(), ignore_list.end(),
+    return  !entry.is_character_file() ||
+            std::any_of(ignore_list.begin(), ignore_list.end(),
                        [&entry] (auto& el) { return entry.path().generic_string().find(el) != std::string::npos; });
 }
 
 TTAIR_t TTAParser::ParseToIntermediateRep(const std::string &path) {
-    // Find all the .json files in the filepath
     TTAIR_t ttair{}; // TODO: Symbols.
     for (const auto & entry : std::filesystem::directory_iterator(path)) {
         if(ShouldSkipEntry(entry)) continue;
