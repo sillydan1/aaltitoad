@@ -18,20 +18,7 @@
  */
 #include <mavepch.h>
 #include "TTAParser.h"
-
-// Some json files are important to ignore, so Ignore-list:
-std::vector<std::string> ignore_list = { // NOLINT(cert-err58-cpp)
-        "IgnoreMe",     // ignore all files that want to be ignored
-        "ignoreme",     // ignore all files that want to be ignored
-        "Queries.json", // Queries are not component- or symbol-files
-        ".parts",       // ignore all parts files
-};
-
-bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry) {
-    return  !entry.is_character_file() ||
-            std::any_of(ignore_list.begin(), ignore_list.end(),
-                       [&entry] (auto& el) { return entry.path().generic_string().find(el) != std::string::npos; });
-}
+bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry);
 
 TTAIR_t TTAParser::ParseToIntermediateRep(const std::string &path) {
     TTAIR_t ttair{}; // TODO: Symbols.
@@ -44,12 +31,29 @@ TTAIR_t TTAParser::ParseToIntermediateRep(const std::string &path) {
     return ttair;
 }
 
+// Some json files are important to ignore, so Ignore-list:
+std::vector<std::string> ignore_list = { // NOLINT(cert-err58-cpp)
+        "IgnoreMe",     // ignore all files that want to be ignored
+        "ignoreme",     // ignore all files that want to be ignored
+        "Queries.json", // Queries are not component- or symbol-files
+        ".parts",       // ignore all parts files
+};
+
+bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry) {
+    auto entrystr = entry.path().string();
+    return  !entry.is_regular_file() ||
+            std::any_of(ignore_list.begin(), ignore_list.end(),
+                        [&entrystr] (auto& el) { return entrystr.find(el) != std::string::npos; });
+}
+
 std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &filepath) {
     std::ifstream file{filepath};
     if(file) {
+        spdlog::debug("Parsing file as json: '{0}'", filepath);
         auto dom_document = ParseDocumentDOMStyle(file);
         // Ensure existence of required high-level members
         if(IsDocumentAProperTTA(dom_document)) {
+            spdlog::debug("File '{0}' is a proper TTA", filepath);
             return std::optional(TTAIR_t::Component{
                     .initialLocation = dom_document["initial_location"]["id"].GetString(),
                     .endLocation     = dom_document["final_location"]["id"].GetString(),

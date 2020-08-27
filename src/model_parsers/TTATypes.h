@@ -21,6 +21,7 @@
 #include <mavepch.h>
 
 struct TTAIR_t {
+public:
     struct Edge {
         std::string sourceLocationName;
         std::string targetLocationName;
@@ -38,14 +39,13 @@ struct TTAIR_t {
         std::string dataType;
         std::string initialValue;
     };
-
-    // List of top-level components
+public:
     std::vector<Component> components = {};
-    // List of symbols
-
-    // Helper functions
+    std::vector<Symbol> symbols = {};
+public:
     [[nodiscard]] std::optional<std::vector<Component>::const_iterator> FindMainComponent() const;
     void AddComponent(Component&& component);
+
 private:
     bool hasMainComponentBeenAdded = false;
 };

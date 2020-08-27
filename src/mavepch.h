@@ -16,6 +16,9 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
+//// PCH = Precompiled Header.
+//// This speeds up compile time by ~75%.
+//// Dont overdo it though. Only put things here that are being used (included) across the entire codebase
 #ifndef MAVE_MAVEPCH_H
 #define MAVE_MAVEPCH_H
 
