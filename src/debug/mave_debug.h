@@ -16,37 +16,17 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
-//// PCH = Precompiled Header.
-//// This speeds up compile time by ~75%.
-//// Dont overdo it though. Only put things here that are being used (included) across the entire codebase
-#ifndef MAVE_MAVEPCH_H
-#define MAVE_MAVEPCH_H
 
-// General purpose STL things
-#include <iostream>
-#include <algorithm>
-#include <functional>
-#include <memory>
-#include <utility>
-#include <fstream>
-#include <sstream>
-#include <filesystem>
+#ifndef MAVE_MAVE_DEBUG_H
+#define MAVE_MAVE_DEBUG_H
 
-// Data structures
-#include <map>
-#include <string>
-#include <vector>
-#include <unordered_map>
-#include <unordered_set>
-#include <optional>
-#include <variant>
-
-// Extra "big" libraries that are used everywhere
-#include <spdlog/spdlog.h>
-
-// Debug files
 #ifndef NDEBUG
-#include <debug/mave_debug.h>
+// Type debugger. Will fail compilation and provide you the full type of the template.
+// Usage:
+//          TD<decltype(my_var)> t;
+//          TD<MyTemplate> t;
+template<typename T> struct TD;
+
 #endif // NDEBUG
 
-#endif //MAVE_MAVEPCH_H
+#endif //MAVE_MAVE_DEBUG_H

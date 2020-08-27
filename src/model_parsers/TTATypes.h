@@ -20,26 +20,42 @@
 #define MAVE_TTATYPES_H
 #include <mavepch.h>
 
+using TTASymbolType = std::variant<
+        int,
+        float,
+        bool,
+        std::string
+        >;
+
 struct TTAIR_t {
+public:
     struct Edge {
         std::string sourceLocationName;
         std::string targetLocationName;
         std::string guardExpression;
         std::string updateExpression;
-        std::string parentComponentNamePrefix;
     };
-    struct SubComponent {
-        std::string name;
-        std::string parentComponentName;
+    struct Symbol {
+        std::string identifier;
+        TTASymbolType value;
     };
     struct Component {
+        std::string initialLocation;
+        std::string endLocation;
+        bool isMain = false;
         std::vector<Edge> edges;
-        std::vector<SubComponent> subComponents;
-
+        std::vector<Symbol> symbols = {};
     };
+public:
+    std::vector<Component> components = {};
 
-    // List of folded components
-    // List of folded symbols
+public:
+    [[nodiscard]] std::optional<std::vector<Component>::const_iterator> FindMainComponent() const;
+    void AddComponent(Component&& component);
+    void AddSymbol(Symbol&& symbol);
+
+private:
+    bool hasMainComponentBeenAdded = false;
 };
 
 struct TTA_t {

@@ -18,6 +18,7 @@
  */
 #include <mavepch.h>
 #include "CLIConfig.h"
+#include "model_parsers/TTAParser.h"
 
 int main(int argc, char** argv) {
     // Initialize CLI configuration (based on CLI Args)
@@ -27,7 +28,14 @@ int main(int argc, char** argv) {
         config.PrintHelpMessage(argv);
         return config.GetStatusCode();
     }
+    if(config["verbosity"])
+        spdlog::set_level(static_cast<spdlog::level::level_enum>(config["verbosity"].as_integer()));
+    else
+        spdlog::set_level(spdlog::level::level_enum::critical);
     // Call the engine(s)
+
+    TTAParser ttaParser{};
+    ttaParser.ParseFromFile(config["input"].as_string());
 
     // Return the exit code.
     return config.GetStatusCode();

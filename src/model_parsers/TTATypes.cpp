@@ -16,19 +16,25 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MAVE_MODELPARSER_H
-#define MAVE_MODELPARSER_H
-#include <mavepch.h>
+#include "TTATypes.h"
 
-template<typename ModelType, typename IntermediateRep>
-class ModelParser {
-public:
-    virtual ModelType ParseFromFile(const std::string& filepath) {
-        return ConvertToModelType(ParseToIntermediateRep(filepath));
+std::optional<std::vector<TTAIR_t::Component>::const_iterator> TTAIR_t::FindMainComponent() const {
+    for(auto component_itr = components.begin(); component_itr != components.end(); component_itr++) {
+        if(component_itr->isMain)
+            return component_itr;
     }
-protected:
-    virtual ModelType ConvertToModelType(const IntermediateRep& intermediateRep) = 0;
-    virtual IntermediateRep ParseToIntermediateRep(const std::string& filepath) = 0;
-};
+    return {};
+}
 
-#endif //MAVE_MODELPARSER_H
+void TTAIR_t::AddComponent(TTAIR_t::Component&& component) {
+    components.emplace_back(component);
+    if(component.isMain) {
+        if(hasMainComponentBeenAdded)
+            spdlog::warn("Multiple main components are being parsed");
+        hasMainComponentBeenAdded = true;
+    }
+}
+
+void TTAIR_t::AddSymbol(TTAIR_t::Symbol&& symbol) {
+    symbols.emplace_back(symbol);
+}

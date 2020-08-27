@@ -23,16 +23,13 @@ CLIConfig::CLIConfig() {
     cliOptions = {
             { option_requirement::REQUIRE,
               {"input",  'i', argument_requirement::REQUIRE_ARG ,
-                "Input file"} },
-            { option_requirement::REQUIRE,
+                "[DIR] Input directory"} },
+            { option_requirement::OPTIONAL,
               {"output", 'o', argument_requirement::REQUIRE_ARG,
-                "Output file. Will be created, if not already exists"} },
-            { option_requirement::REQUIRE,
-              {"in-type",'n', argument_requirement::REQUIRE_ARG,
-                "The type of input modelling language"} },
-            { option_requirement::REQUIRE,
-              {"out-type",'u', argument_requirement::REQUIRE_ARG,
-                "The type of output modelling language"} }
+                "[DIR]/[FILENAME] Output file. Will be created, if not already exists"} },
+            { option_requirement::OPTIONAL,
+              {"verbosity",'v', argument_requirement::REQUIRE_ARG,
+                 "[0-6] The level of verbosity. Default is 5 (6 is SILENT/OFF)"} }
     };
     status_code = EXIT_SUCCESS;
 }
@@ -80,7 +77,9 @@ void CLIConfig::PrintHelpMessage(const char *const *argv) {
                             "    GNU General Public License for more details.\n"
                             "\n"
                             "    You should have received a copy of the GNU General Public License\n"
-                            "    along with this program.  If not, see <https://www.gnu.org/licenses/>.\n";
+                            "    along with this program.  If not, see <https://www.gnu.org/licenses/>.\n\n"
+                            "USAGE: " << argv[0] << " -i /path/to/project/dir/ [OPTIONS]\n\n"
+                            "OPTIONS:\n";
     print_argument_help(GetCLIOptionsOnly());
 }
 
