@@ -20,6 +20,13 @@
 #define MAVE_TTATYPES_H
 #include <mavepch.h>
 
+using TTASymbolType = std::variant<
+        int,
+        float,
+        bool,
+        std::string
+        >;
+
 struct TTAIR_t {
 public:
     struct Edge {
@@ -36,8 +43,7 @@ public:
     };
     struct Symbol {
         std::string identifier;
-        std::string dataType;
-        std::string initialValue;
+        TTASymbolType value;
     };
 public:
     std::vector<Component> components = {};

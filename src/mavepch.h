@@ -39,6 +39,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <optional>
+#include <variant>
 
 // Extra "big" libraries that are used everywhere
 #include <spdlog/spdlog.h>
