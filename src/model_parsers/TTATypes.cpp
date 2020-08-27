@@ -34,3 +34,7 @@ void TTAIR_t::AddComponent(TTAIR_t::Component&& component) {
         hasMainComponentBeenAdded = true;
     }
 }
+
+void TTAIR_t::AddSymbol(TTAIR_t::Symbol&& symbol) {
+    symbols.emplace_back(symbol);
+}

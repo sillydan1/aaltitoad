@@ -35,22 +35,24 @@ public:
         std::string guardExpression;
         std::string updateExpression;
     };
-    struct Component {
-        std::string initialLocation;
-        std::string endLocation;
-        std::vector<Edge> edges;
-        bool isMain = false;
-    };
     struct Symbol {
         std::string identifier;
         TTASymbolType value;
     };
+    struct Component {
+        std::string initialLocation;
+        std::string endLocation;
+        bool isMain = false;
+        std::vector<Edge> edges;
+        std::vector<Symbol> symbols = {};
+    };
 public:
     std::vector<Component> components = {};
-    std::vector<Symbol> symbols = {};
+
 public:
     [[nodiscard]] std::optional<std::vector<Component>::const_iterator> FindMainComponent() const;
     void AddComponent(Component&& component);
+    void AddSymbol(Symbol&& symbol);
 
 private:
     bool hasMainComponentBeenAdded = false;

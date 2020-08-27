@@ -48,7 +48,7 @@ bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry) {
 std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &filepath) {
     std::ifstream file{filepath};
     if(file) {
-        spdlog::debug("Parsing file as json: '{0}'", filepath);
+        spdlog::debug("Parsing file '{0}' as a JSON file", filepath);
         auto dom_document = ParseDocumentDOMStyle(file);
         // Ensure existence of required high-level members
         if(IsDocumentAProperTTA(dom_document)) {
@@ -56,8 +56,9 @@ std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &f
             return std::optional(TTAIR_t::Component{
                     .initialLocation = dom_document["initial_location"]["id"].GetString(),
                     .endLocation     = dom_document["final_location"]["id"].GetString(),
+                    .isMain = dom_document["main"].GetBool(),
                     .edges = ParseEdges(dom_document["edges"]),
-                    .isMain = dom_document["main"].GetBool()
+                    .symbols = ParseSymbolDeclarations(dom_document)
             });
         } else
             spdlog::error("File '{0}' is improper", filepath);
@@ -70,6 +71,7 @@ std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &f
 
 rapidjson::Document TTAParser::ParseDocumentDOMStyle(const std::ifstream &file) {
     // Parse the file (DOM)
+    // TODO: DOM Style can be slow and rapidjson provides faster parsing strategies. Extend when it becomes a problem
     std::stringstream filestream{};
     filestream << file.rdbuf();
     rapidjson::Document d;
@@ -84,7 +86,8 @@ bool TTAParser::IsDocumentAProperTTA(const rapidjson::Document &document) {
             DoesMemberExistAndIsObject(document, "final_location") &&
             DoesMemberExistAndIsString(document["final_location"], "id") &&
             DoesMemberExistAndIsArray( document, "edges") &&
-            DoesMemberExistAndIsBool(  document, "main");
+            DoesMemberExistAndIsBool(  document, "main") &&
+            DoesMemberExistAndIsArray( document, "declarations");
 }
 
 bool TTAParser::DoesMemberExistAndIsObject(const rapidjson::Document::ValueType &document, const std::string &membername) {
@@ -119,6 +122,11 @@ TTAIR_t::Edge TTAParser::ParseEdge(const rapidjson::Document::ValueType &edge) {
             edge["target_location"].GetString(),
             edge["guard"].GetString(),
             edge["update"].GetString()};
+}
+
+std::vector<TTAIR_t::Symbol> TTAParser::ParseSymbolDeclarations(const rapidjson::Document &document) {
+    spdlog::critical("ParseSymbolDeclarations is not implemented yet!");
+    return {};
 }
 
 TTA_t TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
