@@ -32,17 +32,16 @@ TTAIR_t TTAParser::ParseToIntermediateRep(const std::string &path) {
 }
 
 // Some json files are important to ignore, so Ignore-list:
-std::vector<std::string> ignore_list = { // NOLINT(cert-err58-cpp)
-        "IgnoreMe",     // ignore all files that want to be ignored
-        "ignoreme",     // ignore all files that want to be ignored
+std::vector<std::string> componentIgnoreList = { // NOLINT(cert-err58-cpp)
+        "ignore",       // ignore all files that want to be ignored
         "Queries.json", // Queries are not component- or symbol-files
-        ".parts",       // ignore all parts files
+        ".parts",       // parts files are not components
 };
 
 bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry) {
     auto entrystr = entry.path().string();
     return  !entry.is_regular_file() ||
-            std::any_of(ignore_list.begin(), ignore_list.end(),
+            std::any_of(componentIgnoreList.begin(), componentIgnoreList.end(),
                         [&entrystr] (auto& el) { return entrystr.find(el) != std::string::npos; });
 }
 
@@ -67,25 +66,6 @@ std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &f
     }
     spdlog::error("File '{0}' does not exist", filepath);
     return {};
-}
-
-std::vector<TTAIR_t::Edge> TTAParser::ParseEdges(const rapidjson::Document::ValueType &edgeList) {
-    std::vector<TTAIR_t::Edge> edges{};
-    for(auto edge = edgeList.Begin(); edge != edgeList.End(); edge++)
-        edges.push_back(ParseEdge(*edge));
-    return edges;
-}
-
-TTAIR_t::Edge TTAParser::ParseEdge(const rapidjson::Document::ValueType &edge) {
-    return {edge["source_location"].GetString(),
-            edge["target_location"].GetString(),
-            edge["guard"].GetString(),
-            edge["update"].GetString()};
-}
-
-TTA_t TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
-    spdlog::critical("ConvertToModelType is not implemented yet!");
-    return {}; // TODO: Implement this!
 }
 
 rapidjson::Document TTAParser::ParseDocumentDOMStyle(const std::ifstream &file) {
@@ -125,4 +105,23 @@ bool TTAParser::DoesMemberExistAndIsBool(const rapidjson::Document::ValueType &d
 bool TTAParser::DoesMemberExistAndIsString(const rapidjson::Document::ValueType &document, const std::string &membername) {
     auto memberIterator = document.FindMember(membername.c_str());
     return memberIterator != document.MemberEnd() && memberIterator->value.IsString();
+}
+
+std::vector<TTAIR_t::Edge> TTAParser::ParseEdges(const rapidjson::Document::ValueType &edgeList) {
+    std::vector<TTAIR_t::Edge> edges{};
+    for(auto edge = edgeList.Begin(); edge != edgeList.End(); edge++)
+        edges.push_back(ParseEdge(*edge));
+    return edges;
+}
+
+TTAIR_t::Edge TTAParser::ParseEdge(const rapidjson::Document::ValueType &edge) {
+    return {edge["source_location"].GetString(),
+            edge["target_location"].GetString(),
+            edge["guard"].GetString(),
+            edge["update"].GetString()};
+}
+
+TTA_t TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
+    spdlog::critical("ConvertToModelType is not implemented yet!");
+    return {}; // TODO: Implement this!
 }
