@@ -151,7 +151,7 @@ std::optional<TTAIR_t::Symbol> TTAParser::ParseSymbolDeclaration(const std::stri
         spdlog::error("Variable declaration '{0}' does not contain a ':=' token", declaration);
         return {};
     }
-    auto value = TTASymbolValueFromTypeAndValueStrings(tokens[2], tokens[4]);
+    auto value = TTASymbolValueFromTypeAndValueStrings(tokens[1], tokens[4]);
     auto identifier = tokens[2];
     return TTAIR_t::Symbol{.identifier=identifier,.value=value};
 }
