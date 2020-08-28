@@ -26,6 +26,7 @@ using TTASymbolType = std::variant<
         bool,
         std::string
         >;
+
 TTASymbolType TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr);
 TTASymbolType TTASymbolTypeFromString(const std::string& typestr);
 TTASymbolType PopulateValueFromString(const TTASymbolType& type, const std::string& valuestr);

@@ -17,7 +17,6 @@
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <mavepch.h>
-#include <extensions/overload>
 #include <extensions/stringextensions.h>
 #include "TTAParser.h"
 bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry);
