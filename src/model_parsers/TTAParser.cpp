@@ -133,6 +133,8 @@ std::vector<TTAIR_t::Symbol> TTAParser::ParseSymbolDeclarations(const rapidjson:
         for(auto& decl : decllines) {
             auto symbol = ParseSymbolDeclaration(decl);
             if(symbol) symbols.emplace_back(std::move(symbol.value()));
+            // Improper symbol decls should result in fatal error
+            else       throw std::logic_error("Symbol declaration failure");
         }
     }
     return symbols;
@@ -141,13 +143,13 @@ std::vector<TTAIR_t::Symbol> TTAParser::ParseSymbolDeclarations(const rapidjson:
 std::optional<TTAIR_t::Symbol> TTAParser::ParseSymbolDeclaration(const std::string &declaration) {
     auto tokens = split(declaration, ' ');
     if(tokens.size() < 5) {
-        spdlog::error("Variable declaration '{0}' is missing tokens - The format is "
+        spdlog::critical("Variable declaration '{0}' is missing tokens - The format is "
                       "[<Access modifier><Space><Type><Space><Identifier><Space>:=<Space><Initial Value>]",
                       declaration);
         return {};
     }
     if(tokens[3] != ":=") {
-        spdlog::error("Variable declaration '{0}' does not contain a ':=' token", declaration);
+        spdlog::critical("Variable declaration '{0}' does not contain a ':=' token", declaration);
         return {};
     }
     auto value = TTASymbolValueFromTypeAndValueStrings(tokens[1], tokens[4]);
