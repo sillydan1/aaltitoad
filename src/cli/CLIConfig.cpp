@@ -17,24 +17,19 @@
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "CLIConfig.h"
-#include <algorithm>
-#include <iostream>
 
 CLIConfig::CLIConfig() {
     /// Add/Remove Command Line options here.
     cliOptions = {
             { option_requirement::REQUIRE,
               {"input",  'i', argument_requirement::REQUIRE_ARG ,
-                "Input file"} },
-            { option_requirement::REQUIRE,
+                "[DIR] Input directory"} },
+            { option_requirement::OPTIONAL,
               {"output", 'o', argument_requirement::REQUIRE_ARG,
-                "Output file. Will be created, if not already exists"} },
-            { option_requirement::REQUIRE,
-              {"in-type",'n', argument_requirement::REQUIRE_ARG,
-                "The type of input modelling language"} },
-            { option_requirement::REQUIRE,
-              {"out-type",'u', argument_requirement::REQUIRE_ARG,
-                "The type of output modelling language"} }
+                "[DIR]/[FILENAME] Output file. Will be created, if not already exists"} },
+            { option_requirement::OPTIONAL,
+              {"verbosity",'v', argument_requirement::REQUIRE_ARG,
+                 "[0-6] The level of verbosity. Default is 5 (6 is SILENT/OFF)"} }
     };
     status_code = EXIT_SUCCESS;
 }
@@ -54,16 +49,17 @@ std::vector<option_t> CLIConfig::GetCLIOptionsOnly() {
     return output;
 }
 
+bool CLIConfig::isElementRequiredAndMissing(const std::pair<option_requirement, option_t>& el) {
+    return el.first == option_requirement::REQUIRE && !providedOptions[el.second.long_option];
+}
+
 void CLIConfig::EnsureRequiredOptionsAreProvided() {
-    auto aRequiredOptionNotThere = std::any_of(cliOptions.begin(), cliOptions.end(),
-            [this] (auto el) -> bool
-            {
-                if(el.first == option_requirement::REQUIRE) {
-                    return !providedOptions[el.second.long_option];
-                } return false;
-            });
-    if(aRequiredOptionNotThere)
-        status_code = EXIT_FAILURE;
+    for(auto& el : cliOptions) {
+        if(isElementRequiredAndMissing(el)) {
+            status_code = EXIT_FAILURE;
+            return;
+        }
+    }
 }
 
 void CLIConfig::PrintHelpMessage(const char *const *argv) {
@@ -81,10 +77,12 @@ void CLIConfig::PrintHelpMessage(const char *const *argv) {
                             "    GNU General Public License for more details.\n"
                             "\n"
                             "    You should have received a copy of the GNU General Public License\n"
-                            "    along with this program.  If not, see <https://www.gnu.org/licenses/>.\n";
+                            "    along with this program.  If not, see <https://www.gnu.org/licenses/>.\n\n"
+                            "USAGE: " << argv[0] << " -i /path/to/project/dir/ [OPTIONS]\n\n"
+                            "OPTIONS:\n";
     print_argument_help(GetCLIOptionsOnly());
 }
 
-bool CLIConfig::operator[](const std::string &lookup) {
-    return providedOptions[lookup].operator bool();
+argument_t CLIConfig::operator[](const std::string &lookup) {
+    return providedOptions[lookup];
 }
