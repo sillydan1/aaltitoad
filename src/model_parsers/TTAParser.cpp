@@ -17,7 +17,8 @@
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <mavepch.h>
-#include <overload>
+#include <extensions/overload>
+#include <extensions/stringextensions.h>
 #include "TTAParser.h"
 bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry);
 
@@ -125,73 +126,37 @@ TTAIR_t::Edge TTAParser::ParseEdge(const rapidjson::Document::ValueType &edge) {
             edge["update"].GetString()};
 }
 
-std::vector<std::string> split(const std::string& s, char delimiter) {
-    std::vector<std::string> tokens;
-    std::string token;
-    std::istringstream tokenStream(s);
-    while (std::getline(tokenStream, token, delimiter))
-        tokens.push_back(token);
-    return tokens;
-}
-
 std::vector<TTAIR_t::Symbol> TTAParser::ParseSymbolDeclarations(const rapidjson::Document &document) {
     std::vector<TTAIR_t::Symbol> symbols{};
     auto decls = document["declarations"].GetString();
     if(decls != std::string("")) {
         auto decllines = split(decls, '\n');
-        std::for_each(decllines.begin(), decllines.end(), [&symbols](auto& decl){
-            auto tokens = split(decl, ' ');
-            if(tokens.size() < 5) {
-                spdlog::error("Variable declaration '{0}' is missing tokens - The format is "
-                              "[<Access modifier><Space><Type><Space><Identifier><Space>:=<Space><Initial Value>]",
-                              decl);
-                return;
-            }
-            if(tokens[3] != ":=") {
-                spdlog::error("Variable declaration '{0}' does not contain a ':=' token", decl);
-                return;
-            }
-            TTASymbolType value;
-            if(tokens[1] == "float")
-                value = (float)0;
-            else if(tokens[1] == "int")
-                value = (int)0;
-            else if(tokens[1] == "bool")
-                value = (bool)false;
-            else if(tokens[1] == "string")
-                value = (std::string)"";
-            else {
-                spdlog::error("Variable declaration '{0}' type is not supported", decl);
-                return;
-            }
-            auto identifier = tokens[2];
-            std::visit(overload(
-                    [&tokens, &value](const float&      ){ value = std::stof(tokens[4]); },
-                    [&tokens, &value](const int&        ){ value = std::stoi(tokens[4]); },
-                    [&tokens, &value](const bool&       ){  if(tokens[4] == "false") value = false;
-                                                            else if(tokens[4] == "true") value = true;
-                                                            else spdlog::error("Value '{0}' is not of boolean type", tokens[4]);
-                                                         },
-                    [&tokens, &value](const std::string&){
-                        if(tokens[4][0] == tokens[4][tokens[4].size()-1] == '\"')
-                            value = tokens[4].substr(1,tokens[4].size()-2);
-                        else
-                            spdlog::error("Missing '\"' on string value '{0}'", tokens[4]);
-                    }
-                    ), value);
-            symbols.emplace_back(TTAIR_t::Symbol{.identifier=identifier,.value=value});
-        });
+        for(auto& decl : decllines) {
+            auto symbol = ParseSymbolDeclaration(decl);
+            if(symbol) symbols.emplace_back(std::move(symbol.value()));
+        }
     }
     return symbols;
 }
 
-TTAIR_t::Symbol TTAParser::ParseSymbolDeclaration(const std::string &declaration) {
-    return TTAIR_t::Symbol();
+std::optional<TTAIR_t::Symbol> TTAParser::ParseSymbolDeclaration(const std::string &declaration) {
+    auto tokens = split(declaration, ' ');
+    if(tokens.size() < 5) {
+        spdlog::error("Variable declaration '{0}' is missing tokens - The format is "
+                      "[<Access modifier><Space><Type><Space><Identifier><Space>:=<Space><Initial Value>]",
+                      declaration);
+        return {};
+    }
+    if(tokens[3] != ":=") {
+        spdlog::error("Variable declaration '{0}' does not contain a ':=' token", declaration);
+        return {};
+    }
+    auto value = TTASymbolValueFromTypeAndValueStrings(tokens[2], tokens[4]);
+    auto identifier = tokens[2];
+    return TTAIR_t::Symbol{.identifier=identifier,.value=value};
 }
 
 TTA_t TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
     spdlog::critical("ConvertToModelType is not implemented yet!");
     return {}; // TODO: Implement this!
 }
-
-

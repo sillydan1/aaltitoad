@@ -38,7 +38,8 @@ add_library(ttaparse
 
 add_executable(mave
         src/cli/main.cpp
-        src/cli/CLIConfig.cpp)
+        src/cli/CLIConfig.cpp
+        src/extensions/stringextensions.cpp)
 
 target_link_libraries(mave
         argvparse

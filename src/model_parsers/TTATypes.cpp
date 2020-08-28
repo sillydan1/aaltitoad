@@ -17,6 +17,7 @@
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "TTATypes.h"
+#include <extensions/overload>
 
 std::optional<std::vector<TTAIR_t::Component>::const_iterator> TTAIR_t::FindMainComponent() const {
     for(auto component_itr = components.begin(); component_itr != components.end(); component_itr++) {
@@ -35,6 +36,36 @@ void TTAIR_t::AddComponent(TTAIR_t::Component&& component) {
     }
 }
 
-void TTAIR_t::Component::AddSymbol(TTAIR_t::Symbol &&symbol) {
-    symbols.emplace_back(symbol);
+TTASymbolType TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr) {
+    return PopulateValueFromString(TTASymbolTypeFromString(typestr), valuestr);
+}
+
+TTASymbolType TTASymbolTypeFromString(const std::string& typestr) {
+    TTASymbolType value;
+    if     (typestr == "int") value = (int)0;
+    else if(typestr == "float") value = (float)0;
+    else if(typestr == "bool") value = (bool)false;
+    else if(typestr == "string") value = (std::string)"";
+    else spdlog::error("Variable type '{0}' is not supported", typestr);
+    // Value string
+    return value;
+}
+
+TTASymbolType PopulateValueFromString(const TTASymbolType& type, const std::string& valuestr) {
+    TTASymbolType value = type;
+    std::visit(overload(
+            [&valuestr, &value](const float&      ){ value = std::stof(valuestr); },
+            [&valuestr, &value](const int&        ){ value = std::stoi(valuestr); },
+            [&valuestr, &value](const bool&       ){  if(valuestr == "false") value = false;
+            else if(valuestr == "true") value = true;
+            else spdlog::error("Value '{0}' is not of boolean type", valuestr);
+            },
+            [&valuestr, &value](const std::string&){
+                if(valuestr[0] == valuestr[valuestr.size()-1] == '\"')
+                    value = valuestr.substr(1,valuestr.size()-2);
+                else
+                    spdlog::error("Missing '\"' on string value '{0}'", valuestr);
+            }
+    ), value);
+    return value;
 }

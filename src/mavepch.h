@@ -31,6 +31,7 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include <type_traits>
 
 // Data structures
 #include <map>

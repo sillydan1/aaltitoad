@@ -26,6 +26,9 @@ using TTASymbolType = std::variant<
         bool,
         std::string
         >;
+TTASymbolType TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr);
+TTASymbolType TTASymbolTypeFromString(const std::string& typestr);
+TTASymbolType PopulateValueFromString(const TTASymbolType& type, const std::string& valuestr);
 
 struct TTAIR_t {
 public:
@@ -43,10 +46,8 @@ public:
         std::string initialLocation;
         std::string endLocation;
         bool isMain = false;
-        std::vector<Edge> edges;
+        std::vector<Edge> edges = {};
         std::vector<Symbol> symbols = {};
-
-        void AddSymbol(Symbol&& symbol);
     };
 public:
     std::vector<Component> components = {};
