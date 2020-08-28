@@ -45,6 +45,8 @@ public:
         bool isMain = false;
         std::vector<Edge> edges;
         std::vector<Symbol> symbols = {};
+
+        void AddSymbol(Symbol&& symbol);
     };
 public:
     std::vector<Component> components = {};
@@ -52,7 +54,6 @@ public:
 public:
     [[nodiscard]] std::optional<std::vector<Component>::const_iterator> FindMainComponent() const;
     void AddComponent(Component&& component);
-    void AddSymbol(Symbol&& symbol);
 
 private:
     bool hasMainComponentBeenAdded = false;
