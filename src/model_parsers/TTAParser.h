@@ -23,13 +23,13 @@
 #include "TTATypes.h"
 
 /// This TTAParser parses TTA's modelled in the H-UPPAAL tool
-class TTAParser : ModelParser<TTA_t, TTAIR_t> {
+class TTAParser : ModelParser<TTA, TTAIR_t> {
 public:
-    TTA_t ParseFromFile(const std::string& filepath) override {
+    TTA ParseFromFile(const std::string& filepath) override {
         return ConvertToModelType(ParseToIntermediateRep(filepath));
     }
 protected:
-    TTA_t   ConvertToModelType(const TTAIR_t& intermediateRep) override;
+    TTA   ConvertToModelType(const TTAIR_t& intermediateRep) override;
     TTAIR_t ParseToIntermediateRep(const std::string& path) override;
     static std::optional<TTAIR_t::Component> ParseComponent(const std::string& filepath);
 private:
@@ -43,6 +43,8 @@ private:
     static bool DoesMemberExistAndIsString(const rapidjson::Document::ValueType& document, const std::string& membername);
     static std::vector<TTAIR_t::Symbol> ParseSymbolDeclarations(const rapidjson::Document& document);
     static std::optional<TTAIR_t::Symbol> ParseSymbolDeclaration(const std::string& declaration);
+    static std::unordered_map<std::string, TTASymbolType> ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t::Symbol>& symbolList);
+    static std::unordered_map<std::string, TTA::Edge> ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge>& edge);
 };
 
 #endif //MAVE_TTAPARSER_H

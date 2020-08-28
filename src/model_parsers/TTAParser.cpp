@@ -157,7 +157,37 @@ std::optional<TTAIR_t::Symbol> TTAParser::ParseSymbolDeclaration(const std::stri
     return TTAIR_t::Symbol{.identifier=identifier,.value=value};
 }
 
-TTA_t TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
-    spdlog::critical("ConvertToModelType is not implemented yet!");
-    return {}; // TODO: Implement this!
+TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
+    TTA tta{};
+    for(auto& comp : intermediateRep.components) {
+        tta.components[comp.name] = {
+                .initialLocationIdentifier = comp.initialLocation,
+                .endLocationIdentifier     = comp.endLocation,
+                .isMain                    = comp.isMain,
+                .edges                     = ConvertEdgeListToEdgeMap(comp.edges),
+                .symbols                   = ConvertSymbolListToSymbolMap(comp.symbols)
+        };
+    }
+    return tta;
+}
+
+std::unordered_map<std::string, TTASymbolType>
+TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t::Symbol> &symbolList) {
+    std::unordered_map<std::string, TTASymbolType> map{};
+    std::for_each(symbolList.begin(), symbolList.end(), [&map] (auto& symbol) { map[symbol.identifier]=symbol.value; });
+    return map;
+}
+
+std::unordered_map<std::string, TTA::Edge>
+TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList) {
+    std::unordered_map<std::string, TTA::Edge> map{};
+    for(auto& edge : edgeList) {
+        map[edge.sourceLocationName] = {
+            .sourceLocationIdentifier = edge.sourceLocationName,
+            .targetLocationIdentifier = edge.targetLocationName,
+            .guardExpression          = edge.guardExpression,   // TODO: Compile this as a thing
+            .updateExpression         = edge.updateExpression  // TODO: Compile this as a thing
+        };
+    }
+    return map;
 }

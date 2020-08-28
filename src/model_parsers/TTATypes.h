@@ -31,6 +31,25 @@ TTASymbolType TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, 
 TTASymbolType TTASymbolTypeFromString(const std::string& typestr);
 TTASymbolType PopulateValueFromString(const TTASymbolType& type, const std::string& valuestr);
 
+struct TTA {
+    struct Edge {
+        std::string sourceLocationIdentifier;
+        std::string targetLocationIdentifier;
+        std::string guardExpression;
+        std::string updateExpression;
+    };
+    struct Component {
+        std::string initialLocationIdentifier;
+        std::string endLocationIdentifier;
+        bool isMain = false;
+        // keyed on sourceLocationIdentifier
+        std::unordered_map<std::string, Edge> edges = {};
+        std::unordered_map<std::string, TTASymbolType> symbols = {};
+    };
+    // keyed on the component name
+    std::unordered_map<std::string, Component> components = {};
+};
+
 struct TTAIR_t {
 public:
     struct Edge {
@@ -44,6 +63,7 @@ public:
         TTASymbolType value;
     };
     struct Component {
+        std::string name;
         std::string initialLocation;
         std::string endLocation;
         bool isMain = false;
@@ -59,11 +79,6 @@ public:
 
 private:
     bool hasMainComponentBeenAdded = false;
-};
-
-struct TTA_t {
-    // List of reduced and unfolded components
-    // list of unfolded symbols
 };
 
 #endif //MAVE_TTATYPES_H
