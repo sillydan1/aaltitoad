@@ -41,7 +41,8 @@ private:
     static bool DoesMemberExistAndIsArray(const rapidjson::Document::ValueType& document, const std::string& membername);
     static bool DoesMemberExistAndIsBool(const rapidjson::Document::ValueType& document, const std::string& membername);
     static bool DoesMemberExistAndIsString(const rapidjson::Document::ValueType& document, const std::string& membername);
-    static std::vector<TTAIR_t::Symbol> ParseSymbolDeclarations(const rapidjson::Document &document);
+    static std::vector<TTAIR_t::Symbol> ParseSymbolDeclarations(const rapidjson::Document& document);
+    static TTAIR_t::Symbol ParseSymbolDeclaration(const std::string& declaration);
 };
 
 #endif //MAVE_TTAPARSER_H
