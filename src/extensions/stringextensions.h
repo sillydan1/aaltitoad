@@ -20,5 +20,7 @@
 #define MAVE_STRINGEXTENSIONS_H
 
 std::vector<std::string> split(const std::string& s, char delimiter);
+// TODO: IFDEF WINDOWS default delimiter is '\\'
+std::string GetFileNameOnly(const std::string& fullpath, char delimiter = '/');
 
 #endif //MAVE_STRINGEXTENSIONS_H

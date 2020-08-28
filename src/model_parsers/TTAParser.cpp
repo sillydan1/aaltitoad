@@ -22,7 +22,7 @@
 bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry);
 
 TTAIR_t TTAParser::ParseToIntermediateRep(const std::string &path) {
-    TTAIR_t ttair{}; // TODO: Symbols.
+    TTAIR_t ttair{};
     for (const auto & entry : std::filesystem::directory_iterator(path)) {
         if(ShouldSkipEntry(entry)) continue;
         auto parsedComponent = ParseComponent(entry.path().generic_string());
@@ -55,6 +55,7 @@ std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &f
         if(IsDocumentAProperTTA(dom_document)) {
             spdlog::debug("File '{0}' is a proper TTA", filepath);
             return std::optional(TTAIR_t::Component{
+                    .name = GetFileNameOnly(filepath),
                     .initialLocation = dom_document["initial_location"]["id"].GetString(),
                     .endLocation     = dom_document["final_location"]["id"].GetString(),
                     .isMain = dom_document["main"].GetBool(),
@@ -71,7 +72,6 @@ std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &f
 }
 
 rapidjson::Document TTAParser::ParseDocumentDOMStyle(const std::ifstream &file) {
-    // Parse the file (DOM)
     // TODO: DOM Style can be slow and rapidjson provides faster parsing strategies. Extend when it becomes a problem
     std::stringstream filestream{};
     filestream << file.rdbuf();

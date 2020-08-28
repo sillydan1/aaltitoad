@@ -26,3 +26,8 @@ std::vector<std::string> split(const std::string& s, char delimiter)  {
         tokens.push_back(token);
     return tokens;
 }
+
+std::string GetFileNameOnly(const std::string& fullpath, char delimiter) {
+    auto filenameWithExtension = fullpath.substr(fullpath.find_last_of(delimiter) + 1);
+    return filenameWithExtension.substr(0, filenameWithExtension.find_last_of('.'));
+}
