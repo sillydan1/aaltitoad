@@ -29,7 +29,7 @@ CLIConfig::CLIConfig() {
                 "[DIR]/[FILENAME] Output file. Will be created, if not already exists"} },
             { option_requirement::OPTIONAL,
               {"verbosity",'v', argument_requirement::REQUIRE_ARG,
-                 "[0-6] The level of verbosity. Default is 5 (6 is SILENT/OFF)"} }
+                 "[0-6] The level of verbosity. Default is 2"} }
     };
     status_code = EXIT_SUCCESS;
 }
