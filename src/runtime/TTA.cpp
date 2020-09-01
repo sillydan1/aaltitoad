@@ -54,12 +54,19 @@ TTASymbolType PopulateValueFromString(const TTASymbolType& type, const std::stri
     return value;
 }
 
+
+
+// TODO: This can be optimized by calculating hashes on the state changes only.
 std::size_t TTA::GetCurrentStateHash() const {
     std::size_t state = 0;
     for(auto& component : components)
-        state == 0 ?    [&state, &component](){ state = std::hash<std::string>{}(component.first);}() :
+        state == 0 ?    [&state, &component](){ state = std::hash<std::string>{}(component.second.currentLocationIdentifier);}() :
         hash_combine(state, component.first);
-    for(auto& symbol : symbols)
-        hash_combine(state, symbol.first);
+
+    for(auto& symbol : symbols) {
+        auto symbolHash = std::hash<std::string>{}(symbol.first);   // hash of the symbol identifier
+        hash_combine(symbolHash, symbol.second);                // Combine with the symbol value
+        hash_combine(state, symbolHash);                        // Combine with the overall state
+    }
     return state;
 }
