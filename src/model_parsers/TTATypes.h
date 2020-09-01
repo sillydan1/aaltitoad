@@ -19,40 +19,7 @@
 #ifndef MAVE_TTATYPES_H
 #define MAVE_TTATYPES_H
 #include <mavepch.h>
-
-using TTASymbolType = std::variant<
-        int,
-        float,
-        bool,
-        std::string
-        >;
-
-TTASymbolType TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr);
-TTASymbolType TTASymbolTypeFromString(const std::string& typestr);
-TTASymbolType PopulateValueFromString(const TTASymbolType& type, const std::string& valuestr);
-
-struct TTA {
-    struct Location {
-        std::string identifier;
-        bool isImmediate;
-    };
-    struct Edge {
-        Location sourceLocation;
-        Location targetLocation;
-        std::string guardExpression;
-        std::string updateExpression;
-    };
-    struct Component {
-        std::string initialLocationIdentifier;
-        std::string endLocationIdentifier;
-        bool isMain = false;
-        // keyed on sourceLocationIdentifier
-        std::unordered_map<std::string, Edge> edges = {};
-        std::unordered_map<std::string, TTASymbolType> symbols = {};
-    };
-    // keyed on the component name
-    std::unordered_map<std::string, Component> components = {};
-};
+#include "runtime/TTA.h"
 
 struct TTAIR_t {
 public:
