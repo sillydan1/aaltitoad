@@ -32,9 +32,13 @@ TTASymbolType TTASymbolTypeFromString(const std::string& typestr);
 TTASymbolType PopulateValueFromString(const TTASymbolType& type, const std::string& valuestr);
 
 struct TTA {
+    struct Location {
+        std::string identifier;
+        bool isImmediate;
+    };
     struct Edge {
-        std::string sourceLocationIdentifier;
-        std::string targetLocationIdentifier;
+        Location sourceLocation;
+        Location targetLocation;
         std::string guardExpression;
         std::string updateExpression;
     };
@@ -52,9 +56,13 @@ struct TTA {
 
 struct TTAIR_t {
 public:
+    struct Location {
+        std::string identifier;
+        bool isImmediate;
+    };
     struct Edge {
-        std::string sourceLocationName;
-        std::string targetLocationName;
+        Location sourceLocation;
+        Location targetLocation;
         std::string guardExpression;
         std::string updateExpression;
     };
