@@ -202,16 +202,17 @@ TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
         tta.components[comp.name] = {
                 .initialLocationIdentifier = comp.initialLocation,
                 .endLocationIdentifier     = comp.endLocation,
+                .currentLocationIdentifier = comp.initialLocation,
                 .isMain                    = comp.isMain,
                 .edges                     = ConvertEdgeListToEdgeMap(comp.edges),
-                .symbols                   = ConvertSymbolListToSymbolMap(comp.symbols)
         };
+        auto componentSymbols = ConvertSymbolListToSymbolMap(comp.symbols);
+        tta.symbols.insert(componentSymbols.begin(), componentSymbols.end());
     }
     return tta;
 }
 
-std::unordered_map<std::string, TTASymbolType>
-TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t::Symbol> &symbolList) {
+TTA::SymbolMap TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t::Symbol> &symbolList) {
     std::unordered_map<std::string, TTASymbolType> map{};
     std::for_each(symbolList.begin(), symbolList.end(), [&map] (auto& symbol) { map[symbol.identifier]=symbol.value; });
     return map;
