@@ -20,6 +20,8 @@
 #include "CLIConfig.h"
 #include "model_parsers/TTAParser.h"
 
+#include <shunting-yard.h>
+
 int main(int argc, char** argv) {
     // Initialize CLI configuration (based on CLI Args)
     CLIConfig config{};
@@ -34,8 +36,12 @@ int main(int argc, char** argv) {
         spdlog::set_level(spdlog::level::level_enum::warn);
 
     // Call the engine(s)
-    TTAParser ttaParser{};
-    TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
+    //TTAParser ttaParser{};
+    //TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
+
+    TokenMap tokenMap{};
+    tokenMap["MainþYES"] = 30;
+    std::cout << calculator::calculate("MainþYES + 2.4", tokenMap) << std::endl;
 
     // Return the exit code.
     return config.GetStatusCode();
