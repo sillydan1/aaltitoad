@@ -56,12 +56,12 @@ TTASymbolType PopulateValueFromString(const TTASymbolType& type, const std::stri
     std::visit(overload(
             [&valuestr, &value](const float&      ){ value = std::stof(valuestr); },
             [&valuestr, &value](const int&        ){ value = std::stoi(valuestr); },
-            [&valuestr, &value](const bool&       ){  if(valuestr == "false") value = false;
-            else if(valuestr == "true") value = true;
-            else spdlog::error("Value '{0}' is not of boolean type", valuestr);
-            },
+            [&valuestr, &value](const bool&       ){    if(valuestr == "false") value = false;
+                                                        else if(valuestr == "true") value = true;
+                                                        else spdlog::error("Value '{0}' is not of boolean type", valuestr);
+                                                   },
             [&valuestr, &value](const std::string&){
-                if(valuestr[0] == valuestr[valuestr.size()-1] == '\"')
+                if(valuestr[0] == '\"' && valuestr[valuestr.size()-1] == '\"')
                     value = valuestr.substr(1,valuestr.size()-2);
                 else
                     spdlog::error("Missing '\"' on string value '{0}'", valuestr);

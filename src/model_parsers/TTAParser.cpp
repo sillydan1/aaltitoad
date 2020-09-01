@@ -59,7 +59,7 @@ std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &f
                     .initialLocation = dom_document["initial_location"]["id"].GetString(),
                     .endLocation     = dom_document["final_location"]["id"].GetString(),
                     .isMain = dom_document["main"].GetBool(),
-                    .edges = ParseEdges(dom_document["edges"]),
+                    .edges = ParseEdges(dom_document["edges"], dom_document),
                     .symbols = ParseSymbolDeclarations(dom_document)
             });
         } else
@@ -88,7 +88,9 @@ bool TTAParser::IsDocumentAProperTTA(const rapidjson::Document &document) {
             DoesMemberExistAndIsString(document["final_location"], "id") &&
             DoesMemberExistAndIsArray( document, "edges") &&
             DoesMemberExistAndIsBool(  document, "main") &&
-            DoesMemberExistAndIsString(document, "declarations");
+            DoesMemberExistAndIsString(document, "declarations") &&
+            DoesMemberExistAndIsArray(document, "locations") &&
+            IsProperLocationList(document["locations"].GetArray());
 }
 
 bool TTAParser::DoesMemberExistAndIsObject(const rapidjson::Document::ValueType &document, const std::string &membername) {
@@ -111,26 +113,63 @@ bool TTAParser::DoesMemberExistAndIsString(const rapidjson::Document::ValueType 
     return memberIterator != document.MemberEnd() && memberIterator->value.IsString();
 }
 
-std::vector<TTAIR_t::Edge> TTAParser::ParseEdges(const rapidjson::Document::ValueType &edgeList) {
+bool TTAParser::IsProperLocationList(const rapidjson::Document::ConstArray &locationList) {
+    bool accumulator = true;
+    for(auto locationObject = locationList.begin(); locationObject != locationList.end() || !accumulator; locationObject++) {
+        accumulator = accumulator && DoesMemberExistAndIsString(*locationObject, "id");
+        accumulator = accumulator && DoesMemberExistAndIsString(*locationObject, "urgency");
+    }
+    return accumulator;
+}
+
+std::vector<TTAIR_t::Edge>
+TTAParser::ParseEdges(const rapidjson::Document::ValueType &edgeList, const rapidjson::Document& document) {
     std::vector<TTAIR_t::Edge> edges{};
     for(auto edge = edgeList.Begin(); edge != edgeList.End(); edge++)
-        edges.push_back(ParseEdge(*edge));
+        edges.push_back(ParseEdge(*edge, document));
     return edges;
 }
 
-TTAIR_t::Edge TTAParser::ParseEdge(const rapidjson::Document::ValueType &edge) {
-    return {edge["source_location"].GetString(),
-            edge["target_location"].GetString(),
-            edge["guard"].GetString(),
-            edge["update"].GetString()};
+std::optional<const rapidjson::Document::ValueType*>
+TTAParser::FindLocationWithName(const rapidjson::Document& document, const std::string& query_name) {
+    if(document["initial_location"]["id"].GetString() == query_name)
+        return { &document["initial_location"] };
+    else if(document["final_location"]["id"].GetString() == query_name)
+        return { &document["final_location"] };
+
+    auto array = document["locations"].GetArray();
+    for(int i = 0; i < array.Size(); i++) {
+        auto id = array[i].FindMember("id");
+        if(id->value.GetString() == query_name) return { &array[i] };
+    }
+    spdlog::error("Unable to find Location with 'id':'{0}' - Make sure that the location names are correct!", query_name);
+    return {};
+}
+
+TTAIR_t::Edge TTAParser::ParseEdge(const rapidjson::Document::ValueType &edge, const rapidjson::Document& document) {
+    auto sourceLocation = FindLocationWithName(document, edge["source_location"].GetString());
+    auto targetLocation = FindLocationWithName(document, edge["target_location"].GetString());
+    if(!sourceLocation) throw std::logic_error("Unable to locate source location for edge");
+    if(!targetLocation) throw std::logic_error("Unable to locate target location for edge");
+    return TTAIR_t::Edge{
+            .sourceLocation = {
+                .identifier = (*sourceLocation.value())["id"].GetString(),
+                .isImmediate = (*sourceLocation.value())["urgency"].GetString() == std::string("urgent")
+            },
+             .targetLocation = {
+                .identifier = (*targetLocation.value())["id"].GetString(),
+                .isImmediate = (*targetLocation.value())["urgency"].GetString() == std::string("urgent")
+            },
+            .guardExpression = edge["guard"].GetString(),
+            .updateExpression = edge["update"].GetString()};
 }
 
 std::vector<TTAIR_t::Symbol> TTAParser::ParseSymbolDeclarations(const rapidjson::Document &document) {
     std::vector<TTAIR_t::Symbol> symbols{};
     auto decls = document["declarations"].GetString();
     if(decls != std::string("")) {
-        auto decllines = split(decls, '\n');
-        for(auto& decl : decllines) {
+        auto declarationLines = split(decls, '\n');
+        for(auto& decl : declarationLines) {
             auto symbol = ParseSymbolDeclaration(decl);
             if(symbol) symbols.emplace_back(std::move(symbol.value()));
             // Improper symbol decls should result in fatal error
@@ -182,11 +221,11 @@ std::unordered_map<std::string, TTA::Edge>
 TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList) {
     std::unordered_map<std::string, TTA::Edge> map{};
     for(auto& edge : edgeList) {
-        map[edge.sourceLocationName] = {
-            .sourceLocationIdentifier = edge.sourceLocationName,
-            .targetLocationIdentifier = edge.targetLocationName,
-            .guardExpression          = edge.guardExpression,   // TODO: Compile this as a thing
-            .updateExpression         = edge.updateExpression  // TODO: Compile this as a thing
+        map[edge.sourceLocation.identifier] = {
+                .sourceLocation           = {edge.sourceLocation.identifier, edge.sourceLocation.isImmediate},
+                .targetLocation           = {edge.targetLocation.identifier, edge.targetLocation.isImmediate},
+                .guardExpression          = edge.guardExpression,   // TODO: Compile this as a thing
+                .updateExpression         = edge.updateExpression  // TODO: Compile this as a thing
         };
     }
     return map;
