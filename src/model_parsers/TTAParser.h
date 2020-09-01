@@ -25,7 +25,7 @@
 /// This TTAParser parses TTA's modelled in the H-UPPAAL tool
 class TTAParser : ModelParser<TTA, TTAIR_t> {
 public:
-    TTA ParseFromFile(const std::string& filepath) override {
+    TTA ParseFromFilePath(const std::string& filepath) override {
         return ConvertToModelType(ParseToIntermediateRep(filepath));
     }
 protected:

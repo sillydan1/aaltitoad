@@ -33,10 +33,8 @@ int main(int argc, char** argv) {
     else
         spdlog::set_level(spdlog::level::level_enum::warn);
     // Call the engine(s)
-
-
     TTAParser ttaParser{};
-    ttaParser.ParseFromFile(config["input"].as_string());
+    TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
 
     // Return the exit code.
     return config.GetStatusCode();

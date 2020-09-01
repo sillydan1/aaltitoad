@@ -23,7 +23,7 @@
 template<typename ModelType, typename IntermediateRep>
 class ModelParser {
 public:
-    virtual ModelType ParseFromFile(const std::string& filepath) {
+    virtual ModelType ParseFromFilePath(const std::string& filepath) {
         return ConvertToModelType(ParseToIntermediateRep(filepath));
     }
 protected:
