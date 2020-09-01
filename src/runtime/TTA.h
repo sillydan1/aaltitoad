@@ -31,6 +31,9 @@ TTASymbolType TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, 
 TTASymbolType TTASymbolTypeFromString(const std::string& typestr);
 TTASymbolType PopulateValueFromString(const TTASymbolType& type, const std::string& valuestr);
 
+/***
+ * Tick Tock Automata datastructure
+ */
 struct TTA {
     struct Location {
         std::string identifier;
@@ -56,13 +59,7 @@ struct TTA {
     SymbolMap symbols = {};
     ComponentMap components = {};
 
-    std::size_t GetCurrentStateHash() {
-        std::size_t state = 0; // TODO: Combine the hashes that are already calculated for you in the unordered_map, duh.
-        for(auto& component : components)
-            state == 0 ?    [&state, &component](){ state = std::hash<std::string>{}(component.second.currentLocationIdentifier);}() :
-                            hash_combine(state, component.second.currentLocationIdentifier);
-        return state;
-    }
+    std::size_t GetCurrentStateHash() const;
 };
 
 #endif //MAVE_TTA_H

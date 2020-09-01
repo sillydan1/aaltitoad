@@ -54,3 +54,12 @@ TTASymbolType PopulateValueFromString(const TTASymbolType& type, const std::stri
     return value;
 }
 
+std::size_t TTA::GetCurrentStateHash() const {
+    std::size_t state = 0;
+    for(auto& component : components)
+        state == 0 ?    [&state, &component](){ state = std::hash<std::string>{}(component.first);}() :
+        hash_combine(state, component.first);
+    for(auto& symbol : symbols)
+        hash_combine(state, symbol.first);
+    return state;
+}
