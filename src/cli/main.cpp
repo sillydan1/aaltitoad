@@ -32,6 +32,7 @@ int main(int argc, char** argv) {
         spdlog::set_level(static_cast<spdlog::level::level_enum>(5-config["verbosity"].as_integer()));
     else
         spdlog::set_level(spdlog::level::level_enum::warn);
+
     // Call the engine(s)
     TTAParser ttaParser{};
     TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
