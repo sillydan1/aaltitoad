@@ -18,6 +18,7 @@
  */
 #include <mavepch.h>
 #include <extensions/stringextensions.h>
+#include <extensions/overload>
 #include "TTAParser.h"
 bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry);
 
@@ -207,14 +208,21 @@ TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
                 .edges                     = ConvertEdgeListToEdgeMap(comp.edges),
         };
         auto componentSymbols = ConvertSymbolListToSymbolMap(comp.symbols);
-        tta.symbols.insert(componentSymbols.begin(), componentSymbols.end());
+        tta.symbols.map().insert(componentSymbols.map().begin(), componentSymbols.map().end());
     }
     return tta;
 }
 
 TTA::SymbolMap TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t::Symbol> &symbolList) {
-    std::unordered_map<std::string, TTASymbolType> map{};
-    std::for_each(symbolList.begin(), symbolList.end(), [&map] (auto& symbol) { map[symbol.identifier]=symbol.value; });
+    TTA::SymbolMap map{};
+    std::for_each(symbolList.begin(), symbolList.end(), [&map] (auto& symbol) {
+        std::visit(overload(
+                [&](const int& value)        { map[symbol.identifier] = value; },
+                [&](const float& value)      { map[symbol.identifier] = value; },
+                [&](const bool& value)       { map[symbol.identifier] = value; },
+                [&](const std::string& value){ map[symbol.identifier] = value; }
+                ), symbol.value);
+    });
     return map;
 }
 

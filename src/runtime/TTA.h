@@ -19,6 +19,7 @@
 #ifndef MAVE_TTA_H
 #define MAVE_TTA_H
 #include <extensions/hash_combine>
+#include <shunting-yard.h>
 
 using TTASymbolType = std::variant<
         int,
@@ -53,7 +54,7 @@ struct TTA {
         bool isMain = false;
         std::unordered_map<std::string, Edge> edges = {};
     };
-    using SymbolMap = std::unordered_map<std::string, TTASymbolType>;
+    using SymbolMap = TokenMap;
     using ComponentMap = std::unordered_map<std::string, Component>;
 
     SymbolMap symbols = {};

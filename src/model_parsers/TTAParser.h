@@ -45,7 +45,7 @@ private:
     static bool IsProperLocationList(const rapidjson::Document::ConstArray &locationList);
     static std::vector<TTAIR_t::Symbol> ParseSymbolDeclarations(const rapidjson::Document& document);
     static std::optional<TTAIR_t::Symbol> ParseSymbolDeclaration(const std::string& declaration);
-    static std::unordered_map<std::string, TTASymbolType> ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t::Symbol>& symbolList);
+    static TTA::SymbolMap ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t::Symbol>& symbolList);
     static std::unordered_map<std::string, TTA::Edge> ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge>& edge);
 };
 

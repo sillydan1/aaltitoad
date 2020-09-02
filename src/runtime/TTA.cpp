@@ -63,9 +63,18 @@ std::size_t TTA::GetCurrentStateHash() const {
         state == 0 ?    [&state, &component](){ state = std::hash<std::string>{}(component.second.currentLocationIdentifier);}() :
         hash_combine(state, component.first);
 
-    for(auto& symbol : symbols) {
+    for(auto& symbol : symbols.map()) {
         auto symbolHash = std::hash<std::string>{}(symbol.first);   // hash of the symbol identifier
-        hash_combine(symbolHash, symbol.second);                // Combine with the symbol value
+        switch(symbol.second->type) {
+            case INT: hash_combine(symbolHash, symbol.second.asInt());    // Combine with the symbol value
+                break;
+            case BOOL: hash_combine(symbolHash, symbol.second.asBool());  // Combine with the symbol value
+                break;
+            case REAL: hash_combine(symbolHash, symbol.second.asDouble());// Combine with the symbol value
+                break;
+            case STR: hash_combine(symbolHash, symbol.second.asString()); // Combine with the symbol value
+                break;
+        }
         hash_combine(state, symbolHash);                        // Combine with the overall state
     }
     return state;
