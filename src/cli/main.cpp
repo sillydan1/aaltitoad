@@ -18,9 +18,6 @@
  */
 #include <mavepch.h>
 #include "CLIConfig.h"
-#include "model_parsers/TTAParser.h"
-
-#include <shunting-yard.h>
 
 int main(int argc, char** argv) {
     // Initialize CLI configuration (based on CLI Args)
@@ -39,9 +36,6 @@ int main(int argc, char** argv) {
     //TTAParser ttaParser{};
     //TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
 
-    TokenMap tokenMap{};
-    tokenMap["MainþYES"] = 30;
-    std::cout << calculator::calculate("MainþYES + 2.4", tokenMap) << std::endl;
 
     // Return the exit code.
     return config.GetStatusCode();
