@@ -21,16 +21,16 @@
 #include <extensions/hash_combine>
 #include <shunting-yard.h>
 
-using TTASymbolType = std::variant<
+using TTASymbol_t = std::variant<
         int,
         float,
         bool,
         std::string
 >;
 
-TTASymbolType TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr);
-TTASymbolType TTASymbolTypeFromString(const std::string& typestr);
-TTASymbolType PopulateValueFromString(const TTASymbolType& type, const std::string& valuestr);
+TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr);
+TTASymbol_t TTASymbolTypeFromString(const std::string& typestr);
+TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& valuestr);
 
 /***
  * Tick Tock Automata datastructure
@@ -56,11 +56,21 @@ struct TTA {
     };
     using SymbolMap = TokenMap;
     using ComponentMap = std::unordered_map<std::string, Component>;
+    struct State {
+        std::unordered_map<std::string, std::string> componentLocations;
+        SymbolMap symbols;
+    };
 
     SymbolMap symbols = {};
     ComponentMap components = {};
 
+    std::size_t GetStateHash(const State& state) const;
     std::size_t GetCurrentStateHash() const;
+    State GetCurrentState() const;
+    bool SetCurrentState(const State& newstate);
+    // If this vector contains more than one entry, that means nondeterministic choice
+    std::vector<State> GetNextTickStates() const;
+
 };
 
 #endif //MAVE_TTA_H

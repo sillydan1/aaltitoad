@@ -35,7 +35,7 @@ public:
     };
     struct Symbol {
         std::string identifier;
-        TTASymbolType value;
+        TTASymbol_t value;
     };
     struct Component {
         std::string name;
