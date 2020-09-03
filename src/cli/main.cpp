@@ -17,6 +17,8 @@
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <mavepch.h>
+#include <runtime/TTA.h>
+#include <model_parsers/TTAParser.h>
 #include "CLIConfig.h"
 
 int main(int argc, char** argv) {
@@ -33,9 +35,8 @@ int main(int argc, char** argv) {
         spdlog::set_level(spdlog::level::level_enum::warn);
 
     // Call the engine(s)
-    //TTAParser ttaParser{};
-    //TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
-
+    TTAParser ttaParser{};
+    TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
 
     // Return the exit code.
     return config.GetStatusCode();
