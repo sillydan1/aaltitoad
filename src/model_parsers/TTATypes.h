@@ -24,8 +24,8 @@
 struct TTAIR_t {
 public:
     struct Location {
-        std::string identifier;
         bool isImmediate;
+        std::string identifier;
     };
     struct Edge {
         Location sourceLocation;
@@ -39,8 +39,8 @@ public:
     };
     struct Component {
         std::string name;
-        std::string initialLocation;
-        std::string endLocation;
+        Location initialLocation;
+        Location endLocation;
         bool isMain = false;
         std::vector<Edge> edges = {};
         std::vector<Symbol> symbols = {};

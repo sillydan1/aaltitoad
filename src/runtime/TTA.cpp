@@ -60,8 +60,8 @@ std::size_t TTA::GetCurrentStateHash() const {
 }
 
 TTA::State TTA::GetCurrentState() const {
-    std::unordered_map<std::string, std::string> componentLocations = {};
-    for(auto& component : components) componentLocations[component.first] = component.second.currentLocationIdentifier;
+    ComponentLocationMap componentLocations = {};
+    for(auto& component : components) componentLocations[component.first] = component.second.currentLocation;
     return { .componentLocations = componentLocations, .symbols = symbols };
 }
 
@@ -69,7 +69,7 @@ std::size_t TTA::GetStateHash(const State& state) const {
     std::size_t state_hash = 0;
     for(auto& component : components)
         state_hash == 0 ?
-        [&state_hash, &component](){ state_hash = std::hash<std::string>{}(component.second.currentLocationIdentifier);}() :
+        [&state_hash, &component](){ state_hash = std::hash<std::string>{}(component.second.currentLocation.identifier);}() :
         hash_combine(state_hash, component.first);
 
     for(auto& symbol : symbols.map()) {
@@ -91,7 +91,7 @@ bool TTA::SetCurrentState(const State& newstate) {
     for(auto& componentLocation : newstate.componentLocations) {
         auto compit = components.find(componentLocation.first);
         if(compit != components.end())
-            compit->second.currentLocationIdentifier = componentLocation.second;
+            compit->second.currentLocation = componentLocation.second;
         else {
             spdlog::critical("Attempted to change the state of TTA failed. Component '{0}' does not exist.",
                              componentLocation.first);
@@ -107,4 +107,10 @@ bool TTA::SetCurrentState(const State& newstate) {
         else return false;
     }
     return true;
+}
+
+bool TTA::IsCurrentStateImmediate() const {
+    for(auto& component : components)
+        if(component.second.currentLocation.isImmediate) return true;
+    return false;
 }

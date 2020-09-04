@@ -47,6 +47,12 @@ bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry) {
                         [&entrystr] (auto& el) { return entrystr.find(el) != std::string::npos; });
 }
 
+TTAIR_t::Location ParseLocation(const rapidjson::Document::ValueType& elem, const std::string& elemname) {
+    auto element = elem.FindMember(elemname.c_str());
+    return { .isImmediate = element->value["urgency"].GetString() == std::string("urgent"),
+             .identifier = element->value["id"].GetString() };
+}
+
 std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &filepath) {
     std::ifstream file{filepath};
     if(file) {
@@ -57,8 +63,8 @@ std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &f
             spdlog::debug("File '{0}' is a proper TTA", filepath);
             return std::optional(TTAIR_t::Component{
                     .name = GetFileNameOnly(filepath),
-                    .initialLocation = dom_document["initial_location"]["id"].GetString(),
-                    .endLocation     = dom_document["final_location"]["id"].GetString(),
+                    .initialLocation = ParseLocation(dom_document, "initial_location"),
+                    .endLocation     = ParseLocation(dom_document, "final_location"),
                     .isMain = dom_document["main"].GetBool(),
                     .edges = ParseEdges(dom_document["edges"], dom_document),
                     .symbols = ParseSymbolDeclarations(dom_document)
@@ -154,12 +160,12 @@ TTAIR_t::Edge TTAParser::ParseEdge(const rapidjson::Document::ValueType &edge, c
     if(!targetLocation) throw std::logic_error("Unable to locate target location for edge");
     return TTAIR_t::Edge{
             .sourceLocation = {
-                .identifier = (*sourceLocation.value())["id"].GetString(),
-                .isImmediate = (*sourceLocation.value())["urgency"].GetString() == std::string("urgent")
+                    .isImmediate = (*sourceLocation.value())["urgency"].GetString() == std::string("urgent"),
+                    .identifier = (*sourceLocation.value())["id"].GetString()
             },
              .targetLocation = {
-                .identifier = (*targetLocation.value())["id"].GetString(),
-                .isImmediate = (*targetLocation.value())["urgency"].GetString() == std::string("urgent")
+                    .isImmediate = (*targetLocation.value())["urgency"].GetString() == std::string("urgent"),
+                    .identifier = (*targetLocation.value())["id"].GetString()
             },
             .guardExpression = edge["guard"].GetString(),
             .updateExpression = edge["update"].GetString()};
@@ -203,9 +209,9 @@ TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
         auto componentSymbols = ConvertSymbolListToSymbolMap(comp.symbols);
         tta.symbols.map().insert(componentSymbols.map().begin(), componentSymbols.map().end());
         tta.components[comp.name] = {
-                .initialLocationIdentifier = comp.initialLocation,
-                .endLocationIdentifier     = comp.endLocation,
-                .currentLocationIdentifier = comp.initialLocation,
+                .initialLocationIdentifier = comp.initialLocation.identifier,
+                .endLocationIdentifier     = comp.endLocation.identifier,
+                .currentLocation           = { comp.initialLocation.isImmediate, comp.initialLocation.identifier },
                 .isMain                    = comp.isMain,
                 .edges                     = ConvertEdgeListToEdgeMap(comp.edges),
         };
@@ -231,8 +237,8 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList) 
     std::unordered_map<std::string, TTA::Edge> map{};
     for(auto& edge : edgeList) {
         map[edge.sourceLocation.identifier] = {
-                .sourceLocation           = {edge.sourceLocation.identifier, edge.sourceLocation.isImmediate},
-                .targetLocation           = {edge.targetLocation.identifier, edge.targetLocation.isImmediate},
+                .sourceLocation           = {edge.sourceLocation.isImmediate,edge.sourceLocation.identifier},
+                .targetLocation           = {edge.targetLocation.isImmediate,edge.targetLocation.identifier},
                 .guardExpression          = edge.guardExpression,   // TODO: Compile this as a thing
                 .updateExpression         = edge.updateExpression  // TODO: Compile this as a thing
         };
