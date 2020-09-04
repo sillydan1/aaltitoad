@@ -200,6 +200,8 @@ std::optional<TTAIR_t::Symbol> TTAParser::ParseSymbolDeclaration(const std::stri
 TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
     TTA tta{};
     for(auto& comp : intermediateRep.components) {
+        auto componentSymbols = ConvertSymbolListToSymbolMap(comp.symbols);
+        tta.symbols.map().insert(componentSymbols.map().begin(), componentSymbols.map().end());
         tta.components[comp.name] = {
                 .initialLocationIdentifier = comp.initialLocation,
                 .endLocationIdentifier     = comp.endLocation,
@@ -207,8 +209,6 @@ TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
                 .isMain                    = comp.isMain,
                 .edges                     = ConvertEdgeListToEdgeMap(comp.edges),
         };
-        auto componentSymbols = ConvertSymbolListToSymbolMap(comp.symbols);
-        tta.symbols.map().insert(componentSymbols.map().begin(), componentSymbols.map().end());
     }
     return tta;
 }
