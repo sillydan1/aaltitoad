@@ -71,11 +71,13 @@ public:
     static std::size_t GetStateHash(const State& state);
     std::size_t GetCurrentStateHash() const;
     State GetCurrentState() const;
+    std::string GetCurrentStateString() const;
     bool IsCurrentStateImmediate() const;
     bool SetCurrentState(const State& newstate);
     static bool IsStateImmediate(const State& state);
     // If the result contains more than one entry, that means nondeterministic choice
     std::vector<State> GetNextTickStates() const;
+
 
     // Runtime functions:
     // Take a Tick

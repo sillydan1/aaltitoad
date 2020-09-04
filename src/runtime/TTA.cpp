@@ -122,20 +122,34 @@ bool TTA::IsStateImmediate(const TTA::State &state) {
 }
 
 std::vector<TTA::State> TTA::GetNextTickStates() const {
+    auto currentState = GetCurrentState();
+    std::vector<TTA::State> ret{};
     for(auto& component : components) {
         auto newlocations = component.second.GetNextLocations(symbols);
-        // TODO: Stop picking the first.
+        // TODO: Stop picking the first. e.g. Implement divergent behaviour.
         if(newlocations.size() > 1) spdlog::warn("Nondeterministic choice in Component '{0}'. Picking the first!", component.first);
-
+        if(!newlocations.empty())
+            currentState.componentLocations[component.first] = newlocations[0];
     }
+    return ret;
+}
 
-    return std::vector<State>();
+std::string TTA::GetCurrentStateString() const {
+    std::stringstream ss{};
+    for(auto& component : components) {
+        ss << component.first << ": " << component.second.currentLocation.identifier << "\n";
+    }
+    return ss.str();
 }
 
 std::vector<TTA::Location> TTA::Component::GetNextLocations(const SymbolMap& symbolMap) const {
     auto edges_from_current_state = edges.equal_range(currentLocation.identifier);
     std::vector<TTA::Location> ret{};
     for(auto edge = edges_from_current_state.first; edge != edges_from_current_state.second; ++edge) {
+        if(edge->second.guardExpression.empty()) {
+            ret.push_back(edge->second.targetLocation);
+            continue; // Empty guards are considered to be always satisfied
+        }
         auto res = calculator::calculate(edge->second.guardExpression.c_str(), symbolMap);
         if(res.asBool()) ret.push_back(edge->second.targetLocation);
     }
