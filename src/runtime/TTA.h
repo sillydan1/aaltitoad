@@ -37,8 +37,8 @@ TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& 
  */
 struct TTA {
     struct Location {
-        std::string identifier;
         bool isImmediate;
+        std::string identifier;
     };
     struct Edge {
         Location sourceLocation;
@@ -50,14 +50,15 @@ struct TTA {
         std::string initialLocationIdentifier;
         std::string endLocationIdentifier;
         // TODO: This should be a hash. - I dont like storing full strings.
-        std::string currentLocationIdentifier = initialLocationIdentifier;
+        Location currentLocation;
         bool isMain = false;
         std::unordered_map<std::string, Edge> edges = {};
     };
     using SymbolMap = TokenMap;
     using ComponentMap = std::unordered_map<std::string, Component>;
+    using ComponentLocationMap = std::unordered_map<std::string, Location>;
     struct State {
-        std::unordered_map<std::string, std::string> componentLocations;
+        ComponentLocationMap componentLocations;
         SymbolMap symbols;
     };
 
@@ -67,6 +68,7 @@ struct TTA {
     std::size_t GetStateHash(const State& state) const;
     std::size_t GetCurrentStateHash() const;
     State GetCurrentState() const;
+    bool IsCurrentStateImmediate() const;
     bool SetCurrentState(const State& newstate);
     // If this vector contains more than one entry, that means nondeterministic choice
     std::vector<State> GetNextTickStates() const;
