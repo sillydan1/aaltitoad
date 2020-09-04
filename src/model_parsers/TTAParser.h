@@ -46,7 +46,7 @@ private:
     static std::vector<TTAIR_t::Symbol> ParseSymbolDeclarations(const rapidjson::Document& document);
     static std::optional<TTAIR_t::Symbol> ParseSymbolDeclaration(const std::string& declaration);
     static TTA::SymbolMap ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t::Symbol>& symbolList);
-    static std::unordered_map<std::string, TTA::Edge> ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge>& edge);
+    static std::unordered_multimap<std::string, TTA::Edge> ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge>& edge, const TTA::SymbolMap& symbolMap);
 };
 
 #endif //MAVE_TTAPARSER_H

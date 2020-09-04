@@ -36,6 +36,7 @@ TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& 
  * Tick Tock Automata datastructure
  */
 struct TTA {
+    using SymbolMap = TokenMap;
     struct Location {
         bool isImmediate;
         std::string identifier;
@@ -47,14 +48,15 @@ struct TTA {
         std::string updateExpression;
     };
     struct Component {
+        // TODO: This should be a hash. - I dont like storing full strings.
         std::string initialLocationIdentifier;
         std::string endLocationIdentifier;
-        // TODO: This should be a hash. - I dont like storing full strings.
         Location currentLocation;
         bool isMain = false;
-        std::unordered_map<std::string, Edge> edges = {};
+        std::unordered_multimap<std::string, Edge> edges = {};
+
+        std::vector<Location> GetNextLocations(const SymbolMap& symbolMap) const;
     };
-    using SymbolMap = TokenMap;
     using ComponentMap = std::unordered_map<std::string, Component>;
     using ComponentLocationMap = std::unordered_map<std::string, Location>;
     struct State {
@@ -65,13 +67,21 @@ struct TTA {
     SymbolMap symbols = {};
     ComponentMap components = {};
 
-    std::size_t GetStateHash(const State& state) const;
+public:
+    static std::size_t GetStateHash(const State& state);
     std::size_t GetCurrentStateHash() const;
     State GetCurrentState() const;
     bool IsCurrentStateImmediate() const;
     bool SetCurrentState(const State& newstate);
-    // If this vector contains more than one entry, that means nondeterministic choice
+    static bool IsStateImmediate(const State& state);
+    // If the result contains more than one entry, that means nondeterministic choice
     std::vector<State> GetNextTickStates() const;
+
+    // Runtime functions:
+    // Take a Tick
+    void Tick();
+    // Take a Tock step.
+    void Tock();
 
 };
 

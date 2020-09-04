@@ -65,14 +65,14 @@ TTA::State TTA::GetCurrentState() const {
     return { .componentLocations = componentLocations, .symbols = symbols };
 }
 
-std::size_t TTA::GetStateHash(const State& state) const {
+std::size_t TTA::GetStateHash(const State& state) {
     std::size_t state_hash = 0;
-    for(auto& component : components)
+    for(auto& component : state.componentLocations)
         state_hash == 0 ?
-        [&state_hash, &component](){ state_hash = std::hash<std::string>{}(component.second.currentLocation.identifier);}() :
+        [&state_hash, &component](){ state_hash = std::hash<std::string>{}(component.second.identifier);}() :
         hash_combine(state_hash, component.first);
 
-    for(auto& symbol : symbols.map()) {
+    for(auto& symbol : state.symbols.map()) {
         auto symbol_hash = std::hash<std::string>{}(symbol.first);   // hash of the symbol identifier
         // Combine with the symbol value
         switch(symbol.second->type) {
@@ -113,4 +113,31 @@ bool TTA::IsCurrentStateImmediate() const {
     for(auto& component : components)
         if(component.second.currentLocation.isImmediate) return true;
     return false;
+}
+
+bool TTA::IsStateImmediate(const TTA::State &state) {
+    for(auto& component : state.componentLocations)
+        if(component.second.isImmediate) return true;
+    return false;
+}
+
+std::vector<TTA::State> TTA::GetNextTickStates() const {
+    for(auto& component : components) {
+        auto newlocations = component.second.GetNextLocations(symbols);
+        // TODO: Stop picking the first.
+        if(newlocations.size() > 1) spdlog::warn("Nondeterministic choice in Component '{0}'. Picking the first!", component.first);
+
+    }
+
+    return std::vector<State>();
+}
+
+std::vector<TTA::Location> TTA::Component::GetNextLocations(const SymbolMap& symbolMap) const {
+    auto edges_from_current_state = edges.equal_range(currentLocation.identifier);
+    std::vector<TTA::Location> ret{};
+    for(auto edge = edges_from_current_state.first; edge != edges_from_current_state.second; ++edge) {
+        auto res = calculator::calculate(edge->second.guardExpression.c_str(), symbolMap);
+        if(res.asBool()) ret.push_back(edge->second.targetLocation);
+    }
+    return ret;
 }

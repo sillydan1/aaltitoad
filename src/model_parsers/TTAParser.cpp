@@ -208,12 +208,14 @@ TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
     for(auto& comp : intermediateRep.components) {
         auto componentSymbols = ConvertSymbolListToSymbolMap(comp.symbols);
         tta.symbols.map().insert(componentSymbols.map().begin(), componentSymbols.map().end());
+    }
+    for(auto& comp : intermediateRep.components) {
         tta.components[comp.name] = {
                 .initialLocationIdentifier = comp.initialLocation.identifier,
                 .endLocationIdentifier     = comp.endLocation.identifier,
                 .currentLocation           = { comp.initialLocation.isImmediate, comp.initialLocation.identifier },
                 .isMain                    = comp.isMain,
-                .edges                     = ConvertEdgeListToEdgeMap(comp.edges),
+                .edges                     = ConvertEdgeListToEdgeMap(comp.edges, tta.symbols),
         };
     }
     return tta;
@@ -232,16 +234,25 @@ TTA::SymbolMap TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t
     return map;
 }
 
-std::unordered_map<std::string, TTA::Edge>
-TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList) {
-    std::unordered_map<std::string, TTA::Edge> map{};
+std::unordered_multimap<std::string, TTA::Edge>
+TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, const TTA::SymbolMap& symbolMap) {
+    std::unordered_multimap<std::string, TTA::Edge> map{};
+    calculator calc;
     for(auto& edge : edgeList) {
-        map[edge.sourceLocation.identifier] = {
+        // Compile the expressions (guard and update)
+        try {
+            if (!edge.guardExpression.empty())
+                calc.compile(edge.guardExpression.c_str(), symbolMap);
+        } catch (...) {
+            spdlog::critical("Something went wrong when compiling the guard expression: '{0}'", edge.guardExpression);
+            throw;
+        }
+        map.insert({ edge.sourceLocation.identifier, {
                 .sourceLocation           = {edge.sourceLocation.isImmediate,edge.sourceLocation.identifier},
                 .targetLocation           = {edge.targetLocation.isImmediate,edge.targetLocation.identifier},
                 .guardExpression          = edge.guardExpression,   // TODO: Compile this as a thing
                 .updateExpression         = edge.updateExpression  // TODO: Compile this as a thing
-        };
+        } });
     }
     return map;
 }
