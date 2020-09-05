@@ -131,6 +131,8 @@ std::vector<TTA::State> TTA::GetNextTickStates() const {
         if(!newlocations.empty())
             currentState.componentLocations[component.first] = newlocations[0];
     }
+    // TODO: Apply updates
+    
     return ret;
 }
 
@@ -154,4 +156,8 @@ std::vector<TTA::Location> TTA::Component::GetNextLocations(const SymbolMap& sym
         if(res.asBool()) ret.push_back(edge->second.targetLocation);
     }
     return ret;
+}
+
+void TTA::Tick(const nondeterminism_strategy_t& nondeterminismStrategy) {
+
 }

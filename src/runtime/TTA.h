@@ -18,6 +18,7 @@
  */
 #ifndef MAVE_TTA_H
 #define MAVE_TTA_H
+#include <mavepch.h>
 #include <extensions/hash_combine>
 #include <shunting-yard.h>
 
@@ -31,6 +32,13 @@ using TTASymbol_t = std::variant<
 TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr);
 TTASymbol_t TTASymbolTypeFromString(const std::string& typestr);
 TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& valuestr);
+
+enum class nondeterminism_strategy_t {
+    PANIC = 0,
+    PICK_FIRST = 1,
+    PICK_LAST = 2,
+    PICK_RANDOM = 3
+};
 
 /***
  * Tick Tock Automata datastructure
@@ -78,10 +86,9 @@ public:
     // If the result contains more than one entry, that means nondeterministic choice
     std::vector<State> GetNextTickStates() const;
 
-
     // Runtime functions:
     // Take a Tick
-    void Tick();
+    void Tick(const nondeterminism_strategy_t& nondeterminismStrategy = nondeterminism_strategy_t::PANIC);
     // Take a Tock step.
     void Tock();
 
