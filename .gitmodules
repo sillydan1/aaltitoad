@@ -7,3 +7,6 @@
 [submodule "dep/spdlog"]
 	path = dep/spdlog
 	url = https://github.com/gabime/spdlog
+[submodule "dep/cparse"]
+	path = dep/cparse
+	url = https://github.com/sillydan1/cparse
