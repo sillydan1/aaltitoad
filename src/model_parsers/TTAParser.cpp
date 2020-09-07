@@ -241,10 +241,20 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
     for(auto& edge : edgeList) {
         // Compile the expressions (guard and update)
         try {
-            if (!edge.guardExpression.empty())
+            if (!edge.guardExpression.empty()) {
                 calc.compile(edge.guardExpression.c_str(), symbolMap);
+                if(calc.eval()->type != BOOL)
+                    spdlog::critical("Guard expression '{0}' is not a boolean expression", edge.guardExpression);
+            }
         } catch (...) {
-            spdlog::critical("Something went wrong when compiling the guard expression: '{0}'", edge.guardExpression);
+            spdlog::critical("Something went wrong when compiling guard expression: '{0}'", edge.guardExpression);
+            throw;
+        }
+        try {
+            if (!edge.updateExpression.empty())
+                calc.compile(edge.updateExpression.c_str(), symbolMap);
+        } catch(...) {
+            spdlog::critical("Something went wrong when compiling update expression: '{0}'", edge.updateExpression);
             throw;
         }
         map.insert({ edge.sourceLocation.identifier, {
