@@ -24,11 +24,11 @@ std::vector<std::string> split(const std::string& s, const std::string& delimite
 // TODO: IFDEF WINDOWS default delimiter is '\\'
 std::string GetFileNameOnly(const std::string& fullpath, char delimiter = '/');
 
-static inline void ltrim(std::string &s);
-static inline void rtrim(std::string &s);
-static inline void trim(std::string &s);
-static inline std::string ltrim_copy(std::string s);
-static inline std::string rtrim_copy(std::string s);
-static inline std::string trim_copy(std::string s);
+void ltrim(std::string &s);
+void rtrim(std::string &s);
+void trim(std::string &s);
+std::string ltrim_copy(std::string s);
+std::string rtrim_copy(std::string s);
+std::string trim_copy(std::string s);
 
 #endif //MAVE_STRINGEXTENSIONS_H
