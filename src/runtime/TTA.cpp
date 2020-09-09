@@ -127,24 +127,43 @@ bool TTA::IsStateImmediate(const TTA::State &state) {
 
 std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
     auto currentLocations = GetCurrentLocations();
-    std::vector<TTA::State> ret{};
+    std::vector<UpdateExpression> symbolChanges{};
+
+    std::multimap<std::string, UpdateExpression> symbolsToChange{};
     for(auto& component : components) {
         auto enabledEdges = component.second.GetEnabledEdges(symbols);
-        // TODO: Stop picking the first. e.g. Implement divergent behaviour. NOTE: You wanna do this with a multimap of components.
-        if(enabledEdges.size() > 1) spdlog::error("Non-deterministic choice in Component '{0}'. "
-                                                 "Non-deterministic strategies are not implemented yet."
-                                                 "Defaulting to picking the first!", component.first);
         if(!enabledEdges.empty()) {
-            currentLocations[component.first] = enabledEdges[0].targetLocation;
+            // TODO: Stop picking the first. e.g. Implement divergent behaviour. NOTE: You wanna do this with a multimap of components.
+            if(enabledEdges.size() > 1) spdlog::error("Non-deterministic choice in Component '{0}'. "
+                                                      "Non-deterministic strategies are not implemented yet."
+                                                      "Defaulting to picking the first!", component.first);
+            auto& pickedEdge = enabledEdges[0];
+            bool updateInfluenceOverlap = false;
+            for(auto& expr : pickedEdge.updateExpressions) {
+                if(symbolsToChange.count(expr.lhs) > 0) {
+                    spdlog::warn("Overlapping update influence on evaluation of update on edge {0}-->{1}. "
+                                     "Variable '{2}' is already being written to in this tick!",
+                                     pickedEdge.sourceLocation.identifier, pickedEdge.targetLocation.identifier,
+                                     expr.lhs);
+                    updateInfluenceOverlap = true;
+                    break;
+                }
+                else
+                    symbolsToChange.insert({ expr.lhs, expr });
+            }
+            if(updateInfluenceOverlap) continue;
+            for(auto& symbolChange : symbolsToChange) symbolChanges.push_back(symbolChange.second);
+            currentLocations[component.first] = pickedEdge.targetLocation;
         }
     }
-    return ret;
+    SymbolMap symbolscpy = symbols;
+    for(auto& symbolChange : symbolChanges) symbolscpy[symbolChange.lhs] = symbolChange.Evaluate(symbolscpy);
+    return {{ currentLocations, symbolscpy }};
 }
 
 std::string TTA::GetCurrentStateString() const {
     std::stringstream ss{};
-    for(auto& component : components)
-        ss << component.first << ": " << component.second.currentLocation.identifier << "\n";
+    for(auto& component : components) ss<<component.first<<": "<<component.second.currentLocation.identifier<<"\n";
     return ss.str();
 }
 

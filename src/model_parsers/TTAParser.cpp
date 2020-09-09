@@ -234,6 +234,7 @@ TTA::SymbolMap TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t
     return map;
 }
 
+#include <extensions/cparse_extensions.h> // TODO: Remove this. This is only used for debugging purposes atm
 std::unordered_multimap<std::string, TTA::Edge>
 TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, const TTA::SymbolMap& symbolMap) {
     std::unordered_multimap<std::string, TTA::Edge> map{};
@@ -243,8 +244,10 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
         try {
             if (!edge.guardExpression.empty()) {
                 calc.compile(edge.guardExpression.c_str(), symbolMap);
-                if(calc.eval()->type != BOOL)
-                    spdlog::critical("Guard expression '{0}' is not a boolean expression", edge.guardExpression);
+                auto type = calc.eval()->type;
+                if(type != BOOL)
+                    spdlog::critical("Guard expression '{0}' is not a boolean expression. It is a {1} expression",
+                                     edge.guardExpression, tokTypeToString(static_cast<const tokType>(type)));
             }
         } catch (...) {
             spdlog::critical("Something went wrong when compiling guard expression: '{0}'", edge.guardExpression);
