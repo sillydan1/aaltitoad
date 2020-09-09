@@ -145,7 +145,7 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
                                      "Variable '{2}' is already being written to in this tick!",
                                      pickedEdge.sourceLocation.identifier, pickedEdge.targetLocation.identifier,
                                      expr.lhs);
-                    updateInfluenceOverlap = true;
+                    updateInfluenceOverlap = true;<
                     break;
                 }
                 else
@@ -156,9 +156,9 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
             currentLocations[component.first] = pickedEdge.targetLocation;
         }
     }
-    SymbolMap symbolscpy = symbols;
-    for(auto& symbolChange : symbolChanges) symbolscpy[symbolChange.lhs] = symbolChange.Evaluate(symbolscpy);
-    return {{ currentLocations, symbolscpy }};
+    SymbolMap symbolsCopy = symbols;
+    for(auto& symbolChange : symbolChanges) symbolsCopy[symbolChange.lhs] = symbolChange.Evaluate(symbolsCopy);
+    return {{ currentLocations, symbolsCopy }};
 }
 
 std::string TTA::GetCurrentStateString() const {
