@@ -19,11 +19,13 @@
 #ifndef MAVE_UPDATEEXPRESSION_H
 #define MAVE_UPDATEEXPRESSION_H
 #include <mavepch.h>
+#include <shunting-yard.h>
 
 struct UpdateExpression {
-    std::string lhs, rhs;
+    std::string lhs, rhs; // TODO: Store rhs as a compiled tree.
     explicit UpdateExpression(const std::string& fullExpr);
     static std::vector<UpdateExpression> ParseExpressions(const std::string& fullExpr);
+    [[nodiscard]] packToken Evaluate(const TokenMap& map) const;
 };
 
 #endif //MAVE_UPDATEEXPRESSION_H

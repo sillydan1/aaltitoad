@@ -19,8 +19,11 @@
 #include "UpdateExpression.h"
 #include <extensions/stringextensions.h>
 
+const char* assignmentOperator = ":=";
+const char  expressionDelimiter = ';';
+
 UpdateExpression::UpdateExpression(const std::string &fullExpr) {
-    auto tokens = split(fullExpr, ":=");
+    auto tokens = split(fullExpr, assignmentOperator);
     if(tokens.size() != 2) {
         spdlog::critical("Update expression '{0}' is required to only have a "
                          "right-hand side and a left-hand side, delimited by the ':=' token",
@@ -31,14 +34,17 @@ UpdateExpression::UpdateExpression(const std::string &fullExpr) {
 }
 
 std::vector<UpdateExpression> UpdateExpression::ParseExpressions(const std::string& fullExpr) {
+    if(fullExpr.empty()) return {};
     std::vector<UpdateExpression> expressions{};
-    auto it = fullExpr.find_first_of(":=");
-    if(it != std::string::npos) {
-        auto subExpressions = split(fullExpr, ';');
+    if(fullExpr.find(assignmentOperator) != std::string::npos) {
+        auto subExpressions = split(fullExpr, expressionDelimiter);
         for(auto& expr : subExpressions)
             subExpressions.emplace_back(expr);
-    } else {
+    } else
         spdlog::critical("Update expression '{0}' does not include the ':=' token!", fullExpr);
-    }
     return expressions;
+}
+
+packToken UpdateExpression::Evaluate(const TokenMap& map) const {
+    return calculator::calculate(rhs.c_str(), map);
 }
