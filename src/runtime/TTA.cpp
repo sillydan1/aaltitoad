@@ -145,7 +145,7 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
                                      "Variable '{2}' is already being written to in this tick!",
                                      pickedEdge.sourceLocation.identifier, pickedEdge.targetLocation.identifier,
                                      expr.lhs);
-                    updateInfluenceOverlap = true;<
+                    updateInfluenceOverlap = true;
                     break;
                 }
                 else

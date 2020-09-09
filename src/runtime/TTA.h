@@ -34,7 +34,7 @@ TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, co
 TTASymbol_t TTASymbolTypeFromString(const std::string& typestr);
 TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& valuestr);
 
-    enum class nondeterminism_strategy_t {
+enum class nondeterminism_strategy_t {
     PANIC = 0,
     PICK_FIRST = 1,
     PICK_LAST = 2,
