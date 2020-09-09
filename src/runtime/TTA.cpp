@@ -121,26 +121,25 @@ bool TTA::IsStateImmediate(const TTA::State &state) {
     return false;
 }
 
-std::vector<TTA::State> TTA::GetNextTickStates() const {
+std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
     auto currentState = GetCurrentState();
     std::vector<TTA::State> ret{};
     for(auto& component : components) {
         auto newlocations = component.second.GetNextLocations(symbols);
         // TODO: Stop picking the first. e.g. Implement divergent behaviour.
-        if(newlocations.size() > 1) spdlog::warn("Nondeterministic choice in Component '{0}'. Picking the first!", component.first);
+        if(newlocations.size() > 1) spdlog::warn("Non-deterministic choice in Component '{0}'. Picking the first!", component.first);
         if(!newlocations.empty())
             currentState.componentLocations[component.first] = newlocations[0];
     }
     // TODO: Apply updates
-    
+    // TODO: You should check for conflicting update influences
     return ret;
 }
 
 std::string TTA::GetCurrentStateString() const {
     std::stringstream ss{};
-    for(auto& component : components) {
+    for(auto& component : components)
         ss << component.first << ": " << component.second.currentLocation.identifier << "\n";
-    }
     return ss.str();
 }
 

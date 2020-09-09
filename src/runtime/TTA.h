@@ -33,7 +33,7 @@ TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, co
 TTASymbol_t TTASymbolTypeFromString(const std::string& typestr);
 TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& valuestr);
 
-enum class nondeterminism_strategy_t {
+    enum class nondeterminism_strategy_t {
     PANIC = 0,
     PICK_FIRST = 1,
     PICK_LAST = 2,
@@ -84,7 +84,7 @@ public:
     bool SetCurrentState(const State& newstate);
     static bool IsStateImmediate(const State& state);
     // If the result contains more than one entry, that means nondeterministic choice
-    std::vector<State> GetNextTickStates() const;
+    std::vector<State> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PICK_FIRST) const;
 
     // Runtime functions:
     // Take a Tick
