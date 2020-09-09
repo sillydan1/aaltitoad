@@ -21,6 +21,7 @@
 #include <mavepch.h>
 #include <extensions/hash_combine>
 #include <shunting-yard.h>
+#include "UpdateExpression.h"
 
 using TTASymbol_t = std::variant<
         int,
@@ -53,7 +54,7 @@ struct TTA {
         Location sourceLocation;
         Location targetLocation;
         std::string guardExpression;
-        std::string updateExpression;
+        std::vector<UpdateExpression> updateExpressions;
     };
     struct Component {
         // TODO: This should be a hash. - I dont like storing full strings.
@@ -63,7 +64,7 @@ struct TTA {
         bool isMain = false;
         std::unordered_multimap<std::string, Edge> edges = {};
 
-        std::vector<Location> GetNextLocations(const SymbolMap& symbolMap) const;
+        std::vector<Edge> GetEnabledEdges(const SymbolMap& symbolMap) const;
     };
     using ComponentMap = std::unordered_map<std::string, Component>;
     using ComponentLocationMap = std::unordered_map<std::string, Location>;
@@ -79,6 +80,7 @@ public:
     static std::size_t GetStateHash(const State& state);
     std::size_t GetCurrentStateHash() const;
     State GetCurrentState() const;
+    ComponentLocationMap GetCurrentLocations() const;
     std::string GetCurrentStateString() const;
     bool IsCurrentStateImmediate() const;
     bool SetCurrentState(const State& newstate);
@@ -91,7 +93,6 @@ public:
     void Tick(const nondeterminism_strategy_t& nondeterminismStrategy = nondeterminism_strategy_t::PANIC);
     // Take a Tock step.
     void Tock();
-
 };
 
 #endif //MAVE_TTA_H

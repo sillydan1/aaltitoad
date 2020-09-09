@@ -54,15 +54,19 @@ TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& 
     return value;
 }
 
-// TODO: This can be optimized by calculating hashes on the state changes only. And there's no need to copy the symbols.
+// TODO: This can be optimized by caching hashes on the state changes only. And there's no need to copy the symbols.
 std::size_t TTA::GetCurrentStateHash() const {
     return GetStateHash(GetCurrentState());
 }
 
 TTA::State TTA::GetCurrentState() const {
+    return { .componentLocations = GetCurrentLocations(), .symbols = symbols };
+}
+
+TTA::ComponentLocationMap TTA::GetCurrentLocations() const {
     ComponentLocationMap componentLocations = {};
     for(auto& component : components) componentLocations[component.first] = component.second.currentLocation;
-    return { .componentLocations = componentLocations, .symbols = symbols };
+    return componentLocations;
 }
 
 std::size_t TTA::GetStateHash(const State& state) {
@@ -122,17 +126,18 @@ bool TTA::IsStateImmediate(const TTA::State &state) {
 }
 
 std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
-    auto currentState = GetCurrentState();
+    auto currentLocations = GetCurrentLocations();
     std::vector<TTA::State> ret{};
     for(auto& component : components) {
-        auto newlocations = component.second.GetNextLocations(symbols);
-        // TODO: Stop picking the first. e.g. Implement divergent behaviour.
-        if(newlocations.size() > 1) spdlog::warn("Non-deterministic choice in Component '{0}'. Picking the first!", component.first);
-        if(!newlocations.empty())
-            currentState.componentLocations[component.first] = newlocations[0];
+        auto enabledEdges = component.second.GetEnabledEdges(symbols);
+        // TODO: Stop picking the first. e.g. Implement divergent behaviour. NOTE: You wanna do this with a multimap of components.
+        if(enabledEdges.size() > 1) spdlog::error("Non-deterministic choice in Component '{0}'. "
+                                                 "Non-deterministic strategies are not implemented yet."
+                                                 "Defaulting to picking the first!", component.first);
+        if(!enabledEdges.empty()) {
+            currentLocations[component.first] = enabledEdges[0].targetLocation;
+        }
     }
-    // TODO: Apply updates
-    // TODO: You should check for conflicting update influences
     return ret;
 }
 
@@ -143,16 +148,16 @@ std::string TTA::GetCurrentStateString() const {
     return ss.str();
 }
 
-std::vector<TTA::Location> TTA::Component::GetNextLocations(const SymbolMap& symbolMap) const {
+std::vector<TTA::Edge> TTA::Component::GetEnabledEdges(const SymbolMap& symbolMap) const {
     auto edges_from_current_state = edges.equal_range(currentLocation.identifier);
-    std::vector<TTA::Location> ret{};
+    std::vector<TTA::Edge> ret{};
     for(auto edge = edges_from_current_state.first; edge != edges_from_current_state.second; ++edge) {
         if(edge->second.guardExpression.empty()) {
-            ret.push_back(edge->second.targetLocation);
+            ret.push_back(edge->second);
             continue; // Empty guards are considered to be always satisfied
         }
         auto res = calculator::calculate(edge->second.guardExpression.c_str(), symbolMap);
-        if(res.asBool()) ret.push_back(edge->second.targetLocation);
+        if(res.asBool()) ret.push_back(edge->second);
     }
     return ret;
 }

@@ -250,9 +250,10 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
             spdlog::critical("Something went wrong when compiling guard expression: '{0}'", edge.guardExpression);
             throw;
         }
+        auto updateExpressions = UpdateExpression::ParseExpressions(edge.updateExpression);
         try {
-            if (!edge.updateExpression.empty())
-                calc.compile(edge.updateExpression.c_str(), symbolMap);
+            for(auto& expression : updateExpressions)
+                calc.compile(expression.rhs.c_str(), symbolMap);
         } catch(...) {
             spdlog::critical("Something went wrong when compiling update expression: '{0}'", edge.updateExpression);
             throw;
@@ -260,8 +261,8 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
         map.insert({ edge.sourceLocation.identifier, {
                 .sourceLocation           = {edge.sourceLocation.isImmediate,edge.sourceLocation.identifier},
                 .targetLocation           = {edge.targetLocation.isImmediate,edge.targetLocation.identifier},
-                .guardExpression          = edge.guardExpression,   // TODO: Compile this as a thing
-                .updateExpression         = edge.updateExpression  // TODO: Compile this as a thing
+                .guardExpression          = edge.guardExpression, // TODO: Store this as a compiled tree. Strings are nasty
+                .updateExpressions        = updateExpressions
         } });
     }
     return map;
