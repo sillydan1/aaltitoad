@@ -55,7 +55,7 @@ add_executable(${PROJECT_NAME}
         src/cli/CLIConfig.cpp
         src/extensions/stringextensions.cpp
         src/runtime/TTA.cpp
-        )
+        src/runtime/UpdateExpression.cpp)
 
 target_link_libraries(${PROJECT_NAME}
         argvparse

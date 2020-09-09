@@ -16,19 +16,17 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MAVE_STRINGEXTENSIONS_H
-#define MAVE_STRINGEXTENSIONS_H
+#ifndef MAVE_SYMBOLCHANGE_H
+#define MAVE_SYMBOLCHANGE_H
+#include <mavepch.h>
+#include "TTA.h"
 
-std::vector<std::string> split(const std::string& s, char delimiter);
-std::vector<std::string> split(const std::string& s, const std::string& delimiter);
-// TODO: IFDEF WINDOWS default delimiter is '\\'
-std::string GetFileNameOnly(const std::string& fullpath, char delimiter = '/');
+struct SymbolChange {
+    std::string identifier;
+    TTASymbol_t value;
+#ifndef NDEBUG
+    std::string valueExpression;
+#endif
+};
 
-static inline void ltrim(std::string &s);
-static inline void rtrim(std::string &s);
-static inline void trim(std::string &s);
-static inline std::string ltrim_copy(std::string s);
-static inline std::string rtrim_copy(std::string s);
-static inline std::string trim_copy(std::string s);
-
-#endif //MAVE_STRINGEXTENSIONS_H
+#endif //MAVE_SYMBOLCHANGE_H
