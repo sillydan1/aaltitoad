@@ -62,7 +62,7 @@ struct TTA {
         std::vector<UpdateExpression> updateExpressions;
     };
     struct Component {
-        // TODO: This should be a hash. - I dont like storing full strings.
+        // TODO: I dont like storing full strings.
         std::string initialLocationIdentifier;
         std::string endLocationIdentifier;
         Location currentLocation;
@@ -77,13 +77,15 @@ struct TTA {
         ComponentLocationMap componentLocations;
         SymbolMap symbols;
     };
-
-    SymbolMap symbols = {};
-    // This only works because we don't add or remove symbols during runtime
-    std::vector<packToken*> externalSymbols = {};
     ComponentMap components = {};
 
+private:
+    SymbolMap symbols = {};
+    // This only works because we don't add or remove symbols during runtime
+    std::vector<packToken*> externalSymbols = {}; // Still. Beware of dangling pointers!
+
 public:
+    const SymbolMap& GetSymbols() const { return symbols; } // TODO: Am I still allowed to edit the symbol values themselves?
     void InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys);
     static std::size_t GetStateHash(const State& state);
     std::size_t GetCurrentStateHash() const;
