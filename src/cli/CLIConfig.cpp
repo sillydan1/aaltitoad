@@ -63,7 +63,7 @@ void CLIConfig::EnsureRequiredOptionsAreProvided() {
 }
 
 void CLIConfig::PrintHelpMessage(const char *const *argv) {
-    std::cout << argv[0] << " is a program that translates Modelling languages to other modelling languages."
+    std::cout << argv[0] << " is a program that performs model verification techniques to the provided unfolded TTA."
                             " Below are the possible options.\nCopyright (C) 2020  Asger Gitz-Johansen\n"
                             "\n"
                             "    This program is free software: you can redistribute it and/or modify\n"
