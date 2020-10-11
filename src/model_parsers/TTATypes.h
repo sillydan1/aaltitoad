@@ -47,10 +47,15 @@ public:
     };
 public:
     std::vector<Component> components = {};
+    std::vector<Symbol> externalSymbols = {};
+    std::vector<Symbol> internalSymbols = {};
 
 public:
     [[nodiscard]] std::optional<std::vector<Component>::const_iterator> FindMainComponent() const;
     void AddComponent(Component&& component);
+    inline void AddExternalSymbols(std::vector<Symbol>&& _externalSymbols) {
+        externalSymbols = std::move(_externalSymbols);
+    }
 
 private:
     bool hasMainComponentBeenAdded = false;

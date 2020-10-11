@@ -32,6 +32,9 @@ protected:
     TTA   ConvertToModelType(const TTAIR_t& intermediateRep) override;
     TTAIR_t ParseToIntermediateRep(const std::string& path) override;
     static std::optional<TTAIR_t::Component> ParseComponent(const std::string& filepath);
+    static std::vector<TTAIR_t::Symbol> ParsePartsFiles(const std::string& path);
+
+
 private:
     static std::vector<TTAIR_t::Edge> ParseEdges(const rapidjson::Document::ValueType& edgeList, const rapidjson::Document& document);
     static TTAIR_t::Edge ParseEdge(const rapidjson::Document::ValueType& edge, const rapidjson::Document& document);
@@ -41,12 +44,23 @@ private:
     static bool DoesMemberExistAndIsObject(const rapidjson::Document::ValueType& document, const std::string& membername);
     static bool DoesMemberExistAndIsArray(const rapidjson::Document::ValueType& document, const std::string& membername);
     static bool DoesMemberExistAndIsBool(const rapidjson::Document::ValueType& document, const std::string& membername);
+    static bool DoesMemberExistAndIsInt(const rapidjson::Document::ValueType& document, const std::string& membername);
+    static bool DoesMemberExistAndIsFloat(const rapidjson::Document::ValueType& document, const std::string& membername);
     static bool DoesMemberExistAndIsString(const rapidjson::Document::ValueType& document, const std::string& membername);
     static bool IsProperLocationList(const rapidjson::Document::ConstArray &locationList);
     static std::vector<TTAIR_t::Symbol> ParseSymbolDeclarations(const rapidjson::Document& document);
     static std::optional<TTAIR_t::Symbol> ParseSymbolDeclaration(const std::string& declaration);
     static TTA::SymbolMap ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t::Symbol>& symbolList);
     static std::unordered_multimap<std::string, TTA::Edge> ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge>& edge, const TTA::SymbolMap& symbolMap);
+
+    static std::vector<TTAIR_t::Symbol> ParsePartsFile(const std::string& filepath);
+    static TTAIR_t::Symbol ParsePart(const rapidjson::Document::ValueType& document);
+    static TTASymbol_t ParseGenericType(const rapidjson::Document::ValueType& document);
+    static bool IsDocumentAProperPartsFile(const rapidjson::Document& document);
+    static bool IsDocumentAProperPart(const rapidjson::Document::ValueType& document);
+    static bool IsDocumentAProperGenericType(const rapidjson::Document::ValueType& document);
+    static bool IsDocumentAProperAccessType(const rapidjson::Document::ValueType& document);
+    static bool IsDocumentAProperExternalType(const rapidjson::Document::ValueType& document);
 };
 
 #endif //MAVE_TTAPARSER_H
