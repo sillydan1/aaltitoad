@@ -79,9 +79,12 @@ struct TTA {
     };
 
     SymbolMap symbols = {};
+    // This only works because we don't add or remove symbols during runtime
+    std::vector<packToken*> externalSymbols = {};
     ComponentMap components = {};
 
 public:
+    void InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys);
     static std::size_t GetStateHash(const State& state);
     std::size_t GetCurrentStateHash() const;
     State GetCurrentState() const;

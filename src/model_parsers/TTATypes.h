@@ -56,6 +56,9 @@ public:
     inline void AddExternalSymbols(std::vector<Symbol>&& _externalSymbols) {
         externalSymbols = std::move(_externalSymbols);
     }
+    inline void AddInternalSymbols(std::vector<Symbol>&& _internalSymbols) {
+        internalSymbols = std::move(_internalSymbols);
+    }
 
 private:
     bool hasMainComponentBeenAdded = false;

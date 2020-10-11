@@ -24,7 +24,12 @@ bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry);
 
 TTAIR_t TTAParser::ParseToIntermediateRep(const std::string &path) {
     TTAIR_t ttair{};
-    ttair.AddExternalSymbols(ParsePartsFiles(path));
+    {
+        auto internalParts = ParsePartsFiles(path);
+        auto extractedParts = ExtractExternalParts(internalParts);
+        ttair.AddInternalSymbols(std::move(extractedParts.internal));
+        ttair.AddExternalSymbols(std::move(extractedParts.external));
+    }
     for (const auto & entry : std::filesystem::directory_iterator(path)) {
         if(ShouldSkipEntry(entry)) continue;
         auto parsedComponent = ParseComponent(entry.path().generic_string());
@@ -32,6 +37,15 @@ TTAIR_t TTAParser::ParseToIntermediateRep(const std::string &path) {
             ttair.AddComponent(std::move(parsedComponent.value()));
     }
     return ttair;
+}
+
+TTAParser::ExtractedSymbolLists TTAParser::ExtractExternalParts(std::vector<TTAParser::SymbolExternalPair>& allParts) {
+    TTAParser::ExtractedSymbolLists lsts{};
+    for(auto& it : allParts) {
+        if(it.isExternal)   lsts.external.emplace_back(std::move(it.symbol));
+        else                lsts.internal.emplace_back(std::move(it.symbol));
+    }
+    return lsts;
 }
 
 // Some json files are important to ignore, so Ignore-list:
@@ -220,13 +234,18 @@ TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
         auto componentSymbols = ConvertSymbolListToSymbolMap(comp.symbols);
         tta.symbols.map().insert(componentSymbols.map().begin(), componentSymbols.map().end());
     }
+    auto internalSymbols = ConvertSymbolListToSymbolMap(intermediateRep.internalSymbols);
+    tta.symbols.map().insert(internalSymbols.map().begin(), internalSymbols.map().end());
+    auto externalSymbols = ConvertSymbolListToSymbolMap(intermediateRep.externalSymbols);
+    tta.InsertExternalSymbols(externalSymbols);
+
     for(auto& comp : intermediateRep.components) {
         tta.components[comp.name] = {
                 .initialLocationIdentifier = comp.initialLocation.identifier,
                 .endLocationIdentifier     = comp.endLocation.identifier,
                 .currentLocation           = { comp.initialLocation.isImmediate, comp.initialLocation.identifier },
                 .isMain                    = comp.isMain,
-                .edges                     = ConvertEdgeListToEdgeMap(comp.edges, tta.symbols),
+                .edges                     = ConvertEdgeListToEdgeMap(comp.edges, tta.symbols, comp.name),
         };
     }
     return tta;
@@ -248,7 +267,7 @@ TTA::SymbolMap TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t
 
 #include <extensions/cparse_extensions.h> // TODO: Remove this. This is only used for debugging purposes atm
 std::unordered_multimap<std::string, TTA::Edge>
-TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, const TTA::SymbolMap& symbolMap) {
+TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, const TTA::SymbolMap& symbolMap, const std::string& debugCompName) {
     std::unordered_multimap<std::string, TTA::Edge> edgeMap{};
     calculator calc;
     for(auto& edge : edgeList) {
@@ -258,11 +277,11 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
                 calc.compile(edge.guardExpression.c_str(), symbolMap);
                 auto type = calc.eval()->type;
                 if(type != BOOL)
-                    spdlog::critical("Guard expression '{0}' is not a boolean expression. It is a {1} expression",
-                                     edge.guardExpression, tokTypeToString(static_cast<const tokType>(type)));
+                    spdlog::critical("Guard expression '{0}' is not a boolean expression. It is a {1} expression. Component: '{2}'",
+                                     edge.guardExpression, tokenTypeToString(static_cast<const tokType>(type)), debugCompName.c_str());
             }
         } catch (...) {
-            spdlog::critical("Something went wrong when compiling guard expression: '{0}'", edge.guardExpression);
+            spdlog::critical("Something went wrong when compiling guard expression: '{0}' on component: '{1}'", edge.guardExpression, debugCompName.c_str());
             throw;
         }
         auto updateExpressions = UpdateExpression::ParseExpressions(edge.updateExpression);
@@ -270,7 +289,7 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
             for(auto& expression : updateExpressions)
                 calc.compile(expression.rhs.c_str(), symbolMap);
         } catch(...) {
-            spdlog::critical("Something went wrong when compiling update expression: '{0}'", edge.updateExpression);
+            spdlog::critical("Something went wrong when compiling update expression: '{0}' on component: '{1}'", edge.updateExpression, debugCompName.c_str());
             throw;
         }
         edgeMap.insert({edge.sourceLocation.identifier, {
@@ -283,8 +302,8 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
     return edgeMap;
 }
 
-std::vector<TTAIR_t::Symbol> TTAParser::ParsePartsFiles(const std::string &path) {
-    std::vector<TTAIR_t::Symbol> totalParts{};
+std::vector<TTAParser::SymbolExternalPair> TTAParser::ParsePartsFiles(const std::string &path) {
+    std::vector<TTAParser::SymbolExternalPair> totalParts{};
     for (const auto & entry : std::filesystem::directory_iterator(path)) {
         // Filter over ONLY the .parts files.
         auto isEntryPartsFile = entry.is_regular_file() && entry.path().string().find(".parts") != std::string::npos;
@@ -295,11 +314,11 @@ std::vector<TTAIR_t::Symbol> TTAParser::ParsePartsFiles(const std::string &path)
     return totalParts;
 }
 
-std::vector<TTAIR_t::Symbol> TTAParser::ParsePartsFile(const std::string &filepath) {
+std::vector<TTAParser::SymbolExternalPair> TTAParser::ParsePartsFile(const std::string &filepath) {
     std::ifstream file{filepath};
     if(file) {
         auto dom_doc = ParseDocumentDOMStyle(file);
-        std::vector<TTAIR_t::Symbol> symbols{};
+        std::vector<TTAParser::SymbolExternalPair> symbols{};
         if(IsDocumentAProperPartsFile(dom_doc)) {
             auto partsArray = dom_doc["parts"].GetArray();
             std::for_each(partsArray.begin(), partsArray.end(),
@@ -356,10 +375,18 @@ bool TTAParser::IsDocumentAProperExternalType(const rapidjson::Document::ValueTy
            document.GetString() == std::string("Timer")); // TODO: What does Timer mean in terms of external/internal?
 }
 
-TTAIR_t::Symbol TTAParser::ParsePart(const rapidjson::Document::ValueType &document) {
+bool TTAParser::IsDocumentExternalType(const rapidjson::Document::ValueType &document) {
+    return document.IsString() && (
+            document.GetString() == std::string("External") ||
+            document.GetString() == std::string("Timer"));
+}
+
+TTAParser::SymbolExternalPair TTAParser::ParsePart(const rapidjson::Document::ValueType &document) {
     auto name = document["PartName"].GetString();
-    return {.identifier = name,
-            .value = ParseGenericType(document["GenericType"])}; // TODO: Distinguish between Internal/Timer/External
+    return {.symbol = {.identifier = name,
+                       .value = ParseGenericType(document["GenericType"])},
+            .isExternal = IsDocumentExternalType(document["ExternalType"])
+    };
 }
 
 TTASymbol_t TTAParser::ParseGenericType(const rapidjson::Document::ValueType& document) {
