@@ -23,10 +23,15 @@
 #include <shunting-yard.h>
 #include "UpdateExpression.h"
 
+struct TTATimerSymbol {
+    float current_value;
+};
+
 using TTASymbol_t = std::variant<
         int,
         float,
         bool,
+        TTATimerSymbol,
         std::string
 >;
 

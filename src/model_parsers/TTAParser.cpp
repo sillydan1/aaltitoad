@@ -225,10 +225,11 @@ TTA::SymbolMap TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t
     TTA::SymbolMap map{};
     std::for_each(symbolList.begin(), symbolList.end(), [&map] (auto& symbol) {
         std::visit(overload(
-                [&](const int& value)        { map[symbol.identifier] = value; },
-                [&](const float& value)      { map[symbol.identifier] = value; },
-                [&](const bool& value)       { map[symbol.identifier] = value; },
-                [&](const std::string& value){ map[symbol.identifier] = value; }
+                [&](const int& value)            { map[symbol.identifier] = value; },
+                [&](const float& value)          { map[symbol.identifier] = value; },
+                [&](const bool& value)           { map[symbol.identifier] = value; },
+                [&](const TTATimerSymbol& value) { map[symbol.identifier] = value.current_value; }, // Timers are just read-only floats in the Tick-semantics
+                [&](const std::string& value)    { map[symbol.identifier] = value; }
                 ), symbol.value);
     });
     return map;

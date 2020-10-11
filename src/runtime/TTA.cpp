@@ -42,8 +42,9 @@ TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& 
             [&valuestr, &value](const bool&       ){
                 if(valuestr == "false") value = false;
                 else if(valuestr == "true") value = true;
-                else spdlog::error("Value '{0}' is not of boolean type", valuestr);
+                else spdlog::error("Value '{0}' is not of boolean type", valuestr); // TODO: true/false is case-sensitive. Is this good?
             },
+            [&valuestr, &value](const TTATimerSymbol&) { value = TTATimerSymbol{std::stof(valuestr)}; },
             [&valuestr, &value](const std::string&){
                 if(valuestr[0] == '\"' && valuestr[valuestr.size()-1] == '\"')
                     value = valuestr.substr(1,valuestr.size()-2);
