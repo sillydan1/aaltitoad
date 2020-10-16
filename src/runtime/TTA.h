@@ -95,13 +95,9 @@ public:
     bool IsCurrentStateImmediate() const;
     bool SetCurrentState(const State& newstate);
     static bool IsStateImmediate(const State& state);
-    // If the result contains more than one entry, that means nondeterministic choice
     std::vector<State> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PICK_FIRST) const;
 
-    // Runtime functions:
-    // Take a Tick
     void Tick(const nondeterminism_strategy_t& nondeterminismStrategy = nondeterminism_strategy_t::PANIC);
-    // Take a Tock step.
     void Tock();
 };
 
