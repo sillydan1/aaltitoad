@@ -232,10 +232,10 @@ TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
     TTA tta{};
     for(auto& comp : intermediateRep.components) {
         auto componentSymbols = ConvertSymbolListToSymbolMap(comp.symbols);
-        tta.symbols.map().insert(componentSymbols.map().begin(), componentSymbols.map().end());
+        tta.GetSymbols().map().insert(componentSymbols.map().begin(), componentSymbols.map().end());
     }
     auto internalSymbols = ConvertSymbolListToSymbolMap(intermediateRep.internalSymbols);
-    tta.symbols.map().insert(internalSymbols.map().begin(), internalSymbols.map().end());
+    tta.GetSymbols().map().insert(internalSymbols.map().begin(), internalSymbols.map().end());
     auto externalSymbols = ConvertSymbolListToSymbolMap(intermediateRep.externalSymbols);
     tta.InsertExternalSymbols(externalSymbols);
 
@@ -245,7 +245,7 @@ TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
                 .endLocationIdentifier     = comp.endLocation.identifier,
                 .currentLocation           = { comp.initialLocation.isImmediate, comp.initialLocation.identifier },
                 .isMain                    = comp.isMain,
-                .edges                     = ConvertEdgeListToEdgeMap(comp.edges, tta.symbols, comp.name),
+                .edges                     = ConvertEdgeListToEdgeMap(comp.edges, tta.GetSymbols(), comp.name),
         };
     }
     return tta;
