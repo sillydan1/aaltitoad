@@ -18,19 +18,8 @@
  */
 #include <mavepch.h>
 #include <extensions/stringextensions.h>
+#include <extensions/overload>
 #include "TTAParser.h"
-bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry);
-
-TTAIR_t TTAParser::ParseToIntermediateRep(const std::string &path) {
-    TTAIR_t ttair{};
-    for (const auto & entry : std::filesystem::directory_iterator(path)) {
-        if(ShouldSkipEntry(entry)) continue;
-        auto parsedComponent = ParseComponent(entry.path().generic_string());
-        if(parsedComponent)
-            ttair.AddComponent(std::move(parsedComponent.value()));
-    }
-    return ttair;
-}
 
 // Some json files are important to ignore, so Ignore-list:
 std::vector<std::string> componentIgnoreList = { // NOLINT(cert-err58-cpp)
@@ -46,6 +35,71 @@ bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry) {
                         [&entrystr] (auto& el) { return entrystr.find(el) != std::string::npos; });
 }
 
+TTAIR_t TTAParser::ParseToIntermediateRep(const std::string &path) {
+    TTAIR_t ttair{};
+    AddInternalAndExternalSymbols(path, ttair);
+    for (const auto & entry : std::filesystem::directory_iterator(path)) {
+        if(ShouldSkipEntry(entry)) continue;
+        auto parsedComponent = ParseComponent(entry.path().generic_string());
+        if(parsedComponent)
+            ttair.AddComponent(std::move(parsedComponent.value()));
+    }
+    return ttair;
+}
+
+void TTAParser::AddInternalAndExternalSymbols(const std::string& path, TTAIR_t& ttair) {
+    auto internalParts = ParsePartsFiles(path);
+    auto extractedParts = ExtractExternalParts(internalParts);
+    ttair.AddInternalSymbols(std::move(extractedParts.internal));
+    ttair.AddExternalSymbols(std::move(extractedParts.external));
+}
+
+std::vector<TTAParser::SymbolExternalPair> TTAParser::ParsePartsFiles(const std::string &path) {
+    std::vector<TTAParser::SymbolExternalPair> totalParts{};
+    for (const auto & entry : std::filesystem::directory_iterator(path)) {
+        // Filter over ONLY the .parts files.
+        auto isEntryPartsFile = entry.is_regular_file() && entry.path().string().find(".parts") != std::string::npos;
+        if(!isEntryPartsFile) continue;
+        auto parts = ParsePartsFile(entry.path().string());
+        totalParts.insert(totalParts.end(), parts.begin(), parts.end());
+    }
+    return totalParts;
+}
+
+std::vector<TTAParser::SymbolExternalPair> TTAParser::ParsePartsFile(const std::string &filepath) {
+    std::ifstream file{filepath};
+    if(file) {
+        auto dom_doc = ParseDocumentDOMStyle(file);
+        std::vector<TTAParser::SymbolExternalPair> symbols{};
+        if(IsDocumentAProperPartsFile(dom_doc)) {
+            auto partsArray = dom_doc["parts"].GetArray();
+            std::for_each(partsArray.begin(), partsArray.end(),
+                          [&symbols](const auto& doc){ symbols.emplace_back(std::move(ParsePart(doc))); });
+        } else
+            spdlog::error("Parts File '{0}' is improper", filepath);
+        file.close();
+        return symbols;
+    }
+    return {};
+}
+
+TTAParser::ExtractedSymbolLists TTAParser::ExtractExternalParts(std::vector<TTAParser::SymbolExternalPair>& allParts) {
+    TTAParser::ExtractedSymbolLists lsts{};
+    for(auto& it : allParts) {
+        if(it.isExternal)   lsts.external.emplace_back(std::move(it.symbol));
+        else                lsts.internal.emplace_back(std::move(it.symbol));
+    }
+    return lsts;
+}
+
+
+
+TTAIR_t::Location ParseLocation(const rapidjson::Document::ValueType& elem, const std::string& elemname) {
+    auto element = elem.FindMember(elemname.c_str());
+    return { .isImmediate = element->value["urgency"].GetString() == std::string("urgent"),
+             .identifier = element->value["id"].GetString() };
+}
+
 std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &filepath) {
     std::ifstream file{filepath};
     if(file) {
@@ -56,8 +110,8 @@ std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &f
             spdlog::debug("File '{0}' is a proper TTA", filepath);
             return std::optional(TTAIR_t::Component{
                     .name = GetFileNameOnly(filepath),
-                    .initialLocation = dom_document["initial_location"]["id"].GetString(),
-                    .endLocation     = dom_document["final_location"]["id"].GetString(),
+                    .initialLocation = ParseLocation(dom_document, "initial_location"),
+                    .endLocation     = ParseLocation(dom_document, "final_location"),
                     .isMain = dom_document["main"].GetBool(),
                     .edges = ParseEdges(dom_document["edges"], dom_document),
                     .symbols = ParseSymbolDeclarations(dom_document)
@@ -108,6 +162,16 @@ bool TTAParser::DoesMemberExistAndIsBool(const rapidjson::Document::ValueType &d
     return memberIterator != document.MemberEnd() && memberIterator->value.IsBool();
 }
 
+bool TTAParser::DoesMemberExistAndIsInt(const rapidjson::Document::ValueType &document, const std::string &membername) {
+    auto memberIterator = document.FindMember(membername.c_str());
+    return memberIterator != document.MemberEnd() && memberIterator->value.IsInt();
+}
+
+bool TTAParser::DoesMemberExistAndIsFloat(const rapidjson::Document::ValueType &document, const std::string &membername) {
+    auto memberIterator = document.FindMember(membername.c_str());
+    return memberIterator != document.MemberEnd() && memberIterator->value.IsFloat();
+}
+
 bool TTAParser::DoesMemberExistAndIsString(const rapidjson::Document::ValueType &document, const std::string &membername) {
     auto memberIterator = document.FindMember(membername.c_str());
     return memberIterator != document.MemberEnd() && memberIterator->value.IsString();
@@ -153,12 +217,12 @@ TTAIR_t::Edge TTAParser::ParseEdge(const rapidjson::Document::ValueType &edge, c
     if(!targetLocation) throw std::logic_error("Unable to locate target location for edge");
     return TTAIR_t::Edge{
             .sourceLocation = {
-                .identifier = (*sourceLocation.value())["id"].GetString(),
-                .isImmediate = (*sourceLocation.value())["urgency"].GetString() == std::string("urgent")
+                    .isImmediate = (*sourceLocation.value())["urgency"].GetString() == std::string("urgent"),
+                    .identifier = (*sourceLocation.value())["id"].GetString()
             },
              .targetLocation = {
-                .identifier = (*targetLocation.value())["id"].GetString(),
-                .isImmediate = (*targetLocation.value())["urgency"].GetString() == std::string("urgent")
+                    .isImmediate = (*targetLocation.value())["urgency"].GetString() == std::string("urgent"),
+                    .identifier = (*targetLocation.value())["id"].GetString()
             },
             .guardExpression = edge["guard"].GetString(),
             .updateExpression = edge["update"].GetString()};
@@ -197,36 +261,161 @@ std::optional<TTAIR_t::Symbol> TTAParser::ParseSymbolDeclaration(const std::stri
 }
 
 TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
-    TTA tta{};
+    auto tta = ConstructTTAWithAllSymbolsFromIntermediateRep(intermediateRep);
     for(auto& comp : intermediateRep.components) {
         tta.components[comp.name] = {
-                .initialLocationIdentifier = comp.initialLocation,
-                .endLocationIdentifier     = comp.endLocation,
+                .initialLocationIdentifier = comp.initialLocation.identifier,
+                .endLocationIdentifier     = comp.endLocation.identifier,
+                .currentLocation           = { comp.initialLocation.isImmediate, comp.initialLocation.identifier },
                 .isMain                    = comp.isMain,
-                .edges                     = ConvertEdgeListToEdgeMap(comp.edges),
-                .symbols                   = ConvertSymbolListToSymbolMap(comp.symbols)
+                .edges                     = ConvertEdgeListToEdgeMap(comp.edges, tta.GetSymbols(), comp.name),
         };
     }
     return tta;
 }
 
-std::unordered_map<std::string, TTASymbolType>
-TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t::Symbol> &symbolList) {
-    std::unordered_map<std::string, TTASymbolType> map{};
-    std::for_each(symbolList.begin(), symbolList.end(), [&map] (auto& symbol) { map[symbol.identifier]=symbol.value; });
+TTA TTAParser::ConstructTTAWithAllSymbolsFromIntermediateRep(const TTAIR_t &intermediateRep) {
+    TTA tta{};
+    for(auto& comp : intermediateRep.components)
+        tta.InsertInternalSymbols(ConvertSymbolListToSymbolMap(comp.symbols));
+    auto internalSymbols = ConvertSymbolListToSymbolMap(intermediateRep.internalSymbols);
+    tta.InsertInternalSymbols(internalSymbols);
+    auto externalSymbols = ConvertSymbolListToSymbolMap(intermediateRep.externalSymbols);
+    tta.InsertExternalSymbols(externalSymbols);
+    return tta;
+}
+
+TTA::SymbolMap TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t::Symbol> &symbolList) {
+    TTA::SymbolMap map{};
+    std::for_each(symbolList.begin(), symbolList.end(), [&map] (auto& symbol) {
+        std::visit(overload(
+                [&](const int& value)            { map[symbol.identifier] = value; },
+                [&](const float& value)          { map[symbol.identifier] = value; },
+                [&](const bool& value)           { map[symbol.identifier] = value; },
+                [&](const TTATimerSymbol& value) { map[symbol.identifier] = packToken(value.current_value, PACK_IS_TIMER); },
+                [&](const std::string& value)    { map[symbol.identifier] = value; }
+                ), symbol.value);
+    });
     return map;
 }
 
-std::unordered_map<std::string, TTA::Edge>
-TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList) {
-    std::unordered_map<std::string, TTA::Edge> map{};
+#include <extensions/cparse_extensions.h> // TODO: Remove this. This is only used for debugging purposes atm
+std::unordered_multimap<std::string, TTA::Edge>
+TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, const TTA::SymbolMap& symbolMap, const std::string& debugCompName) {
+    std::unordered_multimap<std::string, TTA::Edge> edgeMap{};
+    calculator calc;
     for(auto& edge : edgeList) {
-        map[edge.sourceLocation.identifier] = {
-                .sourceLocation           = {edge.sourceLocation.identifier, edge.sourceLocation.isImmediate},
-                .targetLocation           = {edge.targetLocation.identifier, edge.targetLocation.isImmediate},
-                .guardExpression          = edge.guardExpression,   // TODO: Compile this as a thing
-                .updateExpression         = edge.updateExpression  // TODO: Compile this as a thing
-        };
+        // Compile the expressions (guard and update)
+        try {
+            if (!edge.guardExpression.empty()) {
+                calc.compile(edge.guardExpression.c_str(), symbolMap);
+                auto type = calc.eval()->type; // We can "safely" eval() guards, because they have no side-effects.
+                if(type != BOOL)
+                    spdlog::critical("Guard expression '{0}' is not a boolean expression. It is a {1} expression. Component: '{2}'",
+                                     edge.guardExpression, tokenTypeToString(static_cast<const tokType>(type)), debugCompName.c_str());
+            }
+        } catch (...) {
+            spdlog::critical("Something went wrong when compiling guard expression: '{0}' on component: '{1}'", edge.guardExpression, debugCompName.c_str());
+            throw;
+        }
+        auto updateExpressions = UpdateExpression::ParseExpressions(edge.updateExpression);
+        try {
+            for(auto& expression : updateExpressions) {
+                if(!IsUpdateResettingATimerProperly(expression, symbolMap))
+                    spdlog::critical("Update expression '{0} := {1}' updates a variable of type Timer, but doesn't reset it to zero. Component: '{2}'",
+                                     expression.lhs, expression.rhs, debugCompName.c_str());
+                calc.compile(expression.rhs.c_str(), symbolMap);
+            }
+        } catch(...) {
+            spdlog::critical("Something went wrong when compiling update expression: '{0}' on component: '{1}'", edge.updateExpression, debugCompName.c_str());
+            throw;
+        }
+        edgeMap.insert({edge.sourceLocation.identifier, {
+                .sourceLocation           = {edge.sourceLocation.isImmediate,edge.sourceLocation.identifier},
+                .targetLocation           = {edge.targetLocation.isImmediate,edge.targetLocation.identifier},
+                .guardExpression          = edge.guardExpression, // TODO: Store this as a compiled tree. Strings are nasty
+                .updateExpressions        = updateExpressions
+        } });
     }
-    return map;
+    return edgeMap;
+}
+
+bool TTAParser::IsDocumentAProperPartsFile(const rapidjson::Document &document) {
+    if(!DoesMemberExistAndIsArray(document, "parts")) return false;
+    auto partsArray = document["parts"].GetArray();
+    return std::all_of(partsArray.begin(), partsArray.end(), &IsDocumentAProperPart);
+}
+
+bool TTAParser::IsDocumentAProperPart(const rapidjson::Document::ValueType &document) {
+    return DoesMemberExistAndIsString(document, "PartName") &&
+           DoesMemberExistAndIsString(document, "ExternalType") &&
+           IsDocumentAProperExternalType(document["ExternalType"]) &&
+           DoesMemberExistAndIsObject(document, "Access") &&
+           IsDocumentAProperAccessType(document["Access"]) &&
+           DoesMemberExistAndIsObject(document, "GenericType") &&
+           IsDocumentAProperGenericType(document["GenericType"]);
+}
+
+bool TTAParser::IsDocumentAProperGenericType(const rapidjson::Document::ValueType& document) {
+    return  (DoesMemberExistAndIsObject(document, "int") &&
+            DoesMemberExistAndIsInt(document["int"], "Value"))
+            ||
+            (DoesMemberExistAndIsObject(document, "float") &&
+            DoesMemberExistAndIsFloat(document["float"], "Value"))
+            ||
+            (DoesMemberExistAndIsObject(document, "bool") &&
+            DoesMemberExistAndIsBool(document["bool"], "Value"))
+            ||
+            (DoesMemberExistAndIsObject(document, "string") &&
+            DoesMemberExistAndIsString(document["string"], "Value"))
+            ||
+            (DoesMemberExistAndIsObject(document, "Timer") &&
+            DoesMemberExistAndIsInt(document["Timer"], "Value"));
+}
+
+bool TTAParser::IsDocumentAProperAccessType(const rapidjson::Document::ValueType &document) {
+    return DoesMemberExistAndIsBool(document, "Read") && DoesMemberExistAndIsBool(document, "Write");
+}
+
+bool TTAParser::IsDocumentAProperExternalType(const rapidjson::Document::ValueType &document) {
+    return document.IsString() && (
+           document.GetString() == std::string("External") ||
+           document.GetString() == std::string("Internal") ||
+           document.GetString() == std::string("Timer")); // TODO: What does Timer mean in terms of external/internal?
+}
+
+bool TTAParser::IsDocumentExternalType(const rapidjson::Document::ValueType &document) {
+    return document.IsString() && (
+            document.GetString() == std::string("External") ||
+            document.GetString() == std::string("Timer"));
+}
+
+TTAParser::SymbolExternalPair TTAParser::ParsePart(const rapidjson::Document::ValueType &document) {
+    auto name = document["PartName"].GetString();
+    return {.symbol = {.identifier = name,
+                       .value = ParseGenericType(document["GenericType"])},
+            .isExternal = IsDocumentExternalType(document["ExternalType"])
+    };
+}
+
+TTASymbol_t TTAParser::ParseGenericType(const rapidjson::Document::ValueType& document) {
+    auto intMember      = document.FindMember("int");
+    if(intMember != document.MemberEnd()) return int{ intMember->value["Value"].GetInt() };
+    auto floatMember    = document.FindMember("float");
+    if(floatMember != document.MemberEnd()) return float{ floatMember->value["Value"].GetFloat() };
+    auto boolMember     = document.FindMember("bool");
+    if(boolMember != document.MemberEnd()) return bool{ boolMember->value["Value"].GetBool() };
+    auto timerMember    = document.FindMember("Timer");
+    if(timerMember != document.MemberEnd()) return TTATimerSymbol{static_cast<float>(timerMember->value["Value"].GetInt())};
+    auto stringMember   = document.FindMember("string");
+    if(stringMember != document.MemberEnd()) return std::string{ stringMember->value["Value"].GetString() };
+    spdlog::critical("Error parsing the GenericType. Type is not recognized!");
+    return {};
+}
+
+bool TTAParser::IsUpdateResettingATimerProperly(const UpdateExpression& expr, const TTA::SymbolMap& context) {
+    auto it = context.map().find(expr.lhs);
+    if(it != context.map().end() && it->second->type == TIMER)
+        return expr.rhs == "0";
+    return true;
 }

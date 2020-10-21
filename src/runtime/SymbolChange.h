@@ -16,21 +16,17 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "TTATypes.h"
+#ifndef MAVE_SYMBOLCHANGE_H
+#define MAVE_SYMBOLCHANGE_H
+#include <mavepch.h>
+#include "TTA.h"
 
-std::optional<std::vector<TTAIR_t::Component>::const_iterator> TTAIR_t::FindMainComponent() const {
-    for(auto component_itr = components.begin(); component_itr != components.end(); component_itr++) {
-        if(component_itr->isMain)
-            return component_itr;
-    }
-    return {};
-}
+struct SymbolChange {
+    std::string identifier;
+    TTASymbol_t value;
+#ifndef NDEBUG
+    std::string valueExpression;
+#endif
+};
 
-void TTAIR_t::AddComponent(TTAIR_t::Component&& component) {
-    components.emplace_back(component);
-    if(component.isMain) {
-        if(hasMainComponentBeenAdded)
-            spdlog::warn("Multiple main components are being parsed");
-        hasMainComponentBeenAdded = true;
-    }
-}
+#endif //MAVE_SYMBOLCHANGE_H

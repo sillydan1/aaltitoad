@@ -22,6 +22,7 @@ include_directories(
         dep/argvparse/include
         dep/rapidjson/include
         dep/spdlog/include
+        dep/cparse
         src
 )
 
@@ -29,22 +30,41 @@ set (CMAKE_CXX_STANDARD 17)
 set (SPDLOG_BUILD_SHARED)
 set (CMAKE_CXX_STANDARD_LIBRARIES -lstdc++fs)
 
+# Third party libraries, compiled with CMAKE
 add_subdirectory(dep/argvparse/)
 add_subdirectory(dep/spdlog)
+
+# Third party libraries, compiled with something else
+####
+add_library(shunting_yard OBJECT
+        dep/cparse/shunting-yard.cpp
+        dep/cparse/packToken.cpp
+        dep/cparse/functions.cpp
+        dep/cparse/containers.cpp)
+add_library(builtin_features OBJECT
+        dep/cparse/builtin-features.cpp)
+target_link_libraries(builtin_features PUBLIC shunting_yard)
+####
 
 add_library(ttaparse
         src/model_parsers/TTAParser.cpp
         src/model_parsers/TTATypes.cpp)
 
-add_executable(mave
+add_executable(${PROJECT_NAME}
         src/cli/main.cpp
         src/cli/CLIConfig.cpp
-        src/extensions/stringextensions.cpp)
+        src/extensions/stringextensions.cpp
+        src/runtime/TTA.cpp
+        src/runtime/UpdateExpression.cpp)
 
-target_link_libraries(mave
+target_link_libraries(${PROJECT_NAME}
         argvparse
         spdlog
-        ttaparse)
+        ttaparse
 
-target_precompile_headers(mave PUBLIC src/mavepch.h)
+        shunting_yard
+        builtin_features)
+
+target_precompile_headers(${PROJECT_NAME} PUBLIC src/mavepch.h)
 target_precompile_headers(ttaparse PUBLIC src/mavepch.h)
+

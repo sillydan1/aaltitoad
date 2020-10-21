@@ -19,46 +19,13 @@
 #ifndef MAVE_TTATYPES_H
 #define MAVE_TTATYPES_H
 #include <mavepch.h>
-
-using TTASymbolType = std::variant<
-        int,
-        float,
-        bool,
-        std::string
-        >;
-
-TTASymbolType TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr);
-TTASymbolType TTASymbolTypeFromString(const std::string& typestr);
-TTASymbolType PopulateValueFromString(const TTASymbolType& type, const std::string& valuestr);
-
-struct TTA {
-    struct Location {
-        std::string identifier;
-        bool isImmediate;
-    };
-    struct Edge {
-        Location sourceLocation;
-        Location targetLocation;
-        std::string guardExpression;
-        std::string updateExpression;
-    };
-    struct Component {
-        std::string initialLocationIdentifier;
-        std::string endLocationIdentifier;
-        bool isMain = false;
-        // keyed on sourceLocationIdentifier
-        std::unordered_map<std::string, Edge> edges = {};
-        std::unordered_map<std::string, TTASymbolType> symbols = {};
-    };
-    // keyed on the component name
-    std::unordered_map<std::string, Component> components = {};
-};
+#include "runtime/TTA.h"
 
 struct TTAIR_t {
 public:
     struct Location {
-        std::string identifier;
         bool isImmediate;
+        std::string identifier;
     };
     struct Edge {
         Location sourceLocation;
@@ -68,22 +35,30 @@ public:
     };
     struct Symbol {
         std::string identifier;
-        TTASymbolType value;
+        TTASymbol_t value;
     };
     struct Component {
         std::string name;
-        std::string initialLocation;
-        std::string endLocation;
+        Location initialLocation;
+        Location endLocation;
         bool isMain = false;
         std::vector<Edge> edges = {};
         std::vector<Symbol> symbols = {};
     };
 public:
     std::vector<Component> components = {};
+    std::vector<Symbol> externalSymbols = {};
+    std::vector<Symbol> internalSymbols = {};
 
 public:
     [[nodiscard]] std::optional<std::vector<Component>::const_iterator> FindMainComponent() const;
     void AddComponent(Component&& component);
+    inline void AddExternalSymbols(std::vector<Symbol>&& _externalSymbols) {
+        externalSymbols = std::move(_externalSymbols);
+    }
+    inline void AddInternalSymbols(std::vector<Symbol>&& _internalSymbols) {
+        internalSymbols = std::move(_internalSymbols);
+    }
 
 private:
     bool hasMainComponentBeenAdded = false;

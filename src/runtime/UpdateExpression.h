@@ -16,21 +16,16 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "TTATypes.h"
+#ifndef MAVE_UPDATEEXPRESSION_H
+#define MAVE_UPDATEEXPRESSION_H
+#include <mavepch.h>
+#include <shunting-yard.h>
 
-std::optional<std::vector<TTAIR_t::Component>::const_iterator> TTAIR_t::FindMainComponent() const {
-    for(auto component_itr = components.begin(); component_itr != components.end(); component_itr++) {
-        if(component_itr->isMain)
-            return component_itr;
-    }
-    return {};
-}
+struct UpdateExpression {
+    std::string lhs, rhs; // TODO: Store rhs as a compiled tree.
+    explicit UpdateExpression(const std::string& fullExpr);
+    static std::vector<UpdateExpression> ParseExpressions(const std::string& fullExpr);
+    [[nodiscard]] packToken Evaluate(const TokenMap& map) const;
+};
 
-void TTAIR_t::AddComponent(TTAIR_t::Component&& component) {
-    components.emplace_back(component);
-    if(component.isMain) {
-        if(hasMainComponentBeenAdded)
-            spdlog::warn("Multiple main components are being parsed");
-        hasMainComponentBeenAdded = true;
-    }
-}
+#endif //MAVE_UPDATEEXPRESSION_H

@@ -16,21 +16,13 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "TTATypes.h"
+#ifndef HASH_COMBINE_H
+#define HASH_COMBINE_H
 
-std::optional<std::vector<TTAIR_t::Component>::const_iterator> TTAIR_t::FindMainComponent() const {
-    for(auto component_itr = components.begin(); component_itr != components.end(); component_itr++) {
-        if(component_itr->isMain)
-            return component_itr;
-    }
-    return {};
+template <class T>
+inline void hash_combine(std::size_t& seed, const T& v) {
+    std::hash<T> hasher;
+    seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
 }
 
-void TTAIR_t::AddComponent(TTAIR_t::Component&& component) {
-    components.emplace_back(component);
-    if(component.isMain) {
-        if(hasMainComponentBeenAdded)
-            spdlog::warn("Multiple main components are being parsed");
-        hasMainComponentBeenAdded = true;
-    }
-}
+#endif // HASH_COMBINE_H

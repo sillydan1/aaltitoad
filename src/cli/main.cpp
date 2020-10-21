@@ -17,8 +17,9 @@
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <mavepch.h>
+#include <runtime/TTA.h>
+#include <model_parsers/TTAParser.h>
 #include "CLIConfig.h"
-#include "model_parsers/TTAParser.h"
 
 int main(int argc, char** argv) {
     // Initialize CLI configuration (based on CLI Args)
@@ -32,9 +33,15 @@ int main(int argc, char** argv) {
         spdlog::set_level(static_cast<spdlog::level::level_enum>(5-config["verbosity"].as_integer()));
     else
         spdlog::set_level(spdlog::level::level_enum::warn);
+
     // Call the engine(s)
     TTAParser ttaParser{};
     TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
+    while(true) {
+        std::cout << t.GetCurrentStateString() << std::endl;
+        getchar();
+        t.SetCurrentState(t.GetNextTickStates()[0]);
+    }
 
     // Return the exit code.
     return config.GetStatusCode();
