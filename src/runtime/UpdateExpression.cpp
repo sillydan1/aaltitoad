@@ -39,7 +39,7 @@ std::vector<UpdateExpression> UpdateExpression::ParseExpressions(const std::stri
     if(fullExpr.find(assignmentOperator) != std::string::npos) {
         auto subExpressions = split(fullExpr, expressionDelimiter);
         for(auto& expr : subExpressions)
-            subExpressions.emplace_back(expr);
+            expressions.push_back(UpdateExpression(expr));
     } else
         spdlog::critical("Update expression '{0}' does not include the ':=' token!", fullExpr);
     return expressions;

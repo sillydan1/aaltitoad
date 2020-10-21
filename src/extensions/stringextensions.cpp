@@ -35,11 +35,12 @@ std::vector<std::string> split(const std::string& s, const std::string& delimite
     size_t pos = 0;
     std::string sc = s;
     std::string token;
-    while ((pos = s.find(delimiter)) != std::string::npos) {
-        token = s.substr(0, pos);
+    while ((pos = sc.find(delimiter)) != std::string::npos) {
+        token = sc.substr(0, pos);
         tokens.push_back(token);
         sc.erase(0, pos + delimiter.length());
     }
+    tokens.push_back(sc);
     return tokens;
 }
 

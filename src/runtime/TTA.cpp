@@ -108,7 +108,7 @@ bool TTA::SetCurrentState(const State& newstate) {
         bool error = false;
         if(symbolit == symbols.map().end()) { spdlog::critical("Attempted to change the state of TTA failed. Symbol '{0}' does not exist.", symbol.first); error = true; }
         else if(symbolit->second->type != symbol.second->type)  { spdlog::critical("Attempted to change the state of TTA failed. Symbol '{0}' does not have the correct type.", symbol.first); error = true; }
-        if(!error) symbolit->second = symbol.second;
+        if(!error) symbols.map()[symbol.first] = symbol.second;
         else return false;
     }
     return true;
@@ -157,7 +157,7 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
             currentLocations[component.first] = pickedEdge.targetLocation;
         }
     }
-    SymbolMap symbolsCopy = symbols;
+    SymbolMap symbolsCopy;
     for(auto& symbolChange : symbolChanges) symbolsCopy[symbolChange.lhs] = symbolChange.Evaluate(symbolsCopy);
     return {{ currentLocations, symbolsCopy }};
 }
