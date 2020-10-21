@@ -292,7 +292,7 @@ TTA::SymbolMap TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t
                 [&](const int& value)            { map[symbol.identifier] = value; },
                 [&](const float& value)          { map[symbol.identifier] = value; },
                 [&](const bool& value)           { map[symbol.identifier] = value; },
-                [&](const TTATimerSymbol& value) { map[symbol.identifier] = value.current_value; }, // Timers are just read-only floats in the Tick-semantics
+                [&](const TTATimerSymbol& value) { map[symbol.identifier] = packToken(value.current_value, PACK_IS_TIMER); },
                 [&](const std::string& value)    { map[symbol.identifier] = value; }
                 ), symbol.value);
     });
@@ -320,8 +320,12 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
         }
         auto updateExpressions = UpdateExpression::ParseExpressions(edge.updateExpression);
         try {
-            for(auto& expression : updateExpressions)
+            for(auto& expression : updateExpressions) {
+                if(!IsUpdateResettingATimerProperly(expression, symbolMap))
+                    spdlog::critical("Update expression '{0} := {1}' updates a variable of type Timer, but doesn't reset it to zero. Component: '{2}'",
+                                     expression.lhs, expression.rhs, debugCompName.c_str());
                 calc.compile(expression.rhs.c_str(), symbolMap);
+            }
         } catch(...) {
             spdlog::critical("Something went wrong when compiling update expression: '{0}' on component: '{1}'", edge.updateExpression, debugCompName.c_str());
             throw;
@@ -407,4 +411,11 @@ TTASymbol_t TTAParser::ParseGenericType(const rapidjson::Document::ValueType& do
     if(stringMember != document.MemberEnd()) return std::string{ stringMember->value["Value"].GetString() };
     spdlog::critical("Error parsing the GenericType. Type is not recognized!");
     return {};
+}
+
+bool TTAParser::IsUpdateResettingATimerProperly(const UpdateExpression& expr, const TTA::SymbolMap& context) {
+    auto it = context.map().find(expr.lhs);
+    if(it != context.map().end() && it->second->type == TIMER)
+        return expr.rhs == "0";
+    return true;
 }

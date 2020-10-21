@@ -62,6 +62,7 @@ private:
     static std::optional<TTAIR_t::Symbol> ParseSymbolDeclaration(const std::string& declaration);
     static TTA::SymbolMap ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t::Symbol>& symbolList);
     static std::unordered_multimap<std::string, TTA::Edge> ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge>& edge, const TTA::SymbolMap& symbolMap, const std::string& debugCompName);
+    static bool IsUpdateResettingATimerProperly(const UpdateExpression& expr, const TTA::SymbolMap& context);
 
     static std::vector<SymbolExternalPair> ParsePartsFile(const std::string& filepath);
     static SymbolExternalPair ParsePart(const rapidjson::Document::ValueType& document);
