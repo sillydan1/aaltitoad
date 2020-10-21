@@ -87,6 +87,7 @@ private:
 public:
     const SymbolMap& GetSymbols() const { return symbols; } // TODO: Am I still allowed to edit the symbol values themselves?
     void InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys);
+    void InsertInternalSymbols(const TTA::SymbolMap &internalSymbols);
     static std::size_t GetStateHash(const State& state);
     std::size_t GetCurrentStateHash() const;
     State GetCurrentState() const;

@@ -20,33 +20,6 @@
 #include <extensions/stringextensions.h>
 #include <extensions/overload>
 #include "TTAParser.h"
-bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry);
-
-TTAIR_t TTAParser::ParseToIntermediateRep(const std::string &path) {
-    TTAIR_t ttair{};
-    {
-        auto internalParts = ParsePartsFiles(path);
-        auto extractedParts = ExtractExternalParts(internalParts);
-        ttair.AddInternalSymbols(std::move(extractedParts.internal));
-        ttair.AddExternalSymbols(std::move(extractedParts.external));
-    }
-    for (const auto & entry : std::filesystem::directory_iterator(path)) {
-        if(ShouldSkipEntry(entry)) continue;
-        auto parsedComponent = ParseComponent(entry.path().generic_string());
-        if(parsedComponent)
-            ttair.AddComponent(std::move(parsedComponent.value()));
-    }
-    return ttair;
-}
-
-TTAParser::ExtractedSymbolLists TTAParser::ExtractExternalParts(std::vector<TTAParser::SymbolExternalPair>& allParts) {
-    TTAParser::ExtractedSymbolLists lsts{};
-    for(auto& it : allParts) {
-        if(it.isExternal)   lsts.external.emplace_back(std::move(it.symbol));
-        else                lsts.internal.emplace_back(std::move(it.symbol));
-    }
-    return lsts;
-}
 
 // Some json files are important to ignore, so Ignore-list:
 std::vector<std::string> componentIgnoreList = { // NOLINT(cert-err58-cpp)
@@ -61,6 +34,65 @@ bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry) {
             std::any_of(componentIgnoreList.begin(), componentIgnoreList.end(),
                         [&entrystr] (auto& el) { return entrystr.find(el) != std::string::npos; });
 }
+
+TTAIR_t TTAParser::ParseToIntermediateRep(const std::string &path) {
+    TTAIR_t ttair{};
+    AddInternalAndExternalSymbols(path, ttair);
+    for (const auto & entry : std::filesystem::directory_iterator(path)) {
+        if(ShouldSkipEntry(entry)) continue;
+        auto parsedComponent = ParseComponent(entry.path().generic_string());
+        if(parsedComponent)
+            ttair.AddComponent(std::move(parsedComponent.value()));
+    }
+    return ttair;
+}
+
+void TTAParser::AddInternalAndExternalSymbols(const std::string& path, TTAIR_t& ttair) {
+    auto internalParts = ParsePartsFiles(path);
+    auto extractedParts = ExtractExternalParts(internalParts);
+    ttair.AddInternalSymbols(std::move(extractedParts.internal));
+    ttair.AddExternalSymbols(std::move(extractedParts.external));
+}
+
+std::vector<TTAParser::SymbolExternalPair> TTAParser::ParsePartsFiles(const std::string &path) {
+    std::vector<TTAParser::SymbolExternalPair> totalParts{};
+    for (const auto & entry : std::filesystem::directory_iterator(path)) {
+        // Filter over ONLY the .parts files.
+        auto isEntryPartsFile = entry.is_regular_file() && entry.path().string().find(".parts") != std::string::npos;
+        if(!isEntryPartsFile) continue;
+        auto parts = ParsePartsFile(entry.path().string());
+        totalParts.insert(totalParts.end(), parts.begin(), parts.end());
+    }
+    return totalParts;
+}
+
+std::vector<TTAParser::SymbolExternalPair> TTAParser::ParsePartsFile(const std::string &filepath) {
+    std::ifstream file{filepath};
+    if(file) {
+        auto dom_doc = ParseDocumentDOMStyle(file);
+        std::vector<TTAParser::SymbolExternalPair> symbols{};
+        if(IsDocumentAProperPartsFile(dom_doc)) {
+            auto partsArray = dom_doc["parts"].GetArray();
+            std::for_each(partsArray.begin(), partsArray.end(),
+                          [&symbols](const auto& doc){ symbols.emplace_back(std::move(ParsePart(doc))); });
+        } else
+            spdlog::error("Parts File '{0}' is improper", filepath);
+        file.close();
+        return symbols;
+    }
+    return {};
+}
+
+TTAParser::ExtractedSymbolLists TTAParser::ExtractExternalParts(std::vector<TTAParser::SymbolExternalPair>& allParts) {
+    TTAParser::ExtractedSymbolLists lsts{};
+    for(auto& it : allParts) {
+        if(it.isExternal)   lsts.external.emplace_back(std::move(it.symbol));
+        else                lsts.internal.emplace_back(std::move(it.symbol));
+    }
+    return lsts;
+}
+
+
 
 TTAIR_t::Location ParseLocation(const rapidjson::Document::ValueType& elem, const std::string& elemname) {
     auto element = elem.FindMember(elemname.c_str());
@@ -229,16 +261,7 @@ std::optional<TTAIR_t::Symbol> TTAParser::ParseSymbolDeclaration(const std::stri
 }
 
 TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
-    TTA tta{};
-    for(auto& comp : intermediateRep.components) {
-        auto componentSymbols = ConvertSymbolListToSymbolMap(comp.symbols);
-        tta.GetSymbols().map().insert(componentSymbols.map().begin(), componentSymbols.map().end());
-    }
-    auto internalSymbols = ConvertSymbolListToSymbolMap(intermediateRep.internalSymbols);
-    tta.GetSymbols().map().insert(internalSymbols.map().begin(), internalSymbols.map().end());
-    auto externalSymbols = ConvertSymbolListToSymbolMap(intermediateRep.externalSymbols);
-    tta.InsertExternalSymbols(externalSymbols);
-
+    auto tta = ConstructTTAWithAllSymbolsFromIntermediateRep(intermediateRep);
     for(auto& comp : intermediateRep.components) {
         tta.components[comp.name] = {
                 .initialLocationIdentifier = comp.initialLocation.identifier,
@@ -248,6 +271,17 @@ TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
                 .edges                     = ConvertEdgeListToEdgeMap(comp.edges, tta.GetSymbols(), comp.name),
         };
     }
+    return tta;
+}
+
+TTA TTAParser::ConstructTTAWithAllSymbolsFromIntermediateRep(const TTAIR_t &intermediateRep) {
+    TTA tta{};
+    for(auto& comp : intermediateRep.components)
+        tta.InsertInternalSymbols(ConvertSymbolListToSymbolMap(comp.symbols));
+    auto internalSymbols = ConvertSymbolListToSymbolMap(intermediateRep.internalSymbols);
+    tta.InsertInternalSymbols(internalSymbols);
+    auto externalSymbols = ConvertSymbolListToSymbolMap(intermediateRep.externalSymbols);
+    tta.InsertExternalSymbols(externalSymbols);
     return tta;
 }
 
@@ -275,7 +309,7 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
         try {
             if (!edge.guardExpression.empty()) {
                 calc.compile(edge.guardExpression.c_str(), symbolMap);
-                auto type = calc.eval()->type;
+                auto type = calc.eval()->type; // We can "safely" eval() guards, because they have no side-effects.
                 if(type != BOOL)
                     spdlog::critical("Guard expression '{0}' is not a boolean expression. It is a {1} expression. Component: '{2}'",
                                      edge.guardExpression, tokenTypeToString(static_cast<const tokType>(type)), debugCompName.c_str());
@@ -300,35 +334,6 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
         } });
     }
     return edgeMap;
-}
-
-std::vector<TTAParser::SymbolExternalPair> TTAParser::ParsePartsFiles(const std::string &path) {
-    std::vector<TTAParser::SymbolExternalPair> totalParts{};
-    for (const auto & entry : std::filesystem::directory_iterator(path)) {
-        // Filter over ONLY the .parts files.
-        auto isEntryPartsFile = entry.is_regular_file() && entry.path().string().find(".parts") != std::string::npos;
-        if(!isEntryPartsFile) continue;
-        auto parts = ParsePartsFile(entry.path().string());
-        totalParts.insert(totalParts.end(), parts.begin(), parts.end());
-    }
-    return totalParts;
-}
-
-std::vector<TTAParser::SymbolExternalPair> TTAParser::ParsePartsFile(const std::string &filepath) {
-    std::ifstream file{filepath};
-    if(file) {
-        auto dom_doc = ParseDocumentDOMStyle(file);
-        std::vector<TTAParser::SymbolExternalPair> symbols{};
-        if(IsDocumentAProperPartsFile(dom_doc)) {
-            auto partsArray = dom_doc["parts"].GetArray();
-            std::for_each(partsArray.begin(), partsArray.end(),
-                          [&symbols](const auto& doc){ symbols.emplace_back(std::move(ParsePart(doc))); });
-        } else
-            spdlog::error("Parts File '{0}' is improper", filepath);
-        file.close();
-        return symbols;
-    }
-    return {};
 }
 
 bool TTAParser::IsDocumentAProperPartsFile(const rapidjson::Document &document) {

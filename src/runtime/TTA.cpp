@@ -192,3 +192,7 @@ void TTA::InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys) {
         externalSymbols.push_back(symbols.find(elem.first));
 }
 
+void TTA::InsertInternalSymbols(const TTA::SymbolMap &internalSymbols) {
+    GetSymbols().map().insert(internalSymbols.map().begin(), internalSymbols.map().end());
+}
+

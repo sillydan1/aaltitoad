@@ -21,8 +21,6 @@
 #include <model_parsers/TTAParser.h>
 #include "CLIConfig.h"
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "EndlessLoop"
 int main(int argc, char** argv) {
     // Initialize CLI configuration (based on CLI Args)
     CLIConfig config{};
@@ -41,11 +39,10 @@ int main(int argc, char** argv) {
     TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
     while(true) {
         std::cout << t.GetCurrentStateString() << std::endl;
-        //getchar();
+        getchar();
         t.SetCurrentState(t.GetNextTickStates()[0]);
     }
 
     // Return the exit code.
     return config.GetStatusCode();
 }
-#pragma clang diagnostic pop

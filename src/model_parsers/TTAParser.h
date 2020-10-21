@@ -37,8 +37,10 @@ public:
         return ConvertToModelType(ParseToIntermediateRep(filepath));
     }
 protected:
-    TTA   ConvertToModelType(const TTAIR_t& intermediateRep) override;
+    TTA ConvertToModelType(const TTAIR_t& intermediateRep) override;
+    TTA ConstructTTAWithAllSymbolsFromIntermediateRep(const TTAIR_t &intermediateRep);
     TTAIR_t ParseToIntermediateRep(const std::string& path) override;
+    static void AddInternalAndExternalSymbols(const std::string& path, TTAIR_t& ttair);
     static std::optional<TTAIR_t::Component> ParseComponent(const std::string& filepath);
     static std::vector<SymbolExternalPair> ParsePartsFiles(const std::string& path);
 
