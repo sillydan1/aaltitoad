@@ -29,7 +29,16 @@ CLIConfig::CLIConfig() {
                 "[DIR]/[FILENAME] Output file. Will be created, if not already exists"} },
             { option_requirement::OPTIONAL,
               {"verbosity",'v', argument_requirement::REQUIRE_ARG,
-                 "[0-6] The level of verbosity. Default is 2"} }
+                 "[0-6] The level of verbosity. Default is 2"} },
+            { option_requirement::OPTIONAL,
+              {"parser-disable-check", 'd', argument_requirement::NO_ARG,
+              "Disables proper formation checks."} },
+            { option_requirement::OPTIONAL,
+                    {"trace", 't', argument_requirement::REQUIRE_ARG,
+                            "[1-N] Outputs a trace of the input automata of provided amount of steps. Use with '--trace-output' option"} },
+            { option_requirement::OPTIONAL,
+                    {"trace-output", 'u', argument_requirement::REQUIRE_ARG,
+                            "[DIR]/[FILENAME] Output file for traces. Use together with '--trace' option"} },
     };
     status_code = EXIT_SUCCESS;
 }

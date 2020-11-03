@@ -183,7 +183,7 @@ std::vector<TTA::Edge> TTA::Component::GetEnabledEdges(const SymbolMap& symbolMa
 }
 
 void TTA::Tick(const nondeterminism_strategy_t& nondeterminismStrategy) {
-
+    SetCurrentState(GetNextTickStates()[0]); // TODO: Nondeterminism strategy!
 }
 
 void TTA::InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys) {
