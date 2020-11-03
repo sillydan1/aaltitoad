@@ -16,8 +16,8 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 #include "TTATracer.h"
+#include "TTAResugarizer.h"
 
 void TTATracer::TraceSteps(const std::string &output_json_file, TTA &automata, unsigned int stepAmount) {
     auto file = OpenFile(output_json_file);
@@ -54,11 +54,11 @@ void TTATracer::AppendStateVariablesToFile(const TTA &state, std::ofstream &file
     for(auto& var : symbols) {
         // TODO: Re-sugaring
         if(var.second->type == STR)
-            file << "{ \"" << var.first << "\" : " << var.second.str() << " }";
+            file << "{ \"" << TTAResugarizer::Convert(var.first) << "\" : " << var.second.str() << " }";
         else if(var.second->type == TIMER)
-            file << "{ \"" << var.first << "\" : \"" << var.second.asInt() << "\" }";
+            file << "{ \"" << TTAResugarizer::Convert(var.first) << "\" : \"" << var.second.asInt() << "\" }";
         else
-            file << "{ \"" << var.first << "\" : \"" << var.second.str() << "\" }";
+            file << "{ \"" << TTAResugarizer::Convert(var.first) << "\" : \"" << var.second.str() << "\" }";
         if(i++ != symbols.size()-1) file << ",\n";
     }
 }
@@ -68,7 +68,9 @@ void TTATracer::AppendStateComponentsToFile(const TTA &state, std::ofstream &fil
     int i = 0;
     for(auto& component : components) {
         // TODO: Re-sugaring
-        file << "{ \"" << component.first << "\" : \"" << component.second.currentLocation.identifier << "\" }";
+        auto resugaredName = TTAResugarizer::Convert(component.first);
+        auto resugaredValue = TTAResugarizer::Convert(component.second.currentLocation.identifier);
+        file << "{ \"" << resugaredName << "\" : \"" << resugaredValue.substr(resugaredName.size()+1) << "\" }";
         if(i++ != components.size()-1) file << ",\n";
     }
 }

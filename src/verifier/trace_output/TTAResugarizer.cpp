@@ -16,14 +16,24 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include "TTAResugarizer.h"
 
-#ifndef MAVE_TTARESUGARIZER_H
-#define MAVE_TTARESUGARIZER_H
-#include <mavepch.h>
-
-/// Yes, the name is stupid
-struct TTAResugarizer {
-    static std::string Convert(const std::string& unsugared_string);
+// String to char, because of unicode characters
+const std::unordered_map<std::string, std::string> unsugar_map = {
+        { "€", "." },
+        { "þ", "," },
+        { "ð", "(" },
+        { "đ", ")" },
 };
 
-#endif //MAVE_TTARESUGARIZER_H
+std::string TTAResugarizer::Convert(const std::string& unsugared_string) {
+    auto cpy = unsugared_string;
+    for(auto& key : unsugar_map) {
+        auto x = cpy.find(key.first);
+        while(x != std::string::npos) {
+            cpy.replace(x, key.first.size(), key.second);
+            x = cpy.find(key.first);
+        }
+    }
+    return cpy;
+}
