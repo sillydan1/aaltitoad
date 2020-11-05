@@ -39,6 +39,9 @@ CLIConfig::CLIConfig() {
             { option_requirement::OPTIONAL,
                     {"trace-output", 'u', argument_requirement::REQUIRE_ARG,
                             "[DIR]/[FILENAME] Output file for traces. Use together with '--trace' option"} },
+            { option_requirement::OPTIONAL,
+                    {"ignore-update-influence", 'z', argument_requirement::NO_ARG,
+                            "Forces transitions to be taken, no matter if they have an overlapping update influence. NOTE: Does not disable the warning"} },
     };
     status_code = EXIT_SUCCESS;
 }

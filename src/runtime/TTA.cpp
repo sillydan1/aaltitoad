@@ -152,7 +152,7 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
                 else
                     symbolsToChange.insert({ expr.lhs, expr });
             }
-            if(updateInfluenceOverlap) continue;
+            if(!CLIConfig::getInstance()["ignore-update-influence"] && updateInfluenceOverlap) continue;
             for(auto& symbolChange : symbolsToChange) symbolChanges.push_back(symbolChange.second);
             currentLocations[component.first] = pickedEdge.targetLocation;
         }

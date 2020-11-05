@@ -24,9 +24,9 @@
 
 int main(int argc, char** argv) {
     // Initialize CLI configuration (based on CLI Args)
-    CLIConfig config{};
-    config.ParseCLIOptionsAndCheckForRequirements(argc, argv);
-    if(config.GetStatusCode() != EXIT_SUCCESS) {
+    CLIConfig::getInstance().ParseCLIOptionsAndCheckForRequirements(argc, argv);
+    auto& config = CLIConfig::getInstance();
+    if(config.GetStatusCode() != EXIT_SUCCESS || config["help"]) {
         config.PrintHelpMessage(argv);
         return config.GetStatusCode();
     }
