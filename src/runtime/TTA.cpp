@@ -165,9 +165,12 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
             auto& pickedEdge = PickEdge(enabledEdges, strategy);
             bool updateInfluenceOverlap = false;
             for(auto& expr : pickedEdge.updateExpressions) {
-                overlappingComponents[expr.lhs].push_back(TTAResugarizer::Resugar(expr.lhs + " : " + pickedEdge.sourceLocation.identifier + " --> " + pickedEdge.targetLocation.identifier));
+                overlappingComponents[expr.lhs].push_back(TTAResugarizer::Resugar(
+                        expr.lhs + " : " +
+                        pickedEdge.sourceLocation.identifier + " --> " +
+                        pickedEdge.targetLocation.identifier));
                 if(symbolsToChange.count(expr.lhs) > 0) {
-                    spdlog::warn("Overlapping update influence on evaluation of update on edge {0}-->{1}. "
+                    spdlog::warn("Overlapping update influence on evaluation of update on edge {0} --> {1}. "
                                       "Variable '{2}' is already being written to in this tick! - For more info, run with higher verbosity",
                                       TTAResugarizer::Resugar(pickedEdge.sourceLocation.identifier),
                                       TTAResugarizer::Resugar(pickedEdge.targetLocation.identifier),
