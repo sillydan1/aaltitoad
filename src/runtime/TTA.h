@@ -85,6 +85,7 @@ private:
     std::vector<packToken*> externalSymbols = {}; // Still. Beware of dangling pointers!
 
 public:
+    TTA();
     const SymbolMap& GetSymbols() const { return symbols; } // TODO: Am I still allowed to edit the symbol values themselves?
     void InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys);
     void InsertInternalSymbols(const TTA::SymbolMap &internalSymbols);
@@ -97,6 +98,8 @@ public:
     bool SetCurrentState(const State& newstate);
     static bool IsStateImmediate(const State& state);
     std::vector<State> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PICK_FIRST) const;
+
+    std::optional<const Component*> GetComponent(const std::string& componentName) const;
 
     void Tick(const nondeterminism_strategy_t& nondeterminismStrategy = nondeterminism_strategy_t::PANIC);
     void Tock();

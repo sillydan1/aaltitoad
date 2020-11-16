@@ -23,7 +23,8 @@
 
 /// Yes, the name is stupid
 struct TTAResugarizer {
-    static std::string Convert(const std::string& unsugared_string);
+    static std::string Resugar(const std::string& unsugared_string);
+    static std::string Unsugar(const std::string& unsugared_string);
 };
 
 #endif //MAVE_TTARESUGARIZER_H

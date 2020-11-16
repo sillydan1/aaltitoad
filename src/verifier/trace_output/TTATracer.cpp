@@ -54,11 +54,11 @@ void TTATracer::AppendStateVariablesToFile(const TTA &state, std::ofstream &file
     for(auto& var : symbols) {
         // TODO: Re-sugaring
         if(var.second->type == STR)
-            file << "{ \"" << TTAResugarizer::Convert(var.first) << "\" : " << var.second.str() << " }";
+            file << "{ \"" << TTAResugarizer::Resugar(var.first) << "\" : " << var.second.str() << " }";
         else if(var.second->type == TIMER)
-            file << "{ \"" << TTAResugarizer::Convert(var.first) << "\" : \"" << var.second.asInt() << "\" }";
+            file << "{ \"" << TTAResugarizer::Resugar(var.first) << "\" : \"" << var.second.asInt() << "\" }";
         else
-            file << "{ \"" << TTAResugarizer::Convert(var.first) << "\" : \"" << var.second.str() << "\" }";
+            file << "{ \"" << TTAResugarizer::Resugar(var.first) << "\" : \"" << var.second.str() << "\" }";
         if(i++ != symbols.size()-1) file << ",\n";
     }
 }
@@ -68,8 +68,8 @@ void TTATracer::AppendStateComponentsToFile(const TTA &state, std::ofstream &fil
     int i = 0;
     for(auto& component : components) {
         // TODO: Re-sugaring
-        auto resugaredName = TTAResugarizer::Convert(component.first);
-        auto resugaredValue = TTAResugarizer::Convert(component.second.currentLocation.identifier);
+        auto resugaredName = TTAResugarizer::Resugar(component.first);
+        auto resugaredValue = TTAResugarizer::Resugar(component.second.currentLocation.identifier);
         file << "{ \"" << resugaredName << "\" : \"" << resugaredValue.substr(resugaredName.size()+1) << "\" }";
         if(i++ != components.size()-1) file << ",\n";
     }

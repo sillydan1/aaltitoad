@@ -92,8 +92,6 @@ TTAParser::ExtractedSymbolLists TTAParser::ExtractExternalParts(std::vector<TTAP
     return lsts;
 }
 
-
-
 TTAIR_t::Location ParseLocation(const rapidjson::Document::ValueType& elem, const std::string& elemname) {
     auto element = elem.FindMember(elemname.c_str());
     return { .isImmediate = element->value["urgency"].GetString() == std::string("urgent"),
@@ -289,17 +287,19 @@ TTA::SymbolMap TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t
     TTA::SymbolMap map{};
     std::for_each(symbolList.begin(), symbolList.end(), [&map] (auto& symbol) {
         std::visit(overload(
-                [&](const int& value)            { map[symbol.identifier] = value; },
-                [&](const float& value)          { map[symbol.identifier] = value; },
-                [&](const bool& value)           { map[symbol.identifier] = value; },
-                [&](const TTATimerSymbol& value) { map[symbol.identifier] = packToken(value.current_value, PACK_IS_TIMER); },
-                [&](const std::string& value)    { map[symbol.identifier] = value; }
+                [&](const int& value)            { map[symbol.identifier] = static_cast<int>(value); },
+                [&](const float& value)          { map[symbol.identifier] = static_cast<float>(value); },
+                [&](const bool& value)           { map[symbol.identifier] = static_cast<bool>(value); },
+                [&](const TTATimerSymbol& value) { map[symbol.identifier] = packToken(static_cast<float>(value.current_value), PACK_IS_TIMER); },
+                [&](const std::string& value)    { map[symbol.identifier] = std::string(value); },
+                [&](const auto&& value)          {
+                    spdlog::critical("Something went wrong when converting symbol type!");
+                    throw std::exception(); }
                 ), symbol.value);
     });
     return map;
 }
 
-#include <extensions/cparse_extensions.h> // TODO: Remove this. This is only used for debugging purposes atm
 std::unordered_multimap<std::string, TTA::Edge>
 TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, const TTA::SymbolMap& symbolMap, const std::string& debugCompName) {
     std::unordered_multimap<std::string, TTA::Edge> edgeMap{};
@@ -312,7 +312,7 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
                 auto type = calc.eval()->type; // We can "safely" eval() guards, because they have no side-effects.
                 if(type != BOOL)
                     spdlog::critical("Guard expression '{0}' is not a boolean expression. It is a {1} expression. Component: '{2}'",
-                                     edge.guardExpression, tokenTypeToString(static_cast<const tokType>(type)), debugCompName.c_str());
+                                     edge.guardExpression, static_cast<const tokType>(type), debugCompName.c_str());
             }
         } catch (...) {
             spdlog::critical("Something went wrong when compiling guard expression: '{0}' on component: '{1}'", edge.guardExpression, debugCompName.c_str());
@@ -391,9 +391,8 @@ bool TTAParser::IsDocumentExternalType(const rapidjson::Document::ValueType &doc
 }
 
 TTAParser::SymbolExternalPair TTAParser::ParsePart(const rapidjson::Document::ValueType &document) {
-    auto name = document["PartName"].GetString();
-    return {.symbol = {.identifier = name,
-                       .value = ParseGenericType(document["GenericType"])},
+    return {.symbol = {.identifier = std::string(document["PartName"].GetString()),
+            .value = ParseGenericType(document["GenericType"])},
             .isExternal = IsDocumentExternalType(document["ExternalType"])
     };
 }

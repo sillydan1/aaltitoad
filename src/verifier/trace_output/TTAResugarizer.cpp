@@ -26,13 +26,25 @@ const std::unordered_map<std::string, std::string> unsugar_map = {
         { "đ", ")" },
 };
 
-std::string TTAResugarizer::Convert(const std::string& unsugared_string) {
+std::string TTAResugarizer::Resugar(const std::string& unsugared_string) {
     auto cpy = unsugared_string;
     for(auto& key : unsugar_map) {
         auto x = cpy.find(key.first);
         while(x != std::string::npos) {
             cpy.replace(x, key.first.size(), key.second);
             x = cpy.find(key.first);
+        }
+    }
+    return cpy;
+}
+
+std::string TTAResugarizer::Unsugar(const std::string &unsugared_string) {
+    auto cpy = unsugared_string;
+    for(auto& key : unsugar_map) {
+        auto x = cpy.find(key.second);
+        while(x != std::string::npos) {
+            cpy.replace(x, key.second.size(), key.first);
+            x = cpy.find(key.second);
         }
     }
     return cpy;

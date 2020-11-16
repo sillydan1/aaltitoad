@@ -18,6 +18,8 @@
  */
 #include "TTA.h"
 #include <extensions/overload>
+#include <extensions/cparse_extensions.h>
+
 
 TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr) {
     return PopulateValueFromString(TTASymbolTypeFromString(typestr), valuestr);
@@ -48,8 +50,10 @@ TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& 
             [&valuestr, &value](const std::string&){
                 if(valuestr[0] == '\"' && valuestr[valuestr.size()-1] == '\"')
                     value = valuestr.substr(1,valuestr.size()-2);
-                else
-                    spdlog::error("Missing '\"' on string value '{0}'", valuestr);
+                else {
+                    spdlog::error("Missing '\"' on string value '{0}' - Adding them manually, but this should be corrected", valuestr);
+                    value = valuestr;
+                }
             }
     ), value);
     return value;
@@ -103,11 +107,21 @@ bool TTA::SetCurrentState(const State& newstate) {
             return false;
         }
     }
+
     for(auto& symbol : newstate.symbols.map()) {
         auto symbolit = symbols.map().find(symbol.first);
         bool error = false;
+        auto x = symbol.second->type;
+        auto y = symbolit->second->type;
         if(symbolit == symbols.map().end()) { spdlog::critical("Attempted to change the state of TTA failed. Symbol '{0}' does not exist.", symbol.first); error = true; }
-        else if(symbolit->second->type != symbol.second->type)  { spdlog::critical("Attempted to change the state of TTA failed. Symbol '{0}' does not have the correct type.", symbol.first); error = true; }
+        else if(!(NUM & x & y) && !(x == VAR && (NUM & y))) {
+            auto a = tokenTypeToString(symbolit->second->type);
+            auto b = tokenTypeToString(symbol.second->type);
+            spdlog::critical(
+                    "Attempted to change the state of TTA failed. Symbol '{0}' does not have the correct type. ({1} vs {2} (a := b))",
+                    symbol.first, a, b);
+            error = true;
+        }
         if(!error) symbols.map()[symbol.first] = symbol.second;
         else return false;
     }
@@ -157,8 +171,8 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
             currentLocations[component.first] = pickedEdge.targetLocation;
         }
     }
-    SymbolMap symbolsCopy;
-    for(auto& symbolChange : symbolChanges) symbolsCopy[symbolChange.lhs] = symbolChange.Evaluate(symbolsCopy);
+    SymbolMap symbolsCopy{};
+    for(auto& symbolChange : symbolChanges) symbolsCopy[symbolChange.lhs] = symbolChange.Evaluate(symbols);
     return {{ currentLocations, symbolsCopy }};
 }
 
@@ -182,8 +196,10 @@ std::vector<TTA::Edge> TTA::Component::GetEnabledEdges(const SymbolMap& symbolMa
     return ret;
 }
 
+int ticks = 0;
 void TTA::Tick(const nondeterminism_strategy_t& nondeterminismStrategy) {
     SetCurrentState(GetNextTickStates()[0]); // TODO: Nondeterminism strategy!
+    ticks++;
 }
 
 void TTA::InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys) {

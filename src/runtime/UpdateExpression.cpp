@@ -46,5 +46,27 @@ std::vector<UpdateExpression> UpdateExpression::ParseExpressions(const std::stri
 }
 
 packToken UpdateExpression::Evaluate(const TokenMap& map) const {
-    return calculator::calculate(rhs.c_str(), map);
+    auto val = calculator::calculate(rhs.c_str(), map);
+    switch (val->type) {
+        case STR: return val.asString();
+        case REAL: return val.asDouble();
+        case INT: return val.asInt();
+        case BOOL: return val.asBool();
+        case VAR: {
+            return val.asBool(); // TODO: This is not right, right?
+        }
+        case NUM: // We do not support just "numbers" in general. You need to have an actual type.
+        case FUNC:
+        case IT:
+        case LIST:
+        case TUPLE:
+        case STUPLE:
+        case MAP:
+        case REF:
+        case ANY_TYPE:
+        case NONE:
+        case OP:
+        case UNARY:
+        default: throw std::logic_error("Evaluating something we cant evaluate");
+    }
 }
