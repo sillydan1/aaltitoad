@@ -196,3 +196,15 @@ void TTA::InsertInternalSymbols(const TTA::SymbolMap &internalSymbols) {
     GetSymbols().map().insert(internalSymbols.map().begin(), internalSymbols.map().end());
 }
 
+std::optional<const TTA::Component*> TTA::GetComponent(const std::string &componentName) const {
+    auto it = components.find(componentName);
+    if(it == components.end()) return {};
+    return { &it->second };
+}
+
+TTA::TTA() {
+    // TODO: This is a stupid hack. Please implement an extension for cparse, so that the "False" literal is not case sensitive.
+    // TODO: This hack makes it possible to assign "false := true", which is insanity incarnate.
+    symbols.map()["false"] = false;
+    symbols.map()["true"] = true;
+}
