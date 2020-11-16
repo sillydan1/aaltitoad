@@ -20,7 +20,7 @@
 #include <extensions/overload>
 #include <extensions/cparse_extensions.h>
 
-
+int ticks = 0;
 TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr) {
     return PopulateValueFromString(TTASymbolTypeFromString(typestr), valuestr);
 }
@@ -140,33 +140,40 @@ bool TTA::IsStateImmediate(const TTA::State &state) {
     return false;
 }
 
+// TODO: Clean this function up, it stinks!
 std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
     auto currentLocations = GetCurrentLocations();
     std::vector<UpdateExpression> symbolChanges{};
 
     std::multimap<std::string, UpdateExpression> symbolsToChange{};
+    std::map<std::string, std::vector<std::string>> overlappingComponents{}; // expr.lhs -> componentIdentifiers mapping
+    bool updateInfluenceOverlapGlobal = false;
     for(auto& component : components) {
         auto enabledEdges = component.second.GetEnabledEdges(symbols);
         if(!enabledEdges.empty()) {
             // TODO: Stop picking the first. e.g. Implement divergent behaviour. NOTE: You wanna do this with a multimap of components.
             if(enabledEdges.size() > 1) {
-                spdlog::error("Non-deterministic choice in Component '{0}'. "
-                              "Non-deterministic strategies are not implemented yet.",
+                spdlog::error("Non-deterministic choice in Component '{0}'.",
                               TTAResugarizer::Resugar(component.first));
                 spdlog::debug("Enabled edges in component '{0}':", TTAResugarizer::Resugar(component.first));
                 for(auto& e : enabledEdges)
-                    spdlog::debug("{0} --> {1}", TTAResugarizer::Resugar(e.sourceLocation.identifier), TTAResugarizer::Resugar(e.targetLocation.identifier));
+                    spdlog::debug("{0} --> {1}",
+                                  TTAResugarizer::Resugar(e.sourceLocation.identifier),
+                                  TTAResugarizer::Resugar(e.targetLocation.identifier));
                 spdlog::debug("----- / -----");
             }
             auto& pickedEdge = PickEdge(enabledEdges, strategy);
             bool updateInfluenceOverlap = false;
             for(auto& expr : pickedEdge.updateExpressions) {
+                overlappingComponents[expr.lhs].push_back(TTAResugarizer::Resugar(expr.lhs + " : " + pickedEdge.sourceLocation.identifier + " --> " + pickedEdge.targetLocation.identifier));
                 if(symbolsToChange.count(expr.lhs) > 0) {
                     spdlog::warn("Overlapping update influence on evaluation of update on edge {0}-->{1}. "
-                                     "Variable '{2}' is already being written to in this tick!",
-                                     TTAResugarizer::Resugar(pickedEdge.sourceLocation.identifier), TTAResugarizer::Resugar(pickedEdge.targetLocation.identifier),
-                                    TTAResugarizer::Resugar(expr.lhs));
+                                      "Variable '{2}' is already being written to in this tick! - For more info, run with higher verbosity",
+                                      TTAResugarizer::Resugar(pickedEdge.sourceLocation.identifier),
+                                      TTAResugarizer::Resugar(pickedEdge.targetLocation.identifier),
+                                      TTAResugarizer::Resugar(expr.lhs));
                     updateInfluenceOverlap = true;
+                    updateInfluenceOverlapGlobal = true;
                     break;
                 }
                 else
@@ -174,11 +181,21 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
             }
             if(!CLIConfig::getInstance()["ignore-update-influence"] && updateInfluenceOverlap) continue;
             for(auto& symbolChange : symbolsToChange) symbolChanges.push_back(symbolChange.second);
-
+            // If we transition to the end location, immediately change to first location
             if(component.second.endLocation.identifier == pickedEdge.targetLocation.identifier)
-                currentLocations[component.first] = component.second.initialLocation; // If we transition to the end location, immedately change to first location
+                currentLocations[component.first] = component.second.initialLocation;
             else
                 currentLocations[component.first] = pickedEdge.targetLocation;
+        }
+    }
+    if(updateInfluenceOverlapGlobal) {
+        spdlog::debug("Overlapping Components: (Tick#: {0})", ticks);
+        for (auto& componentCollection : overlappingComponents) {
+            if (componentCollection.second.size() > 1) {
+                for (auto& compname : componentCollection.second) {
+                    spdlog::debug("{0}", compname);
+                }
+            }
         }
     }
     SymbolMap symbolsCopy{};
@@ -206,7 +223,6 @@ std::vector<TTA::Edge> TTA::Component::GetEnabledEdges(const SymbolMap& symbolMa
     return ret;
 }
 
-int ticks = 0;
 void TTA::Tick(const nondeterminism_strategy_t& nondeterminismStrategy) {
     SetCurrentState(GetNextTickStates(nondeterminismStrategy)[0]);
     ticks++;
