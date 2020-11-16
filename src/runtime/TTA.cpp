@@ -149,17 +149,23 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
         auto enabledEdges = component.second.GetEnabledEdges(symbols);
         if(!enabledEdges.empty()) {
             // TODO: Stop picking the first. e.g. Implement divergent behaviour. NOTE: You wanna do this with a multimap of components.
-            if(enabledEdges.size() > 1) spdlog::error("Non-deterministic choice in Component '{0}'. "
-                                                      "Non-deterministic strategies are not implemented yet."
-                                                      "Defaulting to picking the first!", component.first);
-            auto& pickedEdge = enabledEdges[0];
+            if(enabledEdges.size() > 1) {
+                spdlog::error("Non-deterministic choice in Component '{0}'. "
+                              "Non-deterministic strategies are not implemented yet."
+                              "Defaulting to picking the first!", TTAResugarizer::Resugar(component.first));
+                spdlog::debug("Enabled edges in component '{0}':", TTAResugarizer::Resugar(component.first));
+                for(auto& e : enabledEdges)
+                    spdlog::debug("{0} --> {1}", TTAResugarizer::Resugar(e.sourceLocation.identifier), TTAResugarizer::Resugar(e.targetLocation.identifier));
+                spdlog::debug("----- / -----");
+            }
+            auto& pickedEdge = PickEdge(enabledEdges, strategy);
             bool updateInfluenceOverlap = false;
             for(auto& expr : pickedEdge.updateExpressions) {
                 if(symbolsToChange.count(expr.lhs) > 0) {
                     spdlog::warn("Overlapping update influence on evaluation of update on edge {0}-->{1}. "
                                      "Variable '{2}' is already being written to in this tick!",
-                                     pickedEdge.sourceLocation.identifier, pickedEdge.targetLocation.identifier,
-                                     expr.lhs);
+                                     TTAResugarizer::Resugar(pickedEdge.sourceLocation.identifier), TTAResugarizer::Resugar(pickedEdge.targetLocation.identifier),
+                                    TTAResugarizer::Resugar(expr.lhs));
                     updateInfluenceOverlap = true;
                     break;
                 }
@@ -168,7 +174,11 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
             }
             if(!CLIConfig::getInstance()["ignore-update-influence"] && updateInfluenceOverlap) continue;
             for(auto& symbolChange : symbolsToChange) symbolChanges.push_back(symbolChange.second);
-            currentLocations[component.first] = pickedEdge.targetLocation;
+
+            if(component.second.endLocation.identifier == pickedEdge.targetLocation.identifier)
+                currentLocations[component.first] = component.second.initialLocation; // If we transition to the end location, immedately change to first location
+            else
+                currentLocations[component.first] = pickedEdge.targetLocation;
         }
     }
     SymbolMap symbolsCopy{};
@@ -223,4 +233,21 @@ TTA::TTA() {
     // TODO: This hack makes it possible to assign "false := true", which is insanity incarnate.
     symbols.map()["false"] = false;
     symbols.map()["true"] = true;
+}
+
+TTA::Edge& TTA::PickEdge(std::vector<TTA::Edge>& edges, const nondeterminism_strategy_t &strategy) const {
+    if(edges.empty()) throw std::logic_error("Trying to pick an edge from an empty list of edges is impossible.");
+    if(edges.size() == 1) return edges[0];
+    switch (strategy) {
+        case nondeterminism_strategy_t::PICK_FIRST:
+            return edges[0];
+        case nondeterminism_strategy_t::PICK_LAST:
+            return edges[edges.size()-1];
+        case nondeterminism_strategy_t::PICK_RANDOM:
+            return edges[rand() % edges.size()];
+        default:
+        case nondeterminism_strategy_t::PANIC:
+            spdlog::critical("Panicking due to nondeterministic choice!");
+            throw std::exception();
+    }
 }

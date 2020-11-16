@@ -262,8 +262,8 @@ TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
     auto tta = ConstructTTAWithAllSymbolsFromIntermediateRep(intermediateRep);
     for(auto& comp : intermediateRep.components) {
         tta.components[comp.name] = {
-                .initialLocationIdentifier = comp.initialLocation.identifier,
-                .endLocationIdentifier     = comp.endLocation.identifier,
+                .initialLocation           = { comp.initialLocation.isImmediate, comp.initialLocation.identifier },
+                .endLocation               = { comp.endLocation.isImmediate, comp.endLocation.identifier },
                 .currentLocation           = { comp.initialLocation.isImmediate, comp.initialLocation.identifier },
                 .isMain                    = comp.isMain,
                 .edges                     = ConvertEdgeListToEdgeMap(comp.edges, tta.GetSymbols(), comp.name),

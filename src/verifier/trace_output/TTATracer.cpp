@@ -24,7 +24,10 @@ void TTATracer::TraceSteps(const std::string &output_json_file, TTA &automata, u
     for(int i = 0; i < stepAmount; i++) {
         AppendStateToFile(automata, file);
         if(i != stepAmount-1) file << ","; // Put commas after all states, except the last one.
-        automata.Tick();
+        if(CLIConfig::getInstance()["nondeterminism-strategy"])
+            automata.Tick(static_cast<nondeterminism_strategy_t>(CLIConfig::getInstance()["nondeterminism-strategy"].as_integer()));
+        else
+            automata.Tick();
     }
     CloseFile(file);
 }

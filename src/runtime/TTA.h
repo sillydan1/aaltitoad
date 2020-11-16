@@ -63,8 +63,8 @@ struct TTA {
     };
     struct Component {
         // TODO: I dont like storing full strings.
-        std::string initialLocationIdentifier;
-        std::string endLocationIdentifier;
+        Location initialLocation;
+        Location endLocation;
         Location currentLocation;
         bool isMain = false;
         std::unordered_multimap<std::string, Edge> edges = {};
@@ -97,9 +97,10 @@ public:
     bool IsCurrentStateImmediate() const;
     bool SetCurrentState(const State& newstate);
     static bool IsStateImmediate(const State& state);
-    std::vector<State> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PICK_FIRST) const;
+    std::vector<State> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
 
     std::optional<const Component*> GetComponent(const std::string& componentName) const;
+    TTA::Edge& PickEdge(std::vector<TTA::Edge>& edges, const nondeterminism_strategy_t& strategy) const;
 
     void Tick(const nondeterminism_strategy_t& nondeterminismStrategy = nondeterminism_strategy_t::PANIC);
     void Tock();
