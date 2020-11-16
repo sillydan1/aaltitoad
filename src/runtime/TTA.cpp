@@ -151,8 +151,8 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
             // TODO: Stop picking the first. e.g. Implement divergent behaviour. NOTE: You wanna do this with a multimap of components.
             if(enabledEdges.size() > 1) {
                 spdlog::error("Non-deterministic choice in Component '{0}'. "
-                              "Non-deterministic strategies are not implemented yet."
-                              "Defaulting to picking the first!", TTAResugarizer::Resugar(component.first));
+                              "Non-deterministic strategies are not implemented yet.",
+                              TTAResugarizer::Resugar(component.first));
                 spdlog::debug("Enabled edges in component '{0}':", TTAResugarizer::Resugar(component.first));
                 for(auto& e : enabledEdges)
                     spdlog::debug("{0} --> {1}", TTAResugarizer::Resugar(e.sourceLocation.identifier), TTAResugarizer::Resugar(e.targetLocation.identifier));
@@ -208,7 +208,7 @@ std::vector<TTA::Edge> TTA::Component::GetEnabledEdges(const SymbolMap& symbolMa
 
 int ticks = 0;
 void TTA::Tick(const nondeterminism_strategy_t& nondeterminismStrategy) {
-    SetCurrentState(GetNextTickStates()[0]); // TODO: Nondeterminism strategy!
+    SetCurrentState(GetNextTickStates(nondeterminismStrategy)[0]);
     ticks++;
 }
 
