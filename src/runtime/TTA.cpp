@@ -19,6 +19,7 @@
 #include "TTA.h"
 #include <extensions/overload>
 #include <extensions/cparse_extensions.h>
+#include <tinytimer/Timer.hpp>
 
 int ticks = 0;
 TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr) {
@@ -227,7 +228,10 @@ std::vector<TTA::Edge> TTA::Component::GetEnabledEdges(const SymbolMap& symbolMa
 }
 
 void TTA::Tick(const nondeterminism_strategy_t& nondeterminismStrategy) {
+    Timer<int> timer;
+    timer.start();
     SetCurrentState(GetNextTickStates(nondeterminismStrategy)[0]);
+    spdlog::info("Tick time elapsed: {0} ms - (With printing and everything)", timer.milliseconds_elapsed());
     ticks++;
 }
 

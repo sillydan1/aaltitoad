@@ -23,6 +23,7 @@ include_directories(
         dep/rapidjson/include
         dep/spdlog/include
         dep/cparse
+        dep
         src
 )
 
