@@ -10,3 +10,6 @@
 [submodule "dep/cparse"]
 	path = dep/cparse
 	url = https://github.com/sillydan1/cparse
+[submodule "dep/tinytimer"]
+	path = dep/tinytimer
+	url = https://github.com/sillydan1/tinytimer
