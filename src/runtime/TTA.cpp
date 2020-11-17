@@ -141,7 +141,7 @@ bool TTA::IsStateImmediate(const TTA::State &state) {
     return false;
 }
 
-// TODO: Clean this function up, it stinks!
+// TODO: Clean this function up, it stinks! - Funky optimization
 std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
     auto currentLocations = GetCurrentLocations();
     std::vector<UpdateExpression> symbolChanges{};
@@ -175,7 +175,7 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
                                       "Variable '{2}' is already being written to in this tick! - For more info, run with higher verbosity",
                                       TTAResugarizer::Resugar(pickedEdge.sourceLocation.identifier),
                                       TTAResugarizer::Resugar(pickedEdge.targetLocation.identifier),
-                                      TTAResugarizer::Resugar(expr.lhs));
+                                      TTAResugarizer::Resugar(expr.lhs)); // TODO: Idempotent variable assignment
                     updateInfluenceOverlap = true;
                     updateInfluenceOverlapGlobal = true;
                     break;
