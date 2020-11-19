@@ -290,7 +290,7 @@ TTA::SymbolMap TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t
                 [&](const int& value)            { map[symbol.identifier] = static_cast<int>(value); },
                 [&](const float& value)          { map[symbol.identifier] = static_cast<float>(value); },
                 [&](const bool& value)           { map[symbol.identifier] = static_cast<bool>(value); },
-                [&](const TTATimerSymbol& value) { map[symbol.identifier] = packToken(static_cast<float>(value.current_value), PACK_IS_TIMER); },
+                [&](const TTATimerSymbol& value) { map[symbol.identifier] = packToken(value.current_value, PACK_IS_TIMER); },
                 [&](const std::string& value)    { map[symbol.identifier] = std::string(value); },
                 [&](const auto&& value)          {
                     spdlog::critical("Something went wrong when converting symbol type!");

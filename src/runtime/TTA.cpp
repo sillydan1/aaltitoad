@@ -21,7 +21,6 @@
 #include <extensions/cparse_extensions.h>
 #include <tinytimer/Timer.hpp>
 
-int ticks = 0;
 TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr) {
     return PopulateValueFromString(TTASymbolTypeFromString(typestr), valuestr);
 }
@@ -126,6 +125,7 @@ bool TTA::SetCurrentState(const State& newstate) {
         if(!error) symbols.map()[symbol.first] = symbol.second;
         else return false;
     }
+    tickCount++;
     return true;
 }
 
@@ -193,7 +193,7 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
         }
     }
     if(updateInfluenceOverlapGlobal) {
-        spdlog::debug("Overlapping Components: (Tick#: {0})", ticks);
+        spdlog::debug("Overlapping Components: (Tick#: {0})", tickCount);
         for (auto& componentCollection : overlappingComponents) {
             if (componentCollection.second.size() > 1) {
                 for (auto& compname : componentCollection.second) {
@@ -232,7 +232,6 @@ void TTA::Tick(const nondeterminism_strategy_t& nondeterminismStrategy) {
     timer.start();
     SetCurrentState(GetNextTickStates(nondeterminismStrategy)[0]);
     spdlog::info("Tick time elapsed: {0} ms - (With printing and everything)", timer.milliseconds_elapsed());
-    ticks++;
 }
 
 void TTA::InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys) {

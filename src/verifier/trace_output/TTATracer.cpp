@@ -59,7 +59,7 @@ void TTATracer::AppendStateVariablesToFile(const TTA &state, std::ofstream &file
         if(var.second->type == STR)
             file << "{ \"" << TTAResugarizer::Resugar(var.first) << "\" : " << var.second.str() << " }";
         else if(var.second->type == TIMER)
-            file << "{ \"" << TTAResugarizer::Resugar(var.first) << "\" : \"" << var.second.asInt() << "\" }";
+            file << "{ \"" << TTAResugarizer::Resugar(var.first) << "\" : \"" << var.second.asDouble() << "\" }";
         else
             file << "{ \"" << TTAResugarizer::Resugar(var.first) << "\" : \"" << var.second.str() << "\" }";
         if(i++ != symbols.size()-1) file << ",\n";
