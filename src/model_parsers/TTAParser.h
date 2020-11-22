@@ -51,6 +51,7 @@ private:
     static std::optional<const rapidjson::Document::ValueType*> FindLocationWithName(const rapidjson::Document& document, const std::string& query_name);
     static rapidjson::Document ParseDocumentDOMStyle(const std::ifstream& file);
     static bool IsDocumentAProperTTA(const rapidjson::Document& document);
+    // TODO: These safety functions should be in a separate class called "JSONParser" or something.
     static bool DoesMemberExistAndIsObject(const rapidjson::Document::ValueType& document, const std::string& membername);
     static bool DoesMemberExistAndIsArray(const rapidjson::Document::ValueType& document, const std::string& membername);
     static bool DoesMemberExistAndIsBool(const rapidjson::Document::ValueType& document, const std::string& membername);

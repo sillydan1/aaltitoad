@@ -43,6 +43,9 @@ CLIConfig::CLIConfig() {
                     {"trace-output", 'u', argument_requirement::REQUIRE_ARG,
                             "[DIR]/[FILENAME] Output file for traces. Use together with '--trace' option"} },
             { option_requirement::OPTIONAL,
+                    {"timing-info", 'f', argument_requirement::REQUIRE_ARG,
+                            "[DIR]/[FILENAME] Input file for timing information/instructions. Use together with '--trace' option"} },
+            { option_requirement::OPTIONAL,
                     {"ignore-update-influence", 'z', argument_requirement::NO_ARG,
                             "Forces transitions to be taken, no matter if they have an overlapping update influence. NOTE: Does not disable the warning"} },
     };
