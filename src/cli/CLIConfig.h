@@ -22,6 +22,14 @@
 #include <argvparse.h>
 
 class CLIConfig {
+public:
+    static CLIConfig& getInstance() {
+        static CLIConfig instance;
+        return instance;
+    }
+private:
+    CLIConfig();
+
     enum class option_requirement {
         REQUIRE = 0,
         OPTIONAL = 1
@@ -35,7 +43,9 @@ class CLIConfig {
     void EnsureRequiredOptionsAreProvided();
     std::vector<option_t> GetCLIOptionsOnly();
 public:
-    CLIConfig();
+    CLIConfig(const CLIConfig&) = delete;
+    void operator=(const CLIConfig&) = delete;
+
     void ParseCLIOptionsAndCheckForRequirements(int argc, char** argv);
     void PrintHelpMessage(const char* const* argv);
     int GetStatusCode() const { return status_code; }

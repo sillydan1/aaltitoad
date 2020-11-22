@@ -20,12 +20,13 @@
 #include <runtime/TTA.h>
 #include <model_parsers/TTAParser.h>
 #include "CLIConfig.h"
+#include <verifier/trace_output/TTATracer.h>
 
 int main(int argc, char** argv) {
     // Initialize CLI configuration (based on CLI Args)
-    CLIConfig config{};
-    config.ParseCLIOptionsAndCheckForRequirements(argc, argv);
-    if(config.GetStatusCode() != EXIT_SUCCESS) {
+    CLIConfig::getInstance().ParseCLIOptionsAndCheckForRequirements(argc, argv);
+    auto& config = CLIConfig::getInstance();
+    if(config.GetStatusCode() != EXIT_SUCCESS || config["help"]) {
         config.PrintHelpMessage(argv);
         return config.GetStatusCode();
     }
@@ -37,6 +38,12 @@ int main(int argc, char** argv) {
     // Call the engine(s)
     TTAParser ttaParser{};
     TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
+
+    if(config["trace"]) {
+        TTATracer::TraceSteps(config["trace-output"].as_string(), t, config["trace"].as_integer());
+        return 0;
+    }
+
     while(true) {
         std::cout << t.GetCurrentStateString() << std::endl;
         getchar();
