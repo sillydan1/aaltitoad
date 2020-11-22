@@ -21,6 +21,7 @@
 #define MAVE_TTATRACER_H
 #include <mavepch.h>
 #include <runtime/TTA.h>
+#include <rapidjson/document.h>
 
 /***
  * Can generate json style traces on Tick Tock Automata
@@ -39,6 +40,9 @@ private:
 
     static void AppendStateVariablesToFile(const TTA& state, std::ofstream& file);
     static void AppendStateComponentsToFile(const TTA& state, std::ofstream& file);
+
+    static rapidjson::Document ParseDocumentDOMStyle(const std::ifstream &file);
+    static double GetTimerDelay(const unsigned int tick, const rapidjson::Document& doc);
 };
 
 #endif //MAVE_TTATRACER_H
