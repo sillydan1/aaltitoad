@@ -178,7 +178,7 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
                                       TTAResugarizer::Resugar(expr.lhs)); // TODO: Idempotent variable assignment
                     updateInfluenceOverlap = true;
                     updateInfluenceOverlapGlobal = true;
-                    break;
+                    continue;
                 }
                 else
                     symbolsToChange.insert({ expr.lhs, expr });
@@ -203,7 +203,12 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
         }
     }
     SymbolMap symbolsCopy{};
-    for(auto& symbolChange : symbolChanges) symbolsCopy[symbolChange.lhs] = symbolChange.Evaluate(symbols);
+    for(auto& symbolChange : symbolChanges) {
+        if(symbols.map()[symbolChange.lhs]->type == TIMER)
+            symbolsCopy[symbolChange.lhs] = packToken(symbolChange.Evaluate(symbols).asDouble(), PACK_IS_TIMER);
+        else
+            symbolsCopy[symbolChange.lhs] = symbolChange.Evaluate(symbols);
+    }
     return {{ currentLocations, symbolsCopy }};
 }
 
@@ -231,7 +236,8 @@ void TTA::Tick(const nondeterminism_strategy_t& nondeterminismStrategy) {
     Timer<int> timer;
     timer.start();
     SetCurrentState(GetNextTickStates(nondeterminismStrategy)[0]);
-    spdlog::info("Tick time elapsed: {0} ms - (With printing and everything)", timer.milliseconds_elapsed());
+    spdlog::info("Tick {0} time elapsed: {1} ms - (With printing and everything)", tickCount, timer.milliseconds_elapsed());
+    tickCount++;
 }
 
 void TTA::InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys) {
@@ -271,5 +277,19 @@ TTA::Edge& TTA::PickEdge(std::vector<TTA::Edge>& edges, const nondeterminism_str
         case nondeterminism_strategy_t::PANIC:
             spdlog::critical("Panicking due to nondeterministic choice!");
             throw std::exception();
+    }
+}
+
+void TTA::DelayAllTimers(double delayDelta) {
+    for(auto& symbol : symbols.map()) {
+        if(symbol.second->type == TIMER)
+            symbols[symbol.first] = packToken(static_cast<double>(symbol.second.asDouble() + delayDelta), PACK_IS_TIMER);
+    }
+}
+
+void TTA::SetAllTimers(double exactTime) {
+    for(auto& symbol : symbols.map()) {
+        if(symbol.second->type == TIMER)
+            symbols[symbol.first] = packToken(exactTime, PACK_IS_TIMER);
     }
 }

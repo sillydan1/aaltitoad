@@ -83,6 +83,7 @@ private:
     SymbolMap symbols = {};
     // This only works because we don't add or remove symbols during runtime
     std::vector<packToken*> externalSymbols = {}; // Still. Beware of dangling pointers!
+    unsigned int tickCount = 0;
 
 public:
     TTA();
@@ -98,12 +99,15 @@ public:
     bool SetCurrentState(const State& newstate);
     static bool IsStateImmediate(const State& state);
     std::vector<State> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
-
+    void DelayAllTimers(double delayDelta);
+    void SetAllTimers(double exactTime);
     std::optional<const Component*> GetComponent(const std::string& componentName) const;
     TTA::Edge& PickEdge(std::vector<TTA::Edge>& edges, const nondeterminism_strategy_t& strategy) const;
 
     void Tick(const nondeterminism_strategy_t& nondeterminismStrategy = nondeterminism_strategy_t::PANIC);
     void Tock();
+
+    inline unsigned int GetTickCount() const { return tickCount; }
 };
 
 #endif //MAVE_TTA_H
