@@ -19,10 +19,17 @@
 
 #ifndef MAVE_CTLQUERYPARSER_H
 #define MAVE_CTLQUERYPARSER_H
-
+#include "query/QueryTypes.h"
+#include <rapidjson/document.h>
 
 class CTLQueryParser {
+public:
+    static std::vector<BaseQuery> ParseQueriesFile(const std::string& filepath);
+    static BaseQuery ParseQuery(const rapidjson::Document::ValueType& document);
 
+private:
+    static bool IsDocumentProperQueryDocument(const rapidjson::Document::ValueType& document);
+    static bool IsElementProperQuery(const rapidjson::Document::ValueType& document);
 };
 
 
