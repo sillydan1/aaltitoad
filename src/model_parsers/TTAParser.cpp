@@ -19,6 +19,8 @@
 #include <mavepch.h>
 #include <extensions/stringextensions.h>
 #include <extensions/overload>
+#include <json_parsing/JSONParser.h>
+
 #include "TTAParser.h"
 
 // Some json files are important to ignore, so Ignore-list:
@@ -134,52 +136,22 @@ rapidjson::Document TTAParser::ParseDocumentDOMStyle(const std::ifstream &file) 
 
 bool TTAParser::IsDocumentAProperTTA(const rapidjson::Document &document) {
     return  document.IsObject() &&
-            DoesMemberExistAndIsObject(document, "initial_location") &&
-            DoesMemberExistAndIsString(document["initial_location"], "id") &&
-            DoesMemberExistAndIsObject(document, "final_location") &&
-            DoesMemberExistAndIsString(document["final_location"], "id") &&
-            DoesMemberExistAndIsArray( document, "edges") &&
-            DoesMemberExistAndIsBool(  document, "main") &&
-            DoesMemberExistAndIsString(document, "declarations") &&
-            DoesMemberExistAndIsArray(document, "locations") &&
+            JSONParser::DoesMemberExistAndIsObject(document, "initial_location") &&
+            JSONParser::DoesMemberExistAndIsString(document["initial_location"], "id") &&
+            JSONParser::DoesMemberExistAndIsObject(document, "final_location") &&
+            JSONParser::DoesMemberExistAndIsString(document["final_location"], "id") &&
+            JSONParser::DoesMemberExistAndIsArray( document, "edges") &&
+            JSONParser::DoesMemberExistAndIsBool(  document, "main") &&
+            JSONParser::DoesMemberExistAndIsString(document, "declarations") &&
+            JSONParser::DoesMemberExistAndIsArray(document, "locations") &&
             IsProperLocationList(document["locations"].GetArray());
-}
-
-bool TTAParser::DoesMemberExistAndIsObject(const rapidjson::Document::ValueType &document, const std::string &membername) {
-    auto memberIterator = document.FindMember(membername.c_str());
-    return memberIterator != document.MemberEnd() && memberIterator->value.IsObject();
-}
-
-bool TTAParser::DoesMemberExistAndIsArray(const rapidjson::Document::ValueType &document, const std::string &membername) {
-    auto memberIterator = document.FindMember(membername.c_str());
-    return memberIterator != document.MemberEnd() && memberIterator->value.IsArray();
-}
-
-bool TTAParser::DoesMemberExistAndIsBool(const rapidjson::Document::ValueType &document, const std::string &membername) {
-    auto memberIterator = document.FindMember(membername.c_str());
-    return memberIterator != document.MemberEnd() && memberIterator->value.IsBool();
-}
-
-bool TTAParser::DoesMemberExistAndIsInt(const rapidjson::Document::ValueType &document, const std::string &membername) {
-    auto memberIterator = document.FindMember(membername.c_str());
-    return memberIterator != document.MemberEnd() && memberIterator->value.IsInt();
-}
-
-bool TTAParser::DoesMemberExistAndIsFloat(const rapidjson::Document::ValueType &document, const std::string &membername) {
-    auto memberIterator = document.FindMember(membername.c_str());
-    return memberIterator != document.MemberEnd() && memberIterator->value.IsFloat();
-}
-
-bool TTAParser::DoesMemberExistAndIsString(const rapidjson::Document::ValueType &document, const std::string &membername) {
-    auto memberIterator = document.FindMember(membername.c_str());
-    return memberIterator != document.MemberEnd() && memberIterator->value.IsString();
 }
 
 bool TTAParser::IsProperLocationList(const rapidjson::Document::ConstArray &locationList) {
     bool accumulator = true;
     for(auto locationObject = locationList.begin(); locationObject != locationList.end() || !accumulator; locationObject++) {
-        accumulator = accumulator && DoesMemberExistAndIsString(*locationObject, "id");
-        accumulator = accumulator && DoesMemberExistAndIsString(*locationObject, "urgency");
+        accumulator = accumulator && JSONParser::DoesMemberExistAndIsString(*locationObject, "id");
+        accumulator = accumulator && JSONParser::DoesMemberExistAndIsString(*locationObject, "urgency");
     }
     return accumulator;
 }
@@ -341,40 +313,40 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
 }
 
 bool TTAParser::IsDocumentAProperPartsFile(const rapidjson::Document &document) {
-    if(!DoesMemberExistAndIsArray(document, "parts")) return false;
+    if(!JSONParser::DoesMemberExistAndIsArray(document, "parts")) return false;
     auto partsArray = document["parts"].GetArray();
     return std::all_of(partsArray.begin(), partsArray.end(), &IsDocumentAProperPart);
 }
 
 bool TTAParser::IsDocumentAProperPart(const rapidjson::Document::ValueType &document) {
-    return DoesMemberExistAndIsString(document, "PartName") &&
-           DoesMemberExistAndIsString(document, "ExternalType") &&
+    return JSONParser::DoesMemberExistAndIsString(document, "PartName") &&
+           JSONParser::DoesMemberExistAndIsString(document, "ExternalType") &&
            IsDocumentAProperExternalType(document["ExternalType"]) &&
-           DoesMemberExistAndIsObject(document, "Access") &&
+           JSONParser::DoesMemberExistAndIsObject(document, "Access") &&
            IsDocumentAProperAccessType(document["Access"]) &&
-           DoesMemberExistAndIsObject(document, "GenericType") &&
+           JSONParser::DoesMemberExistAndIsObject(document, "GenericType") &&
            IsDocumentAProperGenericType(document["GenericType"]);
 }
 
 bool TTAParser::IsDocumentAProperGenericType(const rapidjson::Document::ValueType& document) {
-    return  (DoesMemberExistAndIsObject(document, "int") &&
-            DoesMemberExistAndIsInt(document["int"], "Value"))
+    return  (JSONParser::DoesMemberExistAndIsObject(document, "int") &&
+            JSONParser::DoesMemberExistAndIsInt(document["int"], "Value"))
             ||
-            (DoesMemberExistAndIsObject(document, "float") &&
-            DoesMemberExistAndIsFloat(document["float"], "Value"))
+            (JSONParser::DoesMemberExistAndIsObject(document, "float") &&
+            JSONParser::DoesMemberExistAndIsFloat(document["float"], "Value"))
             ||
-            (DoesMemberExistAndIsObject(document, "bool") &&
-            DoesMemberExistAndIsBool(document["bool"], "Value"))
+            (JSONParser::DoesMemberExistAndIsObject(document, "bool") &&
+            JSONParser::DoesMemberExistAndIsBool(document["bool"], "Value"))
             ||
-            (DoesMemberExistAndIsObject(document, "string") &&
-            DoesMemberExistAndIsString(document["string"], "Value"))
+            (JSONParser::DoesMemberExistAndIsObject(document, "string") &&
+            JSONParser::DoesMemberExistAndIsString(document["string"], "Value"))
             ||
-            (DoesMemberExistAndIsObject(document, "Timer") &&
-            DoesMemberExistAndIsInt(document["Timer"], "Value"));
+            (JSONParser::DoesMemberExistAndIsObject(document, "Timer") &&
+            JSONParser::DoesMemberExistAndIsInt(document["Timer"], "Value"));
 }
 
 bool TTAParser::IsDocumentAProperAccessType(const rapidjson::Document::ValueType &document) {
-    return DoesMemberExistAndIsBool(document, "Read") && DoesMemberExistAndIsBool(document, "Write");
+    return JSONParser::DoesMemberExistAndIsBool(document, "Read") && JSONParser::DoesMemberExistAndIsBool(document, "Write");
 }
 
 bool TTAParser::IsDocumentAProperExternalType(const rapidjson::Document::ValueType &document) {

@@ -16,6 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include <json_parsing/JSONParser.h>
 #include "TTATracer.h"
 #include "TTAResugarizer.h"
 
@@ -99,14 +100,9 @@ rapidjson::Document TTATracer::ParseDocumentDOMStyle(const std::ifstream &file) 
     return d;
 }
 
-bool DoesMemberExistAndIsInt(const rapidjson::Document::ValueType &document, const std::string &membername) {
-    auto memberIterator = document.FindMember(membername.c_str());
-    return memberIterator != document.MemberEnd() && memberIterator->value.IsInt();
-}
-
 double TTATracer::GetTimerDelay(const unsigned int tick, const rapidjson::Document &doc) {
     std::stringstream ss; ss << tick;
-    if(DoesMemberExistAndIsInt(doc, ss.str()))
+    if(JSONParser::DoesMemberExistAndIsInt(doc, ss.str()))
         return doc[ss.str().c_str()].GetInt();
     else spdlog::error("Timing information file does not contain information from tick '{0}'. Defaulting to zero delay", ss.str());
     return 0;
