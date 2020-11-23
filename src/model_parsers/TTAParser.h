@@ -49,7 +49,6 @@ private:
     static std::vector<TTAIR_t::Edge> ParseEdges(const rapidjson::Document::ValueType& edgeList, const rapidjson::Document& document);
     static TTAIR_t::Edge ParseEdge(const rapidjson::Document::ValueType& edge, const rapidjson::Document& document);
     static std::optional<const rapidjson::Document::ValueType*> FindLocationWithName(const rapidjson::Document& document, const std::string& query_name);
-    static rapidjson::Document ParseDocumentDOMStyle(const std::ifstream& file);
     static bool IsDocumentAProperTTA(const rapidjson::Document& document);
 
     static bool IsProperLocationList(const rapidjson::Document::ConstArray &locationList);

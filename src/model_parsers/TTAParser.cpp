@@ -71,7 +71,7 @@ std::vector<TTAParser::SymbolExternalPair> TTAParser::ParsePartsFiles(const std:
 std::vector<TTAParser::SymbolExternalPair> TTAParser::ParsePartsFile(const std::string &filepath) {
     std::ifstream file{filepath};
     if(file) {
-        auto dom_doc = ParseDocumentDOMStyle(file);
+        auto dom_doc = JSONParser::ParseDocumentDOMStyle(file);
         std::vector<TTAParser::SymbolExternalPair> symbols{};
         if(IsDocumentAProperPartsFile(dom_doc)) {
             auto partsArray = dom_doc["parts"].GetArray();
@@ -104,7 +104,7 @@ std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &f
     std::ifstream file{filepath};
     if(file) {
         spdlog::debug("Parsing file '{0}' as a JSON file", filepath);
-        auto dom_document = ParseDocumentDOMStyle(file);
+        auto dom_document = JSONParser::ParseDocumentDOMStyle(file);
         // Ensure existence of required high-level members
         if(IsDocumentAProperTTA(dom_document)) {
             spdlog::debug("File '{0}' is a proper TTA", filepath);
@@ -123,15 +123,6 @@ std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &f
     }
     spdlog::error("File '{0}' does not exist", filepath);
     return {};
-}
-
-rapidjson::Document TTAParser::ParseDocumentDOMStyle(const std::ifstream &file) {
-    // TODO: DOM Style can be slow and rapidjson provides faster parsing strategies. Extend when it becomes a problem
-    std::stringstream filestream{};
-    filestream << file.rdbuf();
-    rapidjson::Document d;
-    d.Parse(filestream.str().c_str());
-    return d;
 }
 
 bool TTAParser::IsDocumentAProperTTA(const rapidjson::Document &document) {

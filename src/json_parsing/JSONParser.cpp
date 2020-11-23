@@ -48,3 +48,12 @@ bool JSONParser::DoesMemberExistAndIsString(const rapidjson::Document::ValueType
     auto memberIterator = document.FindMember(membername.c_str());
     return memberIterator != document.MemberEnd() && memberIterator->value.IsString();
 }
+
+rapidjson::Document JSONParser::ParseDocumentDOMStyle(const std::ifstream &file) {
+    // TODO: DOM Style can be slow and rapidjson provides faster parsing strategies. Extend when it becomes a problem
+    std::stringstream filestream{};
+    filestream << file.rdbuf();
+    rapidjson::Document d;
+    d.Parse(filestream.str().c_str());
+    return d;
+}

@@ -29,6 +29,7 @@ struct JSONParser {
     static bool DoesMemberExistAndIsInt(const rapidjson::Document::ValueType& document, const std::string& membername);
     static bool DoesMemberExistAndIsFloat(const rapidjson::Document::ValueType& document, const std::string& membername);
     static bool DoesMemberExistAndIsString(const rapidjson::Document::ValueType& document, const std::string& membername);
+    static rapidjson::Document ParseDocumentDOMStyle(const std::ifstream &file);
 };
 
 
