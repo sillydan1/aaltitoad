@@ -20,16 +20,22 @@
 #ifndef MAVE_CTLQUERYPARSER_H
 #define MAVE_CTLQUERYPARSER_H
 #include "query/QueryTypes.h"
+#include "CTLIR.h"
 #include <rapidjson/document.h>
+#include <runtime/TTA.h>
 
 class CTLQueryParser {
 public:
-    static std::vector<BaseQuery> ParseQueriesFile(const std::string& filepath);
-    static BaseQuery ParseQuery(const rapidjson::Document::ValueType& document);
+    static std::vector<Query> ParseQueriesFile(const std::string& filepath, const TTA& tta);
 
 private:
+    static Query ParseQuery(const rapidjson::Document::ValueType& document, const TTA& tta);
+    static Quantifier ParseQuantifier(std::string full_query);
+    static Condition ParseCondition(std::string full_query, const TTA& tta);
+    static Condition ParseSubCondition(const std::string& subquery, const TTA& tta);
     static bool IsDocumentProperQueryDocument(const rapidjson::Document::ValueType& document);
     static bool IsElementProperQuery(const rapidjson::Document::ValueType& document);
+    static CTLIR ParseParetheses(std::string::const_iterator& iterator, std::string::const_iterator end);
 };
 
 

@@ -21,6 +21,7 @@
 #include <model_parsers/TTAParser.h>
 #include "CLIConfig.h"
 #include <verifier/trace_output/TTATracer.h>
+#include <verifier/query_parsing/CTLQueryParser.h>
 
 int main(int argc, char** argv) {
     // Initialize CLI configuration (based on CLI Args)
@@ -39,15 +40,14 @@ int main(int argc, char** argv) {
     TTAParser ttaParser{};
     TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
 
-    if(config["trace"]) {
-        TTATracer::TraceSteps(config["trace-output"].as_string(), t, config["trace"].as_integer());
+    if(config["query"]) {
+        auto thing = CTLQueryParser::ParseQueriesFile(config["query"].as_string(), t);
         return 0;
     }
 
-    while(true) {
-        std::cout << t.GetCurrentStateString() << std::endl;
-        getchar();
-        t.SetCurrentState(t.GetNextTickStates()[0]);
+    if(config["trace"]) {
+        TTATracer::TraceSteps(config["trace-output"].as_string(), t, config["trace"].as_integer());
+        return 0;
     }
 
     // Return the exit code.

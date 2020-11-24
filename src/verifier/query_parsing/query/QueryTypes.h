@@ -20,6 +20,8 @@
 #ifndef MAVE_QUERYTYPES_H
 #define MAVE_QUERYTYPES_H
 #include <mavepch.h>
+
+#include <utility>
 ///// GRAMMAR:
 // Query ::= E quantifier | A quantifier
 // quantifier ::= X phi | G phi | F phi | U phi
@@ -32,63 +34,39 @@
 
 struct Condition {
     std::string expression;
+    Condition(const std::string& _expression) : expression{_expression} {}
+    virtual bool ContainsLocationNames() { return false; }
 };
-
+// As in CON-Junction and DIS-Junction
+enum struct Junction {
+    AND = 0, OR = 0
+};
+struct LogicCondition : Condition {
+    Junction junction;
+    Condition lhs, rhs;
+    LogicCondition(Condition left, const Junction& _junction, Condition right)
+      : Condition{""}, lhs{std::move(left)}, junction{_junction}, rhs{std::move(right)} {}
+    bool ContainsLocationNames() override { return lhs.ContainsLocationNames() || rhs.ContainsLocationNames(); }
+};
 struct LocationCondition : Condition {
-// TODO: Something more...
+    LocationCondition(const std::string& _expression) : Condition{_expression} {}
+    bool ContainsLocationNames() override { return true; }
 };
-
 struct DeadlockCondition : Condition {
-// TODO: Something more...
+    DeadlockCondition() : Condition{"deadlock"} {}
 };
 
 // Quantifiers describe the search strategy of the verification engine.
-struct Quantifier {
-    Quantifier();
-    // You can't just have a "nothing" quantifier.
-    virtual ~Quantifier() = 0;
-};
-// TODO: Something more...
-struct EXQuantifier : Quantifier {
-    virtual ~EXQuantifier() override;
+// A's are offset by 10 in order to do some parsing wizardry
+enum struct Quantifier : unsigned int {
+    EX =  0, EF =  1, EG =  2, EU =  3,
+    AX = 10, AF = 11, AG = 12, AU = 13
 };
 
-struct EFQuantifier : Quantifier {
-    virtual ~EFQuantifier() override;
-};
-
-struct EGQuantifier : Quantifier {
-    virtual ~EGQuantifier() override;
-};
-
-struct EUQuantifier : Quantifier {
-    virtual ~EUQuantifier() override;
-};
-
-struct AXQuantifier : Quantifier {
-    virtual ~AXQuantifier() override;
-};
-
-struct AGQuantifier : Quantifier {
-    virtual ~AGQuantifier() override;
-};
-
-struct AFQuantifier : Quantifier {
-    virtual ~AFQuantifier() override;
-};
-
-struct AUQuantifier : Quantifier {
-    virtual ~AUQuantifier() override;
-};
-
-struct BaseQuery {
+struct Query {
+    Quantifier quantifier;
     Condition condition;
-};
-
-template<typename Quant>
-struct Query : BaseQuery {
-    static_assert(std::is_base_of_v<Quantifier, Quant>, "Provided template is not a Quantifier");
-    Quant quantifier;
+    Query(const Quantifier& _quantifier, Condition  _condition) : quantifier{_quantifier}, condition{std::move(_condition)} {}
 };
 
 #endif //MAVE_QUERYTYPES_H

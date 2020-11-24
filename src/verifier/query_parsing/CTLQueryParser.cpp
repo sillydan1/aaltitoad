@@ -22,15 +22,15 @@
 #include <rapidjson/rapidjson.h>
 #include <extensions/stringextensions.h>
 
-std::vector<BaseQuery> CTLQueryParser::ParseQueriesFile(const std::string &filepath) {
-    std::vector<BaseQuery> queries{};
+std::vector<Query> CTLQueryParser::ParseQueriesFile(const std::string &filepath, const TTA& tta) {
+    std::vector<Query> queries{};
     auto file = std::ifstream{filepath};
     if(file) {
         spdlog::debug("Parsing '{0}' as a Query JSON file.", filepath);
         auto document = JSONParser::ParseDocumentDOMStyle(file);
         if(IsDocumentProperQueryDocument(document)) {
             auto queryarray = document.GetArray();
-            std::for_each(queryarray.begin(), queryarray.end(), [&queries](auto& q){ queries.push_back(ParseQuery(q)); });
+            std::for_each(queryarray.begin(), queryarray.end(), [&queries, &tta](auto& q){ queries.push_back(ParseQuery(q, tta)); });
         } else {
             spdlog::critical("File '{0}' does not contain a proper query list", filepath);
             throw std::exception();
@@ -58,21 +58,95 @@ bool CTLQueryParser::IsElementProperQuery(const rapidjson::Document::ValueType& 
             // JSONParser::DoesMemberExistAndIsBool(document, "is_periodic");
 }
 
-BaseQuery CTLQueryParser::ParseQuery(const rapidjson::Document::ValueType& document) {
-    BaseQuery query{};
+Query CTLQueryParser::ParseQuery(const rapidjson::Document::ValueType& document, const TTA& tta) {
     auto queryString = std::string(document["query"].GetString());
-    ltrim(queryString); // Remove any whitespace left of the string
-    switch (queryString[0]) {
-        case 'E':
-            break;
-        case 'A':
-            break;
-        default:
-            spdlog::critical("CTL Query '{0}' is improper. Queries are required to start with either an E or an A", queryString);
+    return Query{ParseQuantifier(queryString), ParseCondition(queryString, tta)};
+}
+
+Quantifier CTLQueryParser::ParseQuantifier(std::string full_query) {
+    unsigned int retVal;
+    ltrim(full_query); // Remove any whitespace left of the string
+    switch (full_query[0]) {
+        case 'E': retVal = static_cast<unsigned int>(Quantifier::EX); break;
+        case 'A': retVal = static_cast<unsigned int>(Quantifier::AX); break;
+        default: spdlog::critical("CTL Query '{0}' is improper. Queries are required to start with either an E or an A", full_query);
             throw std::exception();
     }
+    auto substr = full_query.substr(1);
+    ltrim(substr);
+    switch (substr[0]) {
+        case 'X': retVal += 0; break;
+        case 'F': retVal += 1; break;
+        case 'G': retVal += 2; break;
+        case 'U': retVal += 3; break;
+        default: spdlog::critical("CTL Query '{0}' is improper. Queries are required to start with either EX,EF,EG,EU,AX,AF,AG or AU", full_query);
+            throw std::exception();
+    }
+    return static_cast<Quantifier>(retVal);
+}
 
-    query.condition.expression =
+Condition CTLQueryParser::ParseCondition(std::string full_query, const TTA& tta) {
+    // Remove the quantifier
+    ltrim(full_query);
+    full_query = full_query.substr(1);
+    ltrim(full_query);
+    full_query = full_query.substr(1);
+    trim(full_query);
+    // Then parse the condition
+    return ParseSubCondition(full_query, tta);
+}
 
-    return BaseQuery();
+Condition CTLQueryParser::ParseSubCondition(const std::string &subquery, const TTA &tta) {
+    Condition topCondition{subquery};
+    // Split over ANDs and ORs
+    // TODO: Doctor robotnic quote: NO! (Parentheses)
+    auto xx = subquery.begin();
+    auto ctl_ir = ParseParetheses(xx, subquery.end());
+    auto andloc = containsString(subquery, "&&");
+    if(andloc.has_value()) {
+        return LogicCondition{
+            ParseSubCondition(subquery.substr(0, andloc.value()), tta),
+            Junction::AND,
+            ParseSubCondition(subquery.substr(andloc.value()+2), tta),
+        };
+    }
+    auto orloc = containsString(subquery, "||");
+    if(orloc.has_value()) {
+        return LogicCondition{
+                ParseSubCondition(subquery.substr(0, andloc.value()), tta),
+                Junction::OR,
+                ParseSubCondition(subquery.substr(andloc.value()), tta),
+        };
+    }
+
+    if(subquery == "deadlock")
+        return DeadlockCondition{};
+    // Else, if query is a location
+
+
+    return Condition{subquery};
+}
+
+CTLIR CTLQueryParser::ParseParetheses(std::string::const_iterator& iterator, std::string::const_iterator end) {
+    // If there is a dot after the end-parenthesis, then it's just a paramenter parethesis.
+    CTLIR current{};
+    while(iterator != end) {
+        if (*iterator == '(') {
+            // Recurse
+            auto ctl_ir = ParseParetheses(++iterator, end);
+            if(iterator == end) { current.children.push_back(ctl_ir); return current; }
+            if (*++iterator == '.') // Edge case e.g.: ComponentName(15, 0).LocationName should be a single token
+                current.expression += ctl_ir.expression;
+            else
+                current.children.push_back(ctl_ir);
+            current.expression += *iterator;
+        }
+        if (*iterator == ')') {
+            return current;
+        }
+        if(iterator == end) break;
+        current.expression += *iterator;
+        ++iterator;
+    }
+    return current;
 }
