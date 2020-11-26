@@ -26,7 +26,7 @@
 // Query ::= E quantifier | A quantifier
 // quantifier ::= X phi | G phi | F phi | U phi
 // --------------------------------------------------------
-// phi ::= phi and phi | phi or phi | psi | deadlock
+// phi ::= phi and phi | phi or phi | psi | (phi) | deadlock
 // psi ::= comparable <X> comparable | loc
 // loc ::= Comp(param).Loc
 // comparable ::= varname | constant

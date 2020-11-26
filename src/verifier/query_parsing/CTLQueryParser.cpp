@@ -96,12 +96,12 @@ Condition CTLQueryParser::ParseCondition(std::string full_query, const TTA& tta)
     return ParseSubCondition(full_query, tta);
 }
 
+// TODO: Use lex/yacc for conditions. - This solution is stupid
 Condition CTLQueryParser::ParseSubCondition(const std::string &subquery, const TTA &tta) {
     Condition topCondition{subquery};
     // Split over ANDs and ORs
     // TODO: Doctor robotnic quote: NO! (Parentheses)
-    auto xx = subquery.begin();
-    auto ctl_ir = ParseParetheses(xx, subquery.end());
+    auto ctl_ir = ParseParetheses(subquery);
     auto andloc = containsString(subquery, "&&");
     if(andloc.has_value()) {
         return LogicCondition{
@@ -127,26 +127,45 @@ Condition CTLQueryParser::ParseSubCondition(const std::string &subquery, const T
     return Condition{subquery};
 }
 
-CTLIR CTLQueryParser::ParseParetheses(std::string::const_iterator& iterator, std::string::const_iterator end) {
+CTLIR CTLQueryParser::ParseParetheses(std::string::const_reverse_iterator& current_it, std::string::const_reverse_iterator end) {
     // If there is a dot after the end-parenthesis, then it's just a paramenter parethesis.
     CTLIR current{};
-    while(iterator != end) {
-        if (*iterator == '(') {
-            // Recurse
-            auto ctl_ir = ParseParetheses(++iterator, end);
-            if(iterator == end) { current.children.push_back(ctl_ir); return current; }
-            if (*++iterator == '.') // Edge case e.g.: ComponentName(15, 0).LocationName should be a single token
-                current.expression += ctl_ir.expression;
-            else
-                current.children.push_back(ctl_ir);
-            current.expression += *iterator;
+    bool skipNext = false;
+    do {
+        if(*current_it == '.') {
+            if(*++current_it == ')') {
+                current.expression += ".)";
+                skipNext = true; // This is just a component name
+                ++current_it;
+            }
         }
-        if (*iterator == ')') {
+        if(*current_it == ')') {
+            if(!current.expression.empty()) {
+                std::reverse(current.expression.begin(), current.expression.end());
+                current.children.emplace_back(current.expression, std::vector<CTLIR>{});
+                current.expression = "";
+            }
+            current.children.push_back(ParseParetheses(++current_it, end));
+            continue;
+        }
+        if(*current_it == '(') {
+            if(skipNext) {
+                skipNext = false;
+                current.expression += "(";
+                continue;
+            }
+            std::reverse(current.expression.begin(), current.expression.end());
+            std::reverse(current.children.begin(), current.children.end());
             return current;
         }
-        if(iterator == end) break;
-        current.expression += *iterator;
-        ++iterator;
-    }
+        current.expression += *current_it;
+    } while(++current_it != end);
+    std::reverse(current.expression.begin(), current.expression.end());
+    std::reverse(current.children.begin(), current.children.end());
     return current;
+}
+
+CTLIR CTLQueryParser::ParseParetheses(const std::string& full_expr) {
+    auto xx = full_expr.rbegin();
+    return ParseParetheses(xx, full_expr.rend());
 }

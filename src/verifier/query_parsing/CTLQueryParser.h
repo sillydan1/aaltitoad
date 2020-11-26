@@ -35,7 +35,8 @@ private:
     static Condition ParseSubCondition(const std::string& subquery, const TTA& tta);
     static bool IsDocumentProperQueryDocument(const rapidjson::Document::ValueType& document);
     static bool IsElementProperQuery(const rapidjson::Document::ValueType& document);
-    static CTLIR ParseParetheses(std::string::const_iterator& iterator, std::string::const_iterator end);
+    static CTLIR ParseParetheses(std::string::const_reverse_iterator& current_it, std::string::const_reverse_iterator end);
+    static CTLIR ParseParetheses(const std::string& full_expr);
 };
 
 

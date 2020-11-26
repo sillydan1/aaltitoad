@@ -21,11 +21,16 @@
 #define MAVE_CTLIR_H
 #include <mavepch.h>
 
+#include <utility>
+
 /// CTL Intermediate Representation
 /// Used for parsing CTL queries.
 struct CTLIR {
     std::string expression;
     std::vector<CTLIR> children;
+    CTLIR() = default;
+    CTLIR(std::string expr, const std::vector<CTLIR>& _children)
+     : expression{std::move(expr)}, children{_children} {}
 };
 
 #endif //MAVE_CTLIR_H
