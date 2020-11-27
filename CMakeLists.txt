@@ -61,7 +61,8 @@ add_executable(${PROJECT_NAME}
         src/verifier/query_parsing/CTLQueryParser.cpp
         src/verifier/trace_output/TTATracer.cpp
         src/verifier/trace_output/TTAResugarizer.cpp
-        src/json_parsing/JSONParser.cpp)
+        src/json_parsing/JSONParser.cpp
+        src/verifier/ReachabilitySearcher.cpp)
 
 target_link_libraries(${PROJECT_NAME}
         argvparse
