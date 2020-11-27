@@ -22,6 +22,7 @@
 #include "CLIConfig.h"
 #include <verifier/trace_output/TTATracer.h>
 #include <verifier/query_parsing/CTLQueryParser.h>
+#include <verifier/ReachabilitySearcher.h>
 
 int main(int argc, char** argv) {
     // Initialize CLI configuration (based on CLI Args)
@@ -36,18 +37,16 @@ int main(int argc, char** argv) {
     else
         spdlog::set_level(spdlog::level::level_enum::warn);
 
-    // Call the engine(s)
+    // Parse the TTA
     TTAParser ttaParser{};
     TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
 
+    //
     if(config["query"]) {
         auto queryList = CTLQueryParser::ParseQueriesFile(config["query"].as_string(), t);
         for(auto& query : queryList) {
-            spdlog::debug("Parsed Query:");
-            query->tree_apply([](auto& n){ spdlog::debug("{0}: {1}", ConvertToString(n.type), n.token); });
-            spdlog::debug("------------------");
+            spdlog::critical("Is Query satisfied in Tick 0? '{1}'", 0,ReachabilitySearcher::IsQuerySatisfied(*query, t));
         }
-        return 0;
     }
 
     if(config["trace"]) {

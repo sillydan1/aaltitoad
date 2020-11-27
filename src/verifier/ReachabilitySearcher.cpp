@@ -33,7 +33,9 @@ bool IsQuerySatisfiedHelper(const Query& query, const TTA& state) {
         case NodeType_t::CompGreater:
         case NodeType_t::CompGreaterEq: {
             std::string exprstring = ""; // This string can technically be precompiled.
-            query.tree_apply([&exprstring]( const auto& node ){ exprstring += node.token; });
+            query.children[0].tree_apply([&exprstring]( const auto& node ){ exprstring += node.token; });
+            exprstring += query.root.token;
+            query.children[1].tree_apply([&exprstring]( const auto& node ){ exprstring += node.token; });
             spdlog::debug("Assembled expression '{0}'", exprstring);
             calculator c(exprstring.c_str());
             return c.eval(state.GetSymbols()).asBool();
