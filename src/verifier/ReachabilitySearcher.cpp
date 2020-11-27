@@ -19,7 +19,7 @@
 
 #include "ReachabilitySearcher.h"
 
-bool IsQuerySatisfiedHelper(Query& query, const TTA& state) {
+bool IsQuerySatisfiedHelper(const Query& query, const TTA& state) {
     switch (query.root.type) {
         case NodeType_t::Location: return state.GetCurrentLocations().find(query.root.token) != state.GetCurrentLocations().end();
         // TODO: ↓ What about tock changes? - Maybe NextTickStates should be done via a successor generator class
@@ -33,7 +33,7 @@ bool IsQuerySatisfiedHelper(Query& query, const TTA& state) {
         case NodeType_t::CompGreater:
         case NodeType_t::CompGreaterEq: {
             std::string exprstring = ""; // This string can technically be precompiled.
-            query.tree_apply([&exprstring]( auto& node ){ exprstring += node.token; });
+            query.tree_apply([&exprstring]( const auto& node ){ exprstring += node.token; });
             spdlog::debug("Assembled expression '{0}'", exprstring);
             calculator c(exprstring.c_str());
             return c.eval(state.GetSymbols()).asBool();
@@ -55,7 +55,7 @@ bool IsQuerySatisfiedHelper(Query& query, const TTA& state) {
     return false;
 }
 
-bool ReachabilitySearcher::IsQuerySatisfied(Query& query, const TTA &state) {
+bool ReachabilitySearcher::IsQuerySatisfied(const Query& query, const TTA &state) {
     if(query.root.type != NodeType_t::Exists) {
         spdlog::critical("Only reachability queries are supported right now, sorry.");
         return false;

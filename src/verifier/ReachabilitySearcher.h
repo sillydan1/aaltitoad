@@ -23,7 +23,7 @@
 #include <runtime/TTA.h>
 
 class ReachabilitySearcher {
-    static bool IsQuerySatisfied(Query& query, const TTA& state);
+    static bool IsQuerySatisfied(const Query& query, const TTA& state);
 };
 
 #endif //MAVE_REACHABILITYSEARCHER_H
