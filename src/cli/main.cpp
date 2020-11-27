@@ -41,7 +41,12 @@ int main(int argc, char** argv) {
     TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
 
     if(config["query"]) {
-        auto thing = CTLQueryParser::ParseQueriesFile(config["query"].as_string(), t);
+        auto queryList = CTLQueryParser::ParseQueriesFile(config["query"].as_string(), t);
+        for(auto& query : queryList) {
+            spdlog::debug("Parsed Query:");
+            query->tree_apply([](auto& n){ spdlog::debug("{0}: {1}", ConvertToString(n.type), n.token); });
+            spdlog::debug("------------------");
+        }
         return 0;
     }
 

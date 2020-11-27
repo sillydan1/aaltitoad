@@ -69,6 +69,7 @@ TTA::State TTA::GetCurrentState() const {
 }
 
 TTA::ComponentLocationMap TTA::GetCurrentLocations() const {
+    // TODO: Maybe this should be cached
     ComponentLocationMap componentLocations = {};
     for(auto& component : components) componentLocations[component.first] = component.second.currentLocation;
     return componentLocations;
@@ -141,7 +142,8 @@ bool TTA::IsStateImmediate(const TTA::State &state) {
     return false;
 }
 
-// TODO: Clean this function up, it stinks! - Funky optimization
+// TODO: Clean this function up, it stinks!
+// TODO: We need something in the query checking that can check for deadlock-ness (other than just calling this function)
 std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
     auto currentLocations = GetCurrentLocations();
     std::vector<UpdateExpression> symbolChanges{};
