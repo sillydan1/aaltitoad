@@ -34,6 +34,7 @@ set (CMAKE_CXX_STANDARD_LIBRARIES -lstdc++fs)
 # Third party libraries, compiled with CMAKE
 add_subdirectory(dep/argvparse/)
 add_subdirectory(dep/spdlog)
+add_subdirectory(dep/ctlparser)
 
 # Third party libraries, compiled with something else
 ####
@@ -66,10 +67,10 @@ target_link_libraries(${PROJECT_NAME}
         argvparse
         spdlog
         ttaparse
+        ctlparser
 
         shunting_yard
         builtin_features)
 
 target_precompile_headers(${PROJECT_NAME} PUBLIC src/mavepch.h)
 target_precompile_headers(ttaparse PUBLIC src/mavepch.h)
-

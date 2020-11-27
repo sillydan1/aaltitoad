@@ -19,24 +19,21 @@
 
 #ifndef MAVE_CTLQUERYPARSER_H
 #define MAVE_CTLQUERYPARSER_H
-#include "query/QueryTypes.h"
-#include "CTLIR.h"
+#include <ctlparser/include/types.h>
+#include <ctlparser/include/Tree.hpp>
 #include <rapidjson/document.h>
 #include <runtime/TTA.h>
 
+using Query = Tree<ASTNode>;
+
 class CTLQueryParser {
 public:
-    static std::vector<Query> ParseQueriesFile(const std::string& filepath, const TTA& tta);
+    static std::vector<Query*> ParseQueriesFile(const std::string& filepath, const TTA& tta);
 
 private:
-    static Query ParseQuery(const rapidjson::Document::ValueType& document, const TTA& tta);
-    static Quantifier ParseQuantifier(std::string full_query);
-    static Condition ParseCondition(std::string full_query, const TTA& tta);
-    static Condition ParseSubCondition(const std::string& subquery, const TTA& tta);
+    static Query* ParseQueryFromDoc(const rapidjson::Document::ValueType& document, const TTA& tta);
     static bool IsDocumentProperQueryDocument(const rapidjson::Document::ValueType& document);
     static bool IsElementProperQuery(const rapidjson::Document::ValueType& document);
-    static CTLIR ParseParetheses(std::string::const_reverse_iterator& current_it, std::string::const_reverse_iterator end);
-    static CTLIR ParseParetheses(const std::string& full_expr);
 };
 
 
