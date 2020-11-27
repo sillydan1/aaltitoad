@@ -18,6 +18,8 @@
  */
 #include "TTA.h"
 #include <extensions/overload>
+#include <extensions/cparse_extensions.h>
+#include <tinytimer/Timer.hpp>
 
 TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr) {
     return PopulateValueFromString(TTASymbolTypeFromString(typestr), valuestr);
@@ -48,8 +50,10 @@ TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& 
             [&valuestr, &value](const std::string&){
                 if(valuestr[0] == '\"' && valuestr[valuestr.size()-1] == '\"')
                     value = valuestr.substr(1,valuestr.size()-2);
-                else
-                    spdlog::error("Missing '\"' on string value '{0}'", valuestr);
+                else {
+                    spdlog::error("Missing '\"' on string value '{0}' - Adding them manually, but this should be corrected", valuestr);
+                    value = valuestr;
+                }
             }
     ), value);
     return value;
@@ -103,14 +107,25 @@ bool TTA::SetCurrentState(const State& newstate) {
             return false;
         }
     }
+
     for(auto& symbol : newstate.symbols.map()) {
         auto symbolit = symbols.map().find(symbol.first);
         bool error = false;
+        auto x = symbol.second->type;
+        auto y = symbolit->second->type;
         if(symbolit == symbols.map().end()) { spdlog::critical("Attempted to change the state of TTA failed. Symbol '{0}' does not exist.", symbol.first); error = true; }
-        else if(symbolit->second->type != symbol.second->type)  { spdlog::critical("Attempted to change the state of TTA failed. Symbol '{0}' does not have the correct type.", symbol.first); error = true; }
+        else if(!(NUM & x & y) && !(x == VAR && (NUM & y))) {
+            auto a = tokenTypeToString(symbolit->second->type);
+            auto b = tokenTypeToString(symbol.second->type);
+            spdlog::critical(
+                    "Attempted to change the state of TTA failed. Symbol '{0}' does not have the correct type. ({1} vs {2} (a := b))",
+                    symbol.first, a, b);
+            error = true;
+        }
         if(!error) symbols.map()[symbol.first] = symbol.second;
         else return false;
     }
+    tickCount++;
     return true;
 }
 
@@ -126,39 +141,74 @@ bool TTA::IsStateImmediate(const TTA::State &state) {
     return false;
 }
 
+// TODO: Clean this function up, it stinks! - Funky optimization
 std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
     auto currentLocations = GetCurrentLocations();
     std::vector<UpdateExpression> symbolChanges{};
 
     std::multimap<std::string, UpdateExpression> symbolsToChange{};
+    std::map<std::string, std::vector<std::string>> overlappingComponents{}; // expr.lhs -> componentIdentifiers mapping
+    bool updateInfluenceOverlapGlobal = false;
     for(auto& component : components) {
         auto enabledEdges = component.second.GetEnabledEdges(symbols);
         if(!enabledEdges.empty()) {
             // TODO: Stop picking the first. e.g. Implement divergent behaviour. NOTE: You wanna do this with a multimap of components.
-            if(enabledEdges.size() > 1) spdlog::error("Non-deterministic choice in Component '{0}'. "
-                                                      "Non-deterministic strategies are not implemented yet."
-                                                      "Defaulting to picking the first!", component.first);
-            auto& pickedEdge = enabledEdges[0];
+            if(enabledEdges.size() > 1) {
+                spdlog::error("Non-deterministic choice in Component '{0}'.",
+                              TTAResugarizer::Resugar(component.first));
+                spdlog::debug("Enabled edges in component '{0}':", TTAResugarizer::Resugar(component.first));
+                for(auto& e : enabledEdges)
+                    spdlog::debug("{0} --> {1}",
+                                  TTAResugarizer::Resugar(e.sourceLocation.identifier),
+                                  TTAResugarizer::Resugar(e.targetLocation.identifier));
+                spdlog::debug("----- / -----");
+            }
+            auto& pickedEdge = PickEdge(enabledEdges, strategy);
             bool updateInfluenceOverlap = false;
             for(auto& expr : pickedEdge.updateExpressions) {
+                overlappingComponents[expr.lhs].push_back(TTAResugarizer::Resugar(
+                        expr.lhs + " : " +
+                        pickedEdge.sourceLocation.identifier + " --> " +
+                        pickedEdge.targetLocation.identifier));
                 if(symbolsToChange.count(expr.lhs) > 0) {
-                    spdlog::warn("Overlapping update influence on evaluation of update on edge {0}-->{1}. "
-                                     "Variable '{2}' is already being written to in this tick!",
-                                     pickedEdge.sourceLocation.identifier, pickedEdge.targetLocation.identifier,
-                                     expr.lhs);
+                    spdlog::warn("Overlapping update influence on evaluation of update on edge {0} --> {1}. "
+                                      "Variable '{2}' is already being written to in this tick! - For more info, run with higher verbosity",
+                                      TTAResugarizer::Resugar(pickedEdge.sourceLocation.identifier),
+                                      TTAResugarizer::Resugar(pickedEdge.targetLocation.identifier),
+                                      TTAResugarizer::Resugar(expr.lhs)); // TODO: Idempotent variable assignment
                     updateInfluenceOverlap = true;
-                    break;
+                    updateInfluenceOverlapGlobal = true;
+                    continue;
                 }
                 else
                     symbolsToChange.insert({ expr.lhs, expr });
             }
-            if(updateInfluenceOverlap) continue;
+            if(!CLIConfig::getInstance()["ignore-update-influence"] && updateInfluenceOverlap) continue;
             for(auto& symbolChange : symbolsToChange) symbolChanges.push_back(symbolChange.second);
-            currentLocations[component.first] = pickedEdge.targetLocation;
+            // If we transition to the end location, immediately change to first location
+            if(component.second.endLocation.identifier == pickedEdge.targetLocation.identifier)
+                currentLocations[component.first] = component.second.initialLocation;
+            else
+                currentLocations[component.first] = pickedEdge.targetLocation;
         }
     }
-    SymbolMap symbolsCopy;
-    for(auto& symbolChange : symbolChanges) symbolsCopy[symbolChange.lhs] = symbolChange.Evaluate(symbolsCopy);
+    if(updateInfluenceOverlapGlobal) {
+        spdlog::debug("Overlapping Components: (Tick#: {0})", tickCount);
+        for (auto& componentCollection : overlappingComponents) {
+            if (componentCollection.second.size() > 1) {
+                for (auto& compname : componentCollection.second) {
+                    spdlog::debug("{0}", compname);
+                }
+            }
+        }
+    }
+    SymbolMap symbolsCopy{};
+    for(auto& symbolChange : symbolChanges) {
+        if(symbols.map()[symbolChange.lhs]->type == TIMER)
+            symbolsCopy[symbolChange.lhs] = packToken(symbolChange.Evaluate(symbols).asDouble(), PACK_IS_TIMER);
+        else
+            symbolsCopy[symbolChange.lhs] = symbolChange.Evaluate(symbols);
+    }
     return {{ currentLocations, symbolsCopy }};
 }
 
@@ -183,7 +233,11 @@ std::vector<TTA::Edge> TTA::Component::GetEnabledEdges(const SymbolMap& symbolMa
 }
 
 void TTA::Tick(const nondeterminism_strategy_t& nondeterminismStrategy) {
-
+    Timer<int> timer;
+    timer.start();
+    SetCurrentState(GetNextTickStates(nondeterminismStrategy)[0]);
+    spdlog::info("Tick {0} time elapsed: {1} ms - (With printing and everything)", tickCount, timer.milliseconds_elapsed());
+    tickCount++;
 }
 
 void TTA::InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys) {
@@ -196,3 +250,46 @@ void TTA::InsertInternalSymbols(const TTA::SymbolMap &internalSymbols) {
     GetSymbols().map().insert(internalSymbols.map().begin(), internalSymbols.map().end());
 }
 
+std::optional<const TTA::Component*> TTA::GetComponent(const std::string &componentName) const {
+    auto it = components.find(componentName);
+    if(it == components.end()) return {};
+    return { &it->second };
+}
+
+TTA::TTA() {
+    // TODO: This is a stupid hack. Please implement an extension for cparse, so that the "False" literal is not case sensitive.
+    // TODO: This hack makes it possible to assign "false := true", which is insanity incarnate.
+    symbols.map()["false"] = false;
+    symbols.map()["true"] = true;
+}
+
+TTA::Edge& TTA::PickEdge(std::vector<TTA::Edge>& edges, const nondeterminism_strategy_t &strategy) const {
+    if(edges.empty()) throw std::logic_error("Trying to pick an edge from an empty list of edges is impossible.");
+    if(edges.size() == 1) return edges[0];
+    switch (strategy) {
+        case nondeterminism_strategy_t::PICK_FIRST:
+            return edges[0];
+        case nondeterminism_strategy_t::PICK_LAST:
+            return edges[edges.size()-1];
+        case nondeterminism_strategy_t::PICK_RANDOM:
+            return edges[rand() % edges.size()];
+        default:
+        case nondeterminism_strategy_t::PANIC:
+            spdlog::critical("Panicking due to nondeterministic choice!");
+            throw std::exception();
+    }
+}
+
+void TTA::DelayAllTimers(double delayDelta) {
+    for(auto& symbol : symbols.map()) {
+        if(symbol.second->type == TIMER)
+            symbols[symbol.first] = packToken(static_cast<double>(symbol.second.asDouble() + delayDelta), PACK_IS_TIMER);
+    }
+}
+
+void TTA::SetAllTimers(double exactTime) {
+    for(auto& symbol : symbols.map()) {
+        if(symbol.second->type == TIMER)
+            symbols[symbol.first] = packToken(exactTime, PACK_IS_TIMER);
+    }
+}

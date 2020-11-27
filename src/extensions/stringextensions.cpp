@@ -86,3 +86,13 @@ std::string trim_copy(std::string s) {
     trim(s);
     return s;
 }
+
+bool contains(const std::string& s, const std::string& substring) {
+    return s.find(substring) != std::string::npos;
+}
+
+std::optional<const size_t> containsString(const std::string& s, const std::string& substring) {
+    auto i = s.find(substring);
+    if(i == std::string::npos) return {};
+    return {i};
+}

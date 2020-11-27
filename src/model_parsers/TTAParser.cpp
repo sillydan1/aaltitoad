@@ -19,6 +19,8 @@
 #include <mavepch.h>
 #include <extensions/stringextensions.h>
 #include <extensions/overload>
+#include <json_parsing/JSONParser.h>
+
 #include "TTAParser.h"
 
 // Some json files are important to ignore, so Ignore-list:
@@ -69,7 +71,7 @@ std::vector<TTAParser::SymbolExternalPair> TTAParser::ParsePartsFiles(const std:
 std::vector<TTAParser::SymbolExternalPair> TTAParser::ParsePartsFile(const std::string &filepath) {
     std::ifstream file{filepath};
     if(file) {
-        auto dom_doc = ParseDocumentDOMStyle(file);
+        auto dom_doc = JSONParser::ParseDocumentDOMStyle(file);
         std::vector<TTAParser::SymbolExternalPair> symbols{};
         if(IsDocumentAProperPartsFile(dom_doc)) {
             auto partsArray = dom_doc["parts"].GetArray();
@@ -92,8 +94,6 @@ TTAParser::ExtractedSymbolLists TTAParser::ExtractExternalParts(std::vector<TTAP
     return lsts;
 }
 
-
-
 TTAIR_t::Location ParseLocation(const rapidjson::Document::ValueType& elem, const std::string& elemname) {
     auto element = elem.FindMember(elemname.c_str());
     return { .isImmediate = element->value["urgency"].GetString() == std::string("urgent"),
@@ -104,7 +104,7 @@ std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &f
     std::ifstream file{filepath};
     if(file) {
         spdlog::debug("Parsing file '{0}' as a JSON file", filepath);
-        auto dom_document = ParseDocumentDOMStyle(file);
+        auto dom_document = JSONParser::ParseDocumentDOMStyle(file);
         // Ensure existence of required high-level members
         if(IsDocumentAProperTTA(dom_document)) {
             spdlog::debug("File '{0}' is a proper TTA", filepath);
@@ -125,63 +125,24 @@ std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &f
     return {};
 }
 
-rapidjson::Document TTAParser::ParseDocumentDOMStyle(const std::ifstream &file) {
-    // TODO: DOM Style can be slow and rapidjson provides faster parsing strategies. Extend when it becomes a problem
-    std::stringstream filestream{};
-    filestream << file.rdbuf();
-    rapidjson::Document d;
-    d.Parse(filestream.str().c_str());
-    return d;
-}
-
 bool TTAParser::IsDocumentAProperTTA(const rapidjson::Document &document) {
     return  document.IsObject() &&
-            DoesMemberExistAndIsObject(document, "initial_location") &&
-            DoesMemberExistAndIsString(document["initial_location"], "id") &&
-            DoesMemberExistAndIsObject(document, "final_location") &&
-            DoesMemberExistAndIsString(document["final_location"], "id") &&
-            DoesMemberExistAndIsArray( document, "edges") &&
-            DoesMemberExistAndIsBool(  document, "main") &&
-            DoesMemberExistAndIsString(document, "declarations") &&
-            DoesMemberExistAndIsArray(document, "locations") &&
+            JSONParser::DoesMemberExistAndIsObject(document, "initial_location") &&
+            JSONParser::DoesMemberExistAndIsString(document["initial_location"], "id") &&
+            JSONParser::DoesMemberExistAndIsObject(document, "final_location") &&
+            JSONParser::DoesMemberExistAndIsString(document["final_location"], "id") &&
+            JSONParser::DoesMemberExistAndIsArray( document, "edges") &&
+            JSONParser::DoesMemberExistAndIsBool(  document, "main") &&
+            JSONParser::DoesMemberExistAndIsString(document, "declarations") &&
+            JSONParser::DoesMemberExistAndIsArray(document, "locations") &&
             IsProperLocationList(document["locations"].GetArray());
-}
-
-bool TTAParser::DoesMemberExistAndIsObject(const rapidjson::Document::ValueType &document, const std::string &membername) {
-    auto memberIterator = document.FindMember(membername.c_str());
-    return memberIterator != document.MemberEnd() && memberIterator->value.IsObject();
-}
-
-bool TTAParser::DoesMemberExistAndIsArray(const rapidjson::Document::ValueType &document, const std::string &membername) {
-    auto memberIterator = document.FindMember(membername.c_str());
-    return memberIterator != document.MemberEnd() && memberIterator->value.IsArray();
-}
-
-bool TTAParser::DoesMemberExistAndIsBool(const rapidjson::Document::ValueType &document, const std::string &membername) {
-    auto memberIterator = document.FindMember(membername.c_str());
-    return memberIterator != document.MemberEnd() && memberIterator->value.IsBool();
-}
-
-bool TTAParser::DoesMemberExistAndIsInt(const rapidjson::Document::ValueType &document, const std::string &membername) {
-    auto memberIterator = document.FindMember(membername.c_str());
-    return memberIterator != document.MemberEnd() && memberIterator->value.IsInt();
-}
-
-bool TTAParser::DoesMemberExistAndIsFloat(const rapidjson::Document::ValueType &document, const std::string &membername) {
-    auto memberIterator = document.FindMember(membername.c_str());
-    return memberIterator != document.MemberEnd() && memberIterator->value.IsFloat();
-}
-
-bool TTAParser::DoesMemberExistAndIsString(const rapidjson::Document::ValueType &document, const std::string &membername) {
-    auto memberIterator = document.FindMember(membername.c_str());
-    return memberIterator != document.MemberEnd() && memberIterator->value.IsString();
 }
 
 bool TTAParser::IsProperLocationList(const rapidjson::Document::ConstArray &locationList) {
     bool accumulator = true;
     for(auto locationObject = locationList.begin(); locationObject != locationList.end() || !accumulator; locationObject++) {
-        accumulator = accumulator && DoesMemberExistAndIsString(*locationObject, "id");
-        accumulator = accumulator && DoesMemberExistAndIsString(*locationObject, "urgency");
+        accumulator = accumulator && JSONParser::DoesMemberExistAndIsString(*locationObject, "id");
+        accumulator = accumulator && JSONParser::DoesMemberExistAndIsString(*locationObject, "urgency");
     }
     return accumulator;
 }
@@ -264,8 +225,8 @@ TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
     auto tta = ConstructTTAWithAllSymbolsFromIntermediateRep(intermediateRep);
     for(auto& comp : intermediateRep.components) {
         tta.components[comp.name] = {
-                .initialLocationIdentifier = comp.initialLocation.identifier,
-                .endLocationIdentifier     = comp.endLocation.identifier,
+                .initialLocation           = { comp.initialLocation.isImmediate, comp.initialLocation.identifier },
+                .endLocation               = { comp.endLocation.isImmediate, comp.endLocation.identifier },
                 .currentLocation           = { comp.initialLocation.isImmediate, comp.initialLocation.identifier },
                 .isMain                    = comp.isMain,
                 .edges                     = ConvertEdgeListToEdgeMap(comp.edges, tta.GetSymbols(), comp.name),
@@ -289,17 +250,19 @@ TTA::SymbolMap TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t
     TTA::SymbolMap map{};
     std::for_each(symbolList.begin(), symbolList.end(), [&map] (auto& symbol) {
         std::visit(overload(
-                [&](const int& value)            { map[symbol.identifier] = value; },
-                [&](const float& value)          { map[symbol.identifier] = value; },
-                [&](const bool& value)           { map[symbol.identifier] = value; },
+                [&](const int& value)            { map[symbol.identifier] = static_cast<int>(value); },
+                [&](const float& value)          { map[symbol.identifier] = static_cast<float>(value); },
+                [&](const bool& value)           { map[symbol.identifier] = static_cast<bool>(value); },
                 [&](const TTATimerSymbol& value) { map[symbol.identifier] = packToken(value.current_value, PACK_IS_TIMER); },
-                [&](const std::string& value)    { map[symbol.identifier] = value; }
+                [&](const std::string& value)    { map[symbol.identifier] = std::string(value); },
+                [&](const auto&& value)          {
+                    spdlog::critical("Something went wrong when converting symbol type!");
+                    throw std::exception(); }
                 ), symbol.value);
     });
     return map;
 }
 
-#include <extensions/cparse_extensions.h> // TODO: Remove this. This is only used for debugging purposes atm
 std::unordered_multimap<std::string, TTA::Edge>
 TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, const TTA::SymbolMap& symbolMap, const std::string& debugCompName) {
     std::unordered_multimap<std::string, TTA::Edge> edgeMap{};
@@ -312,7 +275,7 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
                 auto type = calc.eval()->type; // We can "safely" eval() guards, because they have no side-effects.
                 if(type != BOOL)
                     spdlog::critical("Guard expression '{0}' is not a boolean expression. It is a {1} expression. Component: '{2}'",
-                                     edge.guardExpression, tokenTypeToString(static_cast<const tokType>(type)), debugCompName.c_str());
+                                     edge.guardExpression, static_cast<const tokType>(type), debugCompName.c_str());
             }
         } catch (...) {
             spdlog::critical("Something went wrong when compiling guard expression: '{0}' on component: '{1}'", edge.guardExpression, debugCompName.c_str());
@@ -341,40 +304,40 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
 }
 
 bool TTAParser::IsDocumentAProperPartsFile(const rapidjson::Document &document) {
-    if(!DoesMemberExistAndIsArray(document, "parts")) return false;
+    if(!JSONParser::DoesMemberExistAndIsArray(document, "parts")) return false;
     auto partsArray = document["parts"].GetArray();
     return std::all_of(partsArray.begin(), partsArray.end(), &IsDocumentAProperPart);
 }
 
 bool TTAParser::IsDocumentAProperPart(const rapidjson::Document::ValueType &document) {
-    return DoesMemberExistAndIsString(document, "PartName") &&
-           DoesMemberExistAndIsString(document, "ExternalType") &&
+    return JSONParser::DoesMemberExistAndIsString(document, "PartName") &&
+           JSONParser::DoesMemberExistAndIsString(document, "ExternalType") &&
            IsDocumentAProperExternalType(document["ExternalType"]) &&
-           DoesMemberExistAndIsObject(document, "Access") &&
+           JSONParser::DoesMemberExistAndIsObject(document, "Access") &&
            IsDocumentAProperAccessType(document["Access"]) &&
-           DoesMemberExistAndIsObject(document, "GenericType") &&
+           JSONParser::DoesMemberExistAndIsObject(document, "GenericType") &&
            IsDocumentAProperGenericType(document["GenericType"]);
 }
 
 bool TTAParser::IsDocumentAProperGenericType(const rapidjson::Document::ValueType& document) {
-    return  (DoesMemberExistAndIsObject(document, "int") &&
-            DoesMemberExistAndIsInt(document["int"], "Value"))
+    return  (JSONParser::DoesMemberExistAndIsObject(document, "int") &&
+            JSONParser::DoesMemberExistAndIsInt(document["int"], "Value"))
             ||
-            (DoesMemberExistAndIsObject(document, "float") &&
-            DoesMemberExistAndIsFloat(document["float"], "Value"))
+            (JSONParser::DoesMemberExistAndIsObject(document, "float") &&
+            JSONParser::DoesMemberExistAndIsFloat(document["float"], "Value"))
             ||
-            (DoesMemberExistAndIsObject(document, "bool") &&
-            DoesMemberExistAndIsBool(document["bool"], "Value"))
+            (JSONParser::DoesMemberExistAndIsObject(document, "bool") &&
+            JSONParser::DoesMemberExistAndIsBool(document["bool"], "Value"))
             ||
-            (DoesMemberExistAndIsObject(document, "string") &&
-            DoesMemberExistAndIsString(document["string"], "Value"))
+            (JSONParser::DoesMemberExistAndIsObject(document, "string") &&
+            JSONParser::DoesMemberExistAndIsString(document["string"], "Value"))
             ||
-            (DoesMemberExistAndIsObject(document, "Timer") &&
-            DoesMemberExistAndIsInt(document["Timer"], "Value"));
+            (JSONParser::DoesMemberExistAndIsObject(document, "Timer") &&
+            JSONParser::DoesMemberExistAndIsInt(document["Timer"], "Value"));
 }
 
 bool TTAParser::IsDocumentAProperAccessType(const rapidjson::Document::ValueType &document) {
-    return DoesMemberExistAndIsBool(document, "Read") && DoesMemberExistAndIsBool(document, "Write");
+    return JSONParser::DoesMemberExistAndIsBool(document, "Read") && JSONParser::DoesMemberExistAndIsBool(document, "Write");
 }
 
 bool TTAParser::IsDocumentAProperExternalType(const rapidjson::Document::ValueType &document) {
@@ -391,9 +354,8 @@ bool TTAParser::IsDocumentExternalType(const rapidjson::Document::ValueType &doc
 }
 
 TTAParser::SymbolExternalPair TTAParser::ParsePart(const rapidjson::Document::ValueType &document) {
-    auto name = document["PartName"].GetString();
-    return {.symbol = {.identifier = name,
-                       .value = ParseGenericType(document["GenericType"])},
+    return {.symbol = {.identifier = std::string(document["PartName"].GetString()),
+            .value = ParseGenericType(document["GenericType"])},
             .isExternal = IsDocumentExternalType(document["ExternalType"])
     };
 }

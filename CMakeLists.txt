@@ -23,6 +23,7 @@ include_directories(
         dep/rapidjson/include
         dep/spdlog/include
         dep/cparse
+        dep
         src
 )
 
@@ -33,6 +34,7 @@ set (CMAKE_CXX_STANDARD_LIBRARIES -lstdc++fs)
 # Third party libraries, compiled with CMAKE
 add_subdirectory(dep/argvparse/)
 add_subdirectory(dep/spdlog)
+add_subdirectory(dep/ctlparser)
 
 # Third party libraries, compiled with something else
 ####
@@ -55,16 +57,20 @@ add_executable(${PROJECT_NAME}
         src/cli/CLIConfig.cpp
         src/extensions/stringextensions.cpp
         src/runtime/TTA.cpp
-        src/runtime/UpdateExpression.cpp)
+        src/runtime/UpdateExpression.cpp
+        src/verifier/query_parsing/CTLQueryParser.cpp
+        src/verifier/trace_output/TTATracer.cpp
+        src/verifier/trace_output/TTAResugarizer.cpp
+        src/json_parsing/JSONParser.cpp)
 
 target_link_libraries(${PROJECT_NAME}
         argvparse
         spdlog
         ttaparse
+        ctlparser
 
         shunting_yard
         builtin_features)
 
 target_precompile_headers(${PROJECT_NAME} PUBLIC src/mavepch.h)
 target_precompile_headers(ttaparse PUBLIC src/mavepch.h)
-
