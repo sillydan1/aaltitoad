@@ -21,23 +21,11 @@
 #include <aaltitoadpch.h>
 #include <extensions/hash_combine>
 #include <shunting-yard.h>
+#include <ctlparser/include/Tree.hpp>
+#include <ctlparser/include/types.h>
 #include "UpdateExpression.h"
-
-struct TTATimerSymbol {
-    float current_value;
-};
-
-using TTASymbol_t = std::variant<
-        int,
-        float,
-        bool,
-        TTATimerSymbol,
-        std::string
->;
-
-TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr);
-TTASymbol_t TTASymbolTypeFromString(const std::string& typestr);
-TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& valuestr);
+#include "VariablePredicate.h"
+#include "TTASymbol.h"
 
 enum class nondeterminism_strategy_t {
     PANIC = 0,

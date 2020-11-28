@@ -269,12 +269,13 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
     calculator calc;
     for(auto& edge : edgeList) {
         // Compile the expressions (guard and update)
+
         try {
             if (!edge.guardExpression.empty()) {
                 calc.compile(edge.guardExpression.c_str(), symbolMap);
                 auto type = calc.eval()->type; // We can "safely" eval() guards, because they have no side-effects.
                 if(type != BOOL)
-                    spdlog::critical("Guard expression '{0}' is not a boolean expression. It is a {1} expression. Component: '{2}'",
+                    spdlog::critical("Guard expression '{0}' is not a boolean expression. It is a '{1}' expression. Component: '{2}'",
                                      edge.guardExpression, static_cast<const tokType>(type), debugCompName.c_str());
             }
         } catch (...) {
@@ -297,6 +298,7 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
                 .sourceLocation           = {edge.sourceLocation.isImmediate,edge.sourceLocation.identifier},
                 .targetLocation           = {edge.targetLocation.isImmediate,edge.targetLocation.identifier},
                 .guardExpression          = edge.guardExpression, // TODO: Store this as a compiled tree. Strings are nasty
+                .externalGuardCollection  = {},
                 .updateExpressions        = updateExpressions
         } });
     }
