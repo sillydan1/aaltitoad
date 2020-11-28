@@ -16,7 +16,7 @@
 
 # 3.16+ because of "target_precompile_headers"
 cmake_minimum_required(VERSION 3.16)
-project(mave)
+project(aaltitoad)
 
 include_directories(
         dep/argvparse/include
