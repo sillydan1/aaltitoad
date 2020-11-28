@@ -1,6 +1,6 @@
 # AALTITOAD
 
-![logo](AALTITOAD_LOGO.png)
+![logo](AALTITOAD_LOGO_SMALLER.png)
 
 (**Aal**borg **Ti**ck T**o**ck **A**utomata Vali**d**ator) is a verification engine and simulator for Tick Tock Automata. 
 
