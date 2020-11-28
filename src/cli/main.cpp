@@ -41,12 +41,12 @@ int main(int argc, char** argv) {
     TTAParser ttaParser{};
     TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
 
-    //
+    // Parse the queries
     if(config["query"]) {
         auto queryList = CTLQueryParser::ParseQueriesFile(config["query"].as_string(), t);
-        for(auto& query : queryList) {
-            spdlog::critical("Is Query satisfied in Tick 0? '{1}'", 0,ReachabilitySearcher::IsQuerySatisfied(*query, t));
-        }
+        for(auto& query : queryList)
+            spdlog::critical("Is Query satisfied in Tick 0? '{0}'", ReachabilitySearcher::IsQuerySatisfied(*query, t));
+        return 0;
     }
 
     if(config["trace"]) {
