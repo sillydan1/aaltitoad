@@ -49,10 +49,23 @@ std::vector<std::string> split(const std::string& s, const std::string& delimite
     size_t pos = 0;
     std::string sc = s;
     std::string token;
-    while ((pos = sc.find(delimiter1)) != std::string::npos || (pos = sc.find(delimiter2)) != std::string::npos) {
+    bool test1, test2 = false;
+    if ((pos = sc.find(delimiter1)) != std::string::npos) {
+        test1 = true;
+    } else {
+        test1 = false;
+        test2 = (pos = sc.find(delimiter2)) != std::string::npos;
+    }
+    while (test1 || test2) {
         token = sc.substr(0, pos);
         tokens.push_back(token);
-        sc.erase(0, pos + delimiter1.length()); // TODO: This is literally incorrect.
+        sc.erase(0, pos + (test1 ? delimiter1.length() : test2 ? delimiter2.length() : 0));
+        if ((pos = sc.find(delimiter1)) != std::string::npos) {
+            test1 = true;
+        } else {
+            test1 = false;
+            test2 = (pos = sc.find(delimiter2)) != std::string::npos;
+        }
     }
     tokens.push_back(sc);
     return tokens;
