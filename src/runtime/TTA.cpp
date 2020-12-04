@@ -131,25 +131,14 @@ bool TTA::SetCurrentState(const State& newstate) {
 }
 
 bool TTA::IsCurrentStateImmediate() const {
-    for(auto& component : components)
-        if(component.second.currentLocation.isImmediate) return true;
-    return false;
+    return std::any_of(components.begin(), components.end(), [](const auto& c){ return c.isImmedate; });
 }
 
 bool TTA::IsStateImmediate(const TTA::State &state) {
-    for(auto& component : state.componentLocations)
-        if(component.second.isImmediate) return true;
-    return false;
+    return std::any_of(state.componentLocations.begin(), state.componentLocations.end(), [](const auto& c){ return c.isImmediate; });
 }
 
 TTA::InterestingStateCollection TTA::GetNextTickWithInterestingness(const nondeterminism_strategy_t& strategy) const {
-
-    return {};
-}
-
-// TODO: Clean this function up, it stinks!
-// TODO: We need something in the query checking that can check for deadlock-ness (other than just calling this function)
-std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
     auto currentLocations = GetCurrentLocations();
     std::vector<UpdateExpression> symbolChanges{};
 
@@ -179,10 +168,10 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
                         pickedEdge.targetLocation.identifier));
                 if(symbolsToChange.count(expr.lhs) > 0) {
                     spdlog::warn("Overlapping update influence on evaluation of update on edge {0} --> {1}. "
-                                      "Variable '{2}' is already being written to in this tick! - For more info, run with higher verbosity",
-                                      TTAResugarizer::Resugar(pickedEdge.sourceLocation.identifier),
-                                      TTAResugarizer::Resugar(pickedEdge.targetLocation.identifier),
-                                      TTAResugarizer::Resugar(expr.lhs)); // TODO: Idempotent variable assignment
+                                 "Variable '{2}' is already being written to in this tick! - For more info, run with higher verbosity",
+                                 TTAResugarizer::Resugar(pickedEdge.sourceLocation.identifier),
+                                 TTAResugarizer::Resugar(pickedEdge.targetLocation.identifier),
+                                 TTAResugarizer::Resugar(expr.lhs)); // TODO: Idempotent variable assignment
                     updateInfluenceOverlap = true;
                     updateInfluenceOverlapGlobal = true;
                     continue;
@@ -217,6 +206,16 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
             symbolsCopy[symbolChange.lhs] = symbolChange.Evaluate(symbols);
     }
     return {{ currentLocations, symbolsCopy }};
+}
+
+// TODO: Clean this function up, it stinks!
+// TODO: We need something in the query checking that can check for deadlock-ness (other than just calling this function)
+std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
+    auto interestingState = GetNextTickWithInterestingness(strategy);
+    std::vector<TTA::State> thing{};
+    for(auto& state : interestingState)
+        thing.emplace_back(std::move(state.first));
+    return thing;
 }
 
 std::string TTA::GetCurrentStateString() const {
