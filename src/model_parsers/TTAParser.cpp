@@ -229,7 +229,7 @@ TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
                 .endLocation               = { comp.endLocation.isImmediate, comp.endLocation.identifier },
                 .currentLocation           = { comp.initialLocation.isImmediate, comp.initialLocation.identifier },
                 .isMain                    = comp.isMain,
-                .edges                     = ConvertEdgeListToEdgeMap(comp.edges, tta.GetSymbols(), comp.name),
+                .edges                     = ConvertEdgeListToEdgeMap(comp.edges, tta.GetSymbols(), tta.GetExternalSymbols(), comp.name),
         };
     }
     return tta;
@@ -264,7 +264,7 @@ TTA::SymbolMap TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t
 }
 
 std::unordered_multimap<std::string, TTA::Edge>
-TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, const TTA::SymbolMap& symbolMap, const std::string& debugCompName) {
+TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, const TTA::SymbolMap& symbolMap, const TTA::ExternalSymbolMap& externalSymbolMap, const std::string& debugCompName) {
     std::unordered_multimap<std::string, TTA::Edge> edgeMap{};
     calculator calc;
     for(auto& edge : edgeList) {
@@ -275,7 +275,7 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
                 calc.compile(edge.guardExpression.c_str(), symbolMap);
                 auto type = calc.eval()->type; // We can "safely" eval() guards, because they have no side-effects.
                 if(type != BOOL)
-                    spdlog::critical("Guard expression '{0}' is not a boolean expression. It is a '{1}' expression. Component: '{2}'",
+                    spdlog::critical("GuardExpression expression '{0}' is not a boolean expression. It is a '{1}' expression. Component: '{2}'",
                                      edge.guardExpression, static_cast<const tokType>(type), debugCompName.c_str());
             }
         } catch (...) {
@@ -298,11 +298,42 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
                 .sourceLocation           = {edge.sourceLocation.isImmediate,edge.sourceLocation.identifier},
                 .targetLocation           = {edge.targetLocation.isImmediate,edge.targetLocation.identifier},
                 .guardExpression          = edge.guardExpression, // TODO: Store this as a compiled tree. Strings are nasty
-                .externalGuardCollection  = {},
+                .externalGuardCollection  = ParseExternalVariablesUsedInGuardExpression(edge.guardExpression, externalSymbolMap),
                 .updateExpressions        = updateExpressions
         } });
     }
     return edgeMap;
+}
+
+TTA::GuardCollection TTAParser::ParseExternalVariablesUsedInGuardExpression(const std::string& guardExpression, const TTA::ExternalSymbolMap& externalSymbolMap) {
+    auto expressions = split(guardExpression, "&&", "||");
+    TTA::GuardCollection coll = {};
+    bool doesExpressionContainExternalVariableBool = false;
+    auto doesExpressionContainExternalVariable = [&externalSymbolMap, &doesExpressionContainExternalVariableBool](const ASTNode& n) {
+        switch (n.type) {
+            case NodeType_t::Var:
+                doesExpressionContainExternalVariableBool |= externalSymbolMap.find(n.token) != externalSymbolMap.end();
+            default: break;
+        }
+    };
+    for(auto& expr : expressions) {
+        auto ge = ParseGuardExpression(expr);
+        if(!ge) continue;
+        ge->tree_apply(doesExpressionContainExternalVariable);
+        if(doesExpressionContainExternalVariableBool)
+            coll.push_back(*ge); // copy into the collection
+        doesExpressionContainExternalVariableBool = false;
+        delete ge;
+    }
+    return coll;
+}
+extern Tree<ASTNode>* ParseQuery(const std::string&);
+TTA::GuardExpression* TTAParser::ParseGuardExpression(const std::string &guardExpression) {
+    // Reuse the query parser
+    std::stringstream ss{};
+    ss << "E F " << guardExpression;
+    auto query = ParseQuery(ss.str());
+    return query;
 }
 
 bool TTAParser::IsDocumentAProperPartsFile(const rapidjson::Document &document) {
@@ -383,3 +414,5 @@ bool TTAParser::IsUpdateResettingATimerProperly(const UpdateExpression& expr, co
         return expr.rhs == "0";
     return true;
 }
+
+

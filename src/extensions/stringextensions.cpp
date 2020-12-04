@@ -44,6 +44,20 @@ std::vector<std::string> split(const std::string& s, const std::string& delimite
     return tokens;
 }
 
+std::vector<std::string> split(const std::string& s, const std::string& delimiter1, const std::string& delimiter2) {
+    std::vector<std::string> tokens;
+    size_t pos = 0;
+    std::string sc = s;
+    std::string token;
+    while ((pos = sc.find(delimiter1)) != std::string::npos || (pos = sc.find(delimiter2)) != std::string::npos) {
+        token = sc.substr(0, pos);
+        tokens.push_back(token);
+        sc.erase(0, pos + delimiter1.length()); // TODO: This is literally incorrect.
+    }
+    tokens.push_back(sc);
+    return tokens;
+}
+
 std::string GetFileNameOnly(const std::string& fullpath, char delimiter) {
     auto filenameWithExtension = fullpath.substr(fullpath.find_last_of(delimiter) + 1);
     return filenameWithExtension.substr(0, filenameWithExtension.find_last_of('.'));

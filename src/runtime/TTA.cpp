@@ -142,6 +142,11 @@ bool TTA::IsStateImmediate(const TTA::State &state) {
     return false;
 }
 
+TTA::InterestingStateCollection TTA::GetNextTickWithInterestingness(const nondeterminism_strategy_t& strategy) const {
+
+    return {};
+}
+
 // TODO: Clean this function up, it stinks!
 // TODO: We need something in the query checking that can check for deadlock-ness (other than just calling this function)
 std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
@@ -245,7 +250,7 @@ void TTA::Tick(const nondeterminism_strategy_t& nondeterminismStrategy) {
 void TTA::InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys) {
     symbols.map().insert(externalSymbolKeys.map().begin(), externalSymbolKeys.map().end());
     for(auto& elem : externalSymbolKeys.map())
-        externalSymbols.push_back(symbols.find(elem.first));
+        externalSymbols[elem.first] = symbols.find(elem.first);
 }
 
 void TTA::InsertInternalSymbols(const TTA::SymbolMap &internalSymbols) {

@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
     // Parse the TTA
     TTAParser ttaParser{};
     TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
-
+    
     // Parse the queries
     if(config["query"]) {
         auto queryList = CTLQueryParser::ParseQueriesFile(config["query"].as_string(), t);
