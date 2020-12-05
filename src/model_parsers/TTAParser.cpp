@@ -307,7 +307,7 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
 
 TTA::GuardCollection TTAParser::ParseExternalVariablesUsedInGuardExpression(const std::string& guardExpression, const TTA::ExternalSymbolMap& externalSymbolMap) {
     if(guardExpression.empty()) return {};
-    auto expressions = split(guardExpression, "||", "&&");
+    auto expressions = regex_split(guardExpression, "&&|\\|\\||and|or");
     TTA::GuardCollection coll = {};
     bool doesExpressionContainExternalVariableBool = false;
     auto doesExpressionContainExternalVariable = [&externalSymbolMap, &doesExpressionContainExternalVariableBool](const ASTNode& n) {
