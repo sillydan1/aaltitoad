@@ -208,7 +208,6 @@ void TTA::ApplyComponentLocation(TTA::ComponentLocationMap &currentLocations,
 }
 
 // TODO: Clean this function up, it stinks!
-// TODO: We need something in the query checking that can check for deadlock-ness (other than just calling this function)
 std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
     auto interestingState = GetNextTickWithInterestingness(strategy);
     std::vector<TTA::StateChange> thing{};
@@ -334,3 +333,9 @@ bool TTA::AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<
     return updateInfluenceOverlap;
 }
 
+bool TTA::IsDeadlocked() const {
+    return std::all_of(components.begin(), components.end(), [&] (const auto& component) {
+        auto enabledEdges = component.second.GetEnabledEdges(symbols);
+        return enabledEdges.empty();
+    });
+}

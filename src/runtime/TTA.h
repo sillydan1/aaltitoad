@@ -101,6 +101,8 @@ public:
     static void WarnIfNondeterminism(const std::vector<TTA::Edge>& edges, const std::string& componentName) ;
     bool AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<std::string, UpdateExpression>& symbolsToChange, std::map<std::string, std::vector<std::string>>& overlappingComponents) const;
 
+    bool IsDeadlocked() const;
+
     void DelayAllTimers(double delayDelta);
     void SetAllTimers(double exactTime);
     std::optional<const Component*> GetComponent(const std::string& componentName) const;
