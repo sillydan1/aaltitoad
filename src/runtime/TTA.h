@@ -65,11 +65,11 @@ struct TTA {
     };
     using ComponentMap = std::unordered_map<std::string, Component>;
     using ComponentLocationMap = std::unordered_map<std::string, Location>;
-    struct State {
+    struct StateChange {
         ComponentLocationMap componentLocations;
         SymbolMap symbols;
     };
-    using InterestingState = std::pair<State, std::vector<VariablePredicate>>;
+    using InterestingState = std::pair<StateChange, std::vector<VariablePredicate>>;
     using InterestingStateCollection = std::vector<InterestingState>;
     ComponentMap components = {};
 
@@ -84,17 +84,23 @@ public:
     const SymbolMap& GetSymbols() const { return symbols; }
     const ExternalSymbolMap& GetExternalSymbols() const { return externalSymbols; }
     void InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys);
-    void InsertInternalSymbols(const TTA::SymbolMap &internalSymbols);
-    static std::size_t GetStateHash(const State& state);
+    void InsertInternalSymbols(const TTA::SymbolMap &internalSymbols) const;
+    static std::size_t GetStateHash(const StateChange& state);
     std::size_t GetCurrentStateHash() const;
-    State GetCurrentState() const;
+    StateChange GetCurrentState() const;
     ComponentLocationMap GetCurrentLocations() const;
     std::string GetCurrentStateString() const;
     bool IsCurrentStateImmediate() const;
-    bool SetCurrentState(const State& newstate);
-    static bool IsStateImmediate(const State& state);
-    std::vector<State> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
+    bool SetCurrentState(const StateChange& newstate);
+    bool SetSymbols(const SymbolMap& symbolChange);
+    bool SetComponentLocations(const ComponentLocationMap& locationChange);
+    static bool IsStateImmediate(const StateChange& state);
+    std::vector<StateChange> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
     InterestingStateCollection GetNextTickWithInterestingness(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
+
+    static void WarnIfNondeterminism(const std::vector<TTA::Edge>& edges, const std::string& componentName) ;
+    bool AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<std::string, UpdateExpression>& symbolsToChange, std::map<std::string, std::vector<std::string>>& overlappingComponents) const;
+
     void DelayAllTimers(double delayDelta);
     void SetAllTimers(double exactTime);
     std::optional<const Component*> GetComponent(const std::string& componentName) const;
@@ -103,6 +109,13 @@ public:
     void Tick(const nondeterminism_strategy_t& nondeterminismStrategy = nondeterminism_strategy_t::PANIC);
 
     inline unsigned int GetTickCount() const { return tickCount; }
+
+    static void ApplyComponentLocation(ComponentLocationMap &currentLocations,
+                                const std::pair<const std::string, TTA::Component> &component, Edge &pickedEdge) ;
+
+    TokenMap GetSymbolChangesAsMap(std::vector<UpdateExpression> &symbolChanges) const;
+
+    void WarnAboutComponentOverlap(std::map<std::string, std::vector<std::string>> &overlappingComponents) const;
 };
 
 #endif //MAVE_TTA_H
