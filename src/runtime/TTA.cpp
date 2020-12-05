@@ -144,37 +144,24 @@ bool TTA::SetSymbols(const SymbolMap &symbolChange) {
 }
 
 bool TTA::IsCurrentStateImmediate() const {
-    return std::any_of(components.begin(), components.end(), [](const auto& c){ return c.isImmedate; });
+    return std::any_of(components.begin(), components.end(), [](const auto& c){ return c.second.currentLocation.isImmediate; });
 }
 
 bool TTA::IsStateImmediate(const TTA::StateChange &state) {
-    return std::any_of(state.componentLocations.begin(), state.componentLocations.end(), [](const auto& c){ return c.isImmediate; });
+    return std::any_of(state.componentLocations.begin(), state.componentLocations.end(), [](const auto& c){ return c.second.isImmediate; });
+}
+
+std::optional<StateMultiChoice> TTA::GetChangesFromEdge(const TTA::Edge& choice, bool& outInfluenceOverlap, std::map<std::string, std::vector<std::string>>& overlappingComponents) const {
+    StateMultiChoice changes{};
+    bool DoesUpdateInfluenceOverlap = AccumulateUpdateInfluences(choice, changes.symbolsToChange, overlappingComponents);
+    outInfluenceOverlap |= DoesUpdateInfluenceOverlap;
+    if(!CLIConfig::getInstance()["ignore-update-influence"] && DoesUpdateInfluenceOverlap) return{}; // No changes
+    for(auto& symbolChange : changes.symbolsToChange) changes.symbolChanges.push_back(symbolChange.second);
+    return changes;
 }
 
 TTA::InterestingStateCollection TTA::GetNextTickWithInterestingness(const nondeterminism_strategy_t& strategy) const {
-    auto currentLocations = GetCurrentLocations();
-    std::vector<UpdateExpression> symbolChanges{};
-
-    std::multimap<std::string, UpdateExpression> symbolsToChange{};
-    std::map<std::string, std::vector<std::string>> overlappingComponents{}; // expr.lhs -> componentIdentifiers mapping
-    bool updateInfluenceOverlapGlobal = false;
-    for(auto& component : components) {
-        auto enabledEdges = component.second.GetEnabledEdges(symbols);
-        if(!enabledEdges.empty()) {
-            WarnIfNondeterminism(enabledEdges, component.first);
-            // TODO: Stop picking. e.g. Implement divergent behaviour. NOTE: You wanna do this with a multimap of components.
-            auto& pickedEdge = PickEdge(enabledEdges, strategy);
-            bool DoesUpdateInfluenceOverlap = AccumulateUpdateInfluences(pickedEdge, symbolsToChange, overlappingComponents);
-            updateInfluenceOverlapGlobal |= DoesUpdateInfluenceOverlap;
-            if(!CLIConfig::getInstance()["ignore-update-influence"] && DoesUpdateInfluenceOverlap) continue;
-            for(auto& symbolChange : symbolsToChange) symbolChanges.push_back(symbolChange.second);
-            ApplyComponentLocation(currentLocations, component, pickedEdge);
-        }
-    }
-    if(updateInfluenceOverlapGlobal)
-        WarnAboutComponentOverlap(overlappingComponents);
-    auto symbolsCopy = GetSymbolChangesAsMap(symbolChanges);
-    return {{ currentLocations, symbolsCopy }};
+    return {}; // TODO
 }
 
 void TTA::WarnAboutComponentOverlap(std::map<std::string, std::vector<std::string>> &overlappingComponents) const {
@@ -207,16 +194,53 @@ void TTA::ApplyComponentLocation(TTA::ComponentLocationMap &currentLocations,
         currentLocations[component.first] = pickedEdge.targetLocation;
 }
 
-// TODO: Clean this function up, it stinks!
 std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
+    using ExpressionComponentMap = std::map<std::string, std::vector<std::string>>;
+    // Result type: [0] is shared, [>0] are choice changes
+    StateMultiChoice sharedChanges{};
+    sharedChanges.currentLocations = GetCurrentLocations();
+    std::vector<StateMultiChoice> choiceChanges{};
+
+    ExpressionComponentMap overlappingComponents{}; // expr.lhs -> componentIdentifiers mapping
+    bool updateInfluenceOverlapGlobal = false;
+    for(auto& component : components) {
+        auto enabledEdges = component.second.GetEnabledEdges(symbols);
+        if(!enabledEdges.empty()) {
+            bool hasNondeterminism = WarnIfNondeterminism(enabledEdges, component.first);
+            if(!hasNondeterminism || strategy != nondeterminism_strategy_t::VERIFICATION) {
+                // Simply pick the edge and apply it to the shared changes
+                auto &pickedEdge = PickEdge(enabledEdges, strategy);
+                auto changes = GetChangesFromEdge(pickedEdge, updateInfluenceOverlapGlobal, overlappingComponents);
+                if(changes.has_value()) sharedChanges.Merge(changes.value());
+                ApplyComponentLocation(sharedChanges.currentLocations, component, pickedEdge);
+            } else {
+                // TODO: Incorporate interestingness
+                // TODO: Incorporate external input variable predicates
+                for(auto& edge : enabledEdges) {
+                    auto changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents);
+                    if(changes.has_value()) {
+                        ApplyComponentLocation(changes->currentLocations, component, edge);
+                        choiceChanges.push_back(changes.value());
+                    }
+                }
+            }
+        }
+    }
+    if(updateInfluenceOverlapGlobal) WarnAboutComponentOverlap(overlappingComponents);
+    auto symbolsCopy = GetSymbolChangesAsMap(sharedChanges.symbolChanges);
+    std::vector<TTA::StateChange> retVal{{ sharedChanges.currentLocations, symbolsCopy }};
+    for(auto& change : choiceChanges)
+        retVal.push_back({change.currentLocations, GetSymbolChangesAsMap(change.symbolChanges)});
+    return retVal;
+    /*
     auto interestingState = GetNextTickWithInterestingness(strategy);
     std::vector<TTA::StateChange> thing{};
     for(auto& state : interestingState)
         thing.emplace_back(std::move(state.first));
-    return thing;
+    return thing;*/
 }
 
-void TTA::WarnIfNondeterminism(const std::vector<Edge>& edges, const std::string& componentName) {
+bool TTA::WarnIfNondeterminism(const std::vector<Edge>& edges, const std::string& componentName) {
     if(edges.size() > 1) {
         spdlog::error("Non-deterministic choice in Component '{0}'.",
                       TTAResugarizer::Resugar(componentName));
@@ -226,7 +250,9 @@ void TTA::WarnIfNondeterminism(const std::vector<Edge>& edges, const std::string
                           TTAResugarizer::Resugar(e.sourceLocation.identifier),
                           TTAResugarizer::Resugar(e.targetLocation.identifier));
         spdlog::debug("----- / -----");
+        return true;
     }
+    return false;
 }
 
 std::string TTA::GetCurrentStateString() const {
@@ -339,3 +365,4 @@ bool TTA::IsDeadlocked() const {
         return enabledEdges.empty();
     });
 }
+

@@ -31,9 +31,10 @@ enum class nondeterminism_strategy_t {
     PANIC = 0,
     PICK_FIRST = 1,
     PICK_LAST = 2,
-    PICK_RANDOM = 3
+    PICK_RANDOM = 3,
+    VERIFICATION = 4 /// Used for the verification engine.
 };
-
+struct StateMultiChoice;
 /***
  * Tick Tock Automata datastructure
  */
@@ -98,7 +99,7 @@ public:
     std::vector<StateChange> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
     InterestingStateCollection GetNextTickWithInterestingness(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
 
-    static void WarnIfNondeterminism(const std::vector<TTA::Edge>& edges, const std::string& componentName) ;
+    static bool WarnIfNondeterminism(const std::vector<TTA::Edge>& edges, const std::string& componentName) ;
     bool AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<std::string, UpdateExpression>& symbolsToChange, std::map<std::string, std::vector<std::string>>& overlappingComponents) const;
 
     bool IsDeadlocked() const;
@@ -111,13 +112,24 @@ public:
     void Tick(const nondeterminism_strategy_t& nondeterminismStrategy = nondeterminism_strategy_t::PANIC);
 
     inline unsigned int GetTickCount() const { return tickCount; }
-
+    std::optional<StateMultiChoice> GetChangesFromEdge(const TTA::Edge& choice, bool& outInfluenceOverlap, std::map<std::string, std::vector<std::string>>& overlappingComponents) const;
     static void ApplyComponentLocation(ComponentLocationMap &currentLocations,
                                 const std::pair<const std::string, TTA::Component> &component, Edge &pickedEdge) ;
 
     TokenMap GetSymbolChangesAsMap(std::vector<UpdateExpression> &symbolChanges) const;
 
     void WarnAboutComponentOverlap(std::map<std::string, std::vector<std::string>> &overlappingComponents) const;
+};
+
+struct StateMultiChoice {
+    std::vector<UpdateExpression> symbolChanges{};
+    std::multimap<std::string, UpdateExpression> symbolsToChange{};
+    TTA::ComponentLocationMap currentLocations{};
+
+    void Merge(StateMultiChoice& other) {
+        symbolChanges.insert(symbolChanges.end(), other.symbolChanges.begin(), other.symbolChanges.end());
+        symbolsToChange.merge(other.symbolsToChange);
+    }
 };
 
 #endif //MAVE_TTA_H
