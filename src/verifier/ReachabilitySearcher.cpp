@@ -23,7 +23,7 @@ bool IsQuerySatisfiedHelper(const Query& query, const TTA& state) {
     switch (query.root.type) {
         case NodeType_t::Location: return state.GetCurrentLocations().find(query.root.token) != state.GetCurrentLocations().end();
         // TODO: ↓ What about tock changes? - Maybe NextTickStates should be done via a successor generator class
-        case NodeType_t::Deadlock: return state.IsDeadlocked(); //// Deadlocked and is immediate. If we are not immediate, we can still tock
+        case NodeType_t::Deadlock: return state.IsDeadlocked(); //// Deadlocked and is immediate. If we are not immediate, we can still tock (unless the interesting variables set is empty)
         case NodeType_t::LogicAnd: return IsQuerySatisfiedHelper(query.children[0], state) && IsQuerySatisfiedHelper(query.children[1], state);
         case NodeType_t::LogicOr:  return IsQuerySatisfiedHelper(query.children[0], state) || IsQuerySatisfiedHelper(query.children[1], state);
         case NodeType_t::CompLess:
