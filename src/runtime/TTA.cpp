@@ -148,6 +148,7 @@ TTA::InterestingStateCollection TTA::GetNextTickWithInterestingness(const nondet
     for(auto& component : components) {
         auto enabledEdges = component.second.GetEnabledEdges(symbols);
         if(!enabledEdges.empty()) {
+            
             // TODO: Stop picking the first. e.g. Implement divergent behaviour. NOTE: You wanna do this with a multimap of components.
             if(enabledEdges.size() > 1) {
                 spdlog::error("Non-deterministic choice in Component '{0}'.",
