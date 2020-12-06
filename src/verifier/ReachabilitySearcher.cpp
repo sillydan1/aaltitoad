@@ -16,7 +16,6 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 #include "ReachabilitySearcher.h"
 
 bool IsQuerySatisfiedHelper(const Query& query, const TTA& state) {
@@ -66,8 +65,17 @@ bool ReachabilitySearcher::IsQuerySatisfied(const Query& query, const TTA &state
 }
 
 bool ReachabilitySearcher::ForwardReachabilitySearch(const Query &query, const TTA &initialState) {
-    // Forward reachability search algorithm
-    // Waiting list
-    // Passed list
+    /***  Forward reachability search algorithm
+     * Passed = Ø
+     * Waiting = {initial}
+     *
+     * pick (state) in waiting <DFS,BFS etc>
+     *      if (state |= Q) return true
+     *      for all (state -> state'):
+     *           add (state') to waiting
+     *           move (state) to Passed
+     *      Until Waiting = Ø
+     * return false
+     * */
     return false;
 }
