@@ -101,4 +101,56 @@ TTASymbol_t VariablePredicate::GetValueOverTheEdge() const {
                     default: spdlog::error("Calculating the 'over the edge' value for predicate '{0}' failed.", ToGuardString()); break;
                 } }
     ), value);
+    return value_over;
+}
+
+TTASymbol_t VariablePredicate::GetValueOnTheEdge() const {
+    TTASymbol_t value_over;
+    std::visit(overload(
+            [&](const int& v)            {
+                switch (comparator) {
+                    case PredicateComparator::LESSEQ:
+                    case PredicateComparator::EQ:
+                    case PredicateComparator::LESS: value_over = v + 1; break;
+                    case PredicateComparator::NEQ: value_over = v; break;
+                    case PredicateComparator::GREATEREQ:
+                    case PredicateComparator::GREATER: value_over = v - 1; break;
+                    default: spdlog::error("Calculating the 'over the edge' value for predicate '{0}' failed.", ToGuardString()); break;
+                } },
+            [&](const float& v)          {
+                switch (comparator) {
+                    case PredicateComparator::LESSEQ:
+                    case PredicateComparator::EQ:
+                    case PredicateComparator::LESS: value_over = v + 1; break;
+                    case PredicateComparator::NEQ: value_over = v; break;
+                    case PredicateComparator::GREATEREQ:
+                    case PredicateComparator::GREATER: value_over = v - 1; break;
+                    default: spdlog::error("Calculating the 'over the edge' value for predicate '{0}' failed.", ToGuardString()); break;
+                } },
+            [&](const bool& v)           {
+                switch (comparator) {
+                    case PredicateComparator::NEQ: value_over = v; break;
+                    case PredicateComparator::EQ: value_over = !v; break;
+                    default: spdlog::error("Calculating the 'over the edge' value for predicate '{0}' failed.", ToGuardString()); break;
+                } },
+            [&](const TTATimerSymbol& v) {
+                value_over = TTATimerSymbol{};
+                auto& vot = std::get<TTATimerSymbol>(value_over);
+                switch (comparator) {
+                    case PredicateComparator::LESSEQ:
+                    case PredicateComparator::EQ:
+                    case PredicateComparator::LESS: vot.current_value = v.current_value + 1; break;
+                    case PredicateComparator::NEQ: vot.current_value = v.current_value; break;
+                    case PredicateComparator::GREATEREQ:
+                    case PredicateComparator::GREATER: vot.current_value = v.current_value - 1; break;
+                    default: spdlog::error("Calculating the 'over the edge' value for predicate '{0}' failed.", ToGuardString()); break;
+                } },
+            [&](const std::string& v)    {
+                switch (comparator) {
+                    case PredicateComparator::EQ: value_over = v+"Something else"; break; /// This is hilarious
+                    case PredicateComparator::NEQ: value_over = v; break;
+                    default: spdlog::error("Calculating the 'over the edge' value for predicate '{0}' failed.", ToGuardString()); break;
+                } }
+    ), value);
+    return value_over;
 }

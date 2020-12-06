@@ -304,8 +304,9 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
     }
     return edgeMap;
 }
-
+extern void SetVerbosity(unsigned int level);
 TTA::GuardCollection TTAParser::ParseExternalVariablesUsedInGuardExpression(const std::string& guardExpression, const TTA::ExternalSymbolMap& externalSymbolMap) {
+    SetVerbosity(0); // TODO: We should really do this properly
     if(guardExpression.empty()) return {};
     auto expressions = regex_split(guardExpression, "&&|\\|\\||and|or");
     TTA::GuardCollection coll = {};
@@ -318,14 +319,19 @@ TTA::GuardCollection TTAParser::ParseExternalVariablesUsedInGuardExpression(cons
         }
     };
     for(auto& expr : expressions) {
+        // TODO: Parentheses fuck everything up. I dont think it is a problem right now, but it should be fixed.
         auto ge = ParseGuardExpression(expr);
         if(!ge) continue;
         ge->tree_apply(doesExpressionContainExternalVariable);
-        if(doesExpressionContainExternalVariableBool)
-            coll.push_back(*ge); // copy into the collection
+        if(doesExpressionContainExternalVariableBool) {
+            // Extract the expression only. TODO: Write a more flexible parser
+            auto& expressionOnly = ge->children[0].children[0]; // E->c[0](F)->c[0](expression)
+            coll.push_back(expressionOnly); // copy into the collection
+        }
         doesExpressionContainExternalVariableBool = false;
         delete ge;
     }
+    SetVerbosity(1); // TODO: We should really do this properly
     return coll;
 }
 extern Tree<ASTNode>* ParseQuery(const std::string&);

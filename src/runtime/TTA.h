@@ -53,6 +53,7 @@ struct TTA {
         std::string guardExpression;
         GuardCollection externalGuardCollection;
         std::vector<UpdateExpression> updateExpressions;
+        bool ContainsExternalChecks() const { return ! externalGuardCollection.empty(); }
     };
     struct Component {
         // TODO: I dont like storing full strings.
@@ -81,6 +82,7 @@ private:
     unsigned int tickCount = 0;
 
 public:
+    // TODO: Simplify this fucking class
     TTA();
     const SymbolMap& GetSymbols() const { return symbols; }
     const ExternalSymbolMap& GetExternalSymbols() const { return externalSymbols; }
@@ -97,39 +99,45 @@ public:
     bool SetSymbols(const SymbolMap& symbolChange);
     bool SetComponentLocations(const ComponentLocationMap& locationChange);
     static bool IsStateImmediate(const StateChange& state);
-    std::vector<StateChange> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
-    InterestingStateCollection GetNextTickWithInterestingness(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
-
+    std::vector<StateChange> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC);
     static bool WarnIfNondeterminism(const std::vector<TTA::Edge>& edges, const std::string& componentName) ;
     bool AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<std::string, UpdateExpression>& symbolsToChange, std::map<std::string, std::vector<std::string>>& overlappingComponents) const;
-
     bool IsDeadlocked() const;
-
     void DelayAllTimers(double delayDelta);
     void SetAllTimers(double exactTime);
     std::optional<const Component*> GetComponent(const std::string& componentName) const;
     TTA::Edge& PickEdge(std::vector<TTA::Edge>& edges, const nondeterminism_strategy_t& strategy) const;
-
     void Tick(const nondeterminism_strategy_t& nondeterminismStrategy = nondeterminism_strategy_t::PANIC);
-
     inline unsigned int GetTickCount() const { return tickCount; }
     std::optional<StateMultiChoice> GetChangesFromEdge(const TTA::Edge& choice, bool& outInfluenceOverlap, std::map<std::string, std::vector<std::string>>& overlappingComponents) const;
-    static void ApplyComponentLocation(ComponentLocationMap &currentLocations,
-                                const std::pair<const std::string, TTA::Component> &component, Edge &pickedEdge) ;
-
+    static void ApplyComponentLocation(ComponentLocationMap &currentLocations, const std::pair<const std::string, TTA::Component> &component, Edge &pickedEdge);
     TokenMap GetSymbolChangesAsMap(std::vector<UpdateExpression> &symbolChanges) const;
-
     void WarnAboutComponentOverlap(std::map<std::string, std::vector<std::string>> &overlappingComponents) const;
+    bool TypeCheck(const std::pair<const std::string, packToken> &symbol, const std::map<std::string, packToken>::iterator &changingSymbol) const;
+    void HandleInterestingConsequences(std::vector<StateMultiChoice> &choiceChanges,
+                                       const std::pair<const std::string, TTA::Component> &component,
+                                       std::vector<VariablePredicate> &changes,
+                                       std::map<std::string, std::vector<std::string>> &overlappingComponents,
+                                       bool &updateInfluenceOverlapGlobal, Edge &edge);
+    void AssignVariable(const std::string &varname, const TTASymbol_t &newValue);
 };
 
 struct StateMultiChoice {
     std::vector<UpdateExpression> symbolChanges{};
     std::multimap<std::string, UpdateExpression> symbolsToChange{};
     TTA::ComponentLocationMap currentLocations{};
+    // Consequences of taking this choice.
+    std::vector<VariablePredicate> externalInterestingConsequences{};
 
     void Merge(StateMultiChoice& other) {
         symbolChanges.insert(symbolChanges.end(), other.symbolChanges.begin(), other.symbolChanges.end());
         symbolsToChange.merge(other.symbolsToChange);
+        externalInterestingConsequences.insert(externalInterestingConsequences.end(),
+                                               other.externalInterestingConsequences.begin(),
+                                               other.externalInterestingConsequences.end());
+    }
+    bool HasInterestingConsequences() const {
+        return !externalInterestingConsequences.empty();
     }
 };
 

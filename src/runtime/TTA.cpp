@@ -110,8 +110,7 @@ bool TTA::SetComponentLocations(const ComponentLocationMap &locationChange) {
         if(compit != components.end())
             compit->second.currentLocation = componentLocation.second;
         else {
-            spdlog::critical("Attempted to change the state of TTA failed. Component '{0}' does not exist.",
-                             componentLocation.first);
+            spdlog::critical("Attempted to change the state of TTA failed. Component '{0}' does not exist.", componentLocation.first);
             return false;
         }
     }
@@ -121,24 +120,31 @@ bool TTA::SetComponentLocations(const ComponentLocationMap &locationChange) {
 bool TTA::SetSymbols(const SymbolMap &symbolChange) {
     for(auto& symbol : symbolChange.map()) {
         auto symbolit = symbols.map().find(symbol.first);
-        bool error = false;
-        auto x = symbol.second->type;
-        auto y = symbolit->second->type;
-        if(symbolit == symbols.map().end()) { spdlog::critical("Attempted to change the state of TTA failed. Symbol '{0}' does not exist.", symbol.first); error = true; }
-        else if(!(NUM & x & y) && !(x == VAR && (NUM & y))) {
-            auto a = tokenTypeToString(symbolit->second->type);
-            auto b = tokenTypeToString(symbol.second->type);
-            spdlog::critical(
-                    "Attempted to change the state of TTA failed. Symbol '{0}' does not have the correct type. ({1} vs {2} (a := b))",
-                    symbol.first, a, b);
-            error = true;
-        }
-        if(!error) {
+        bool noerror = TypeCheck(symbol, symbolit);
+        if(noerror) {
             symbols.map()[symbol.first] = symbol.second;
             if(externalSymbols.find(symbol.first) != externalSymbols.end())
                 externalSymbols[symbol.first] = symbols.find(symbol.first);
         }
         else return false;
+    }
+    return true;
+}
+
+bool TTA::TypeCheck(const std::pair<const std::string, packToken> &symbol,
+                    const std::map<std::string, packToken>::iterator &changingSymbol) const {
+    auto x = symbol.second->type;
+    auto y = changingSymbol->second->type;
+    if(changingSymbol == symbols.map().end()) {
+        spdlog::critical("Attempted to change the state of TTA failed. Symbol '{0}' does not exist.", symbol.first);
+        return false;
+    } else if(!(NUM & x & y) && !(x == VAR && (NUM & y))) {
+        auto a = tokenTypeToString(changingSymbol->second->type);
+        auto b = tokenTypeToString(symbol.second->type);
+        spdlog::critical(
+                "Attempted to change the state of TTA failed. Symbol '{0}' does not have the correct type. ({1} vs {2} (a := b))",
+                symbol.first, a, b);
+        return false;
     }
     return true;
 }
@@ -157,11 +163,10 @@ std::optional<StateMultiChoice> TTA::GetChangesFromEdge(const TTA::Edge& choice,
     outInfluenceOverlap |= DoesUpdateInfluenceOverlap;
     if(!CLIConfig::getInstance()["ignore-update-influence"] && DoesUpdateInfluenceOverlap) return{}; // No changes
     for(auto& symbolChange : changes.symbolsToChange) changes.symbolChanges.push_back(symbolChange.second);
+    for(auto& elem : choice.externalGuardCollection) {
+        // TODO: Implement conversion
+    }
     return changes;
-}
-
-TTA::InterestingStateCollection TTA::GetNextTickWithInterestingness(const nondeterminism_strategy_t& strategy) const {
-    return {}; // TODO
 }
 
 void TTA::WarnAboutComponentOverlap(std::map<std::string, std::vector<std::string>> &overlappingComponents) const {
@@ -194,7 +199,7 @@ void TTA::ApplyComponentLocation(TTA::ComponentLocationMap &currentLocations,
         currentLocations[component.first] = pickedEdge.targetLocation;
 }
 
-std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
+std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) {
     using ExpressionComponentMap = std::map<std::string, std::vector<std::string>>;
     // Result type: [0] is shared, [>0] are choice changes
     StateMultiChoice sharedChanges{};
@@ -204,7 +209,7 @@ std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strate
     ExpressionComponentMap overlappingComponents{}; // expr.lhs -> componentIdentifiers mapping
     bool updateInfluenceOverlapGlobal = false;
     for(auto& component : components) {
-        auto enabledEdges = component.second.GetEnabledEdges(symbols);
+        auto enabledEdges = component.second.GetEnabledEdges(symbols); // TODO: Take Interesting variables into account
         if(!enabledEdges.empty()) {
             bool hasNondeterminism = WarnIfNondeterminism(enabledEdges, component.first);
             if(!hasNondeterminism || strategy != nondeterminism_strategy_t::VERIFICATION) {
@@ -214,11 +219,16 @@ std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strate
                 if(changes.has_value()) sharedChanges.Merge(changes.value());
                 ApplyComponentLocation(sharedChanges.currentLocations, component, pickedEdge);
             } else {
-                // TODO: Incorporate interestingness
-                // TODO: Incorporate external input variable predicates
                 for(auto& edge : enabledEdges) {
                     auto changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents);
                     if(changes.has_value()) {
+                        if(changes.value().HasInterestingConsequences()) {
+                            HandleInterestingConsequences(choiceChanges, component,
+                                                          changes.value().externalInterestingConsequences,
+                                                          overlappingComponents,
+                                                          updateInfluenceOverlapGlobal, edge);
+                            continue;
+                        }
                         ApplyComponentLocation(changes->currentLocations, component, edge);
                         choiceChanges.push_back(changes.value());
                     }
@@ -232,12 +242,59 @@ std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strate
     for(auto& change : choiceChanges)
         retVal.push_back({change.currentLocations, GetSymbolChangesAsMap(change.symbolChanges)});
     return retVal;
-    /*
-    auto interestingState = GetNextTickWithInterestingness(strategy);
-    std::vector<TTA::StateChange> thing{};
-    for(auto& state : interestingState)
-        thing.emplace_back(std::move(state.first));
-    return thing;*/
+}
+
+void TTA::HandleInterestingConsequences(std::vector<StateMultiChoice> &choiceChanges,
+                                        const std::pair<const std::string, TTA::Component> &component,
+                                        std::vector<VariablePredicate> &changes,
+                                        std::map<std::string, std::vector<std::string>> &overlappingComponents,
+                                        bool &updateInfluenceOverlapGlobal, TTA::Edge &edge) {
+    for(auto& pred : changes) {
+        auto extsym = externalSymbols.find(pred.variable);
+        if(extsym == externalSymbols.end()) spdlog::critical("Something is very wrong here...");
+        if(extsym->second->token()->type == TIMER) spdlog::error("External interesting variable is a timer. Expect funky behavior now...");
+        auto previousVal = *extsym->second; // Copy the value, so that we may revert back
+
+        //      A: The positive path - e.g. The interesting guard is satisfied, apply symbol changes
+        AssignVariable(pred.variable, pred.GetValueOverTheEdge());
+
+        // Test if the guard is satisfied now
+        auto res = calculator::calculate(edge.guardExpression.c_str(), symbols);
+        if(res.asBool()) {
+            auto _changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents);
+            if(_changes.has_value()) {
+                ApplyComponentLocation(_changes->currentLocations, component, edge);
+                choiceChanges.push_back(_changes.value());
+            }
+        }
+        //      B: The negative path - e.g. The interesting guard is not satisfied, apply symbol changes
+        AssignVariable(pred.variable, pred.GetValueOnTheEdge());
+
+        // Test if the guard is satisfied now
+        res = calculator::calculate(edge.guardExpression.c_str(), symbols);
+        if(res.asBool()) {
+            auto _changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents);
+            if(_changes.has_value()) {
+                ApplyComponentLocation(_changes->currentLocations, component, edge);
+                choiceChanges.push_back(_changes.value());
+            }
+        }
+
+        // Revert back again
+        symbols.map()[pred.variable] = previousVal;
+        externalSymbols[pred.variable] = symbols.find(pred.variable);
+    }
+}
+
+void TTA::AssignVariable(const std::string &varname, const TTASymbol_t &newValue) {
+    std::visit(overload(
+            [&](const int& v)            { symbols.map()[varname] = v; },
+            [&](const float& v)          { symbols.map()[varname] = v; },
+            [&](const bool& v)           { symbols.map()[varname] = v; },
+            [&](const TTATimerSymbol& v) { symbols.map()[varname] = packToken(v.current_value, PACK_IS_TIMER); },
+            [&](const std::string& v)    { symbols.map()[varname] = v; }
+    ), newValue);
+    externalSymbols[varname] = symbols.find(varname);
 }
 
 bool TTA::WarnIfNondeterminism(const std::vector<Edge>& edges, const std::string& componentName) {
@@ -268,6 +325,11 @@ std::vector<TTA::Edge> TTA::Component::GetEnabledEdges(const SymbolMap& symbolMa
         if(edge->second.guardExpression.empty()) {
             ret.push_back(edge->second);
             continue; // Empty guards are considered to be always satisfied
+        }
+        // TODO: Only do this if we are verifying - This shouldn't be done for simulation
+        if(edge->second.ContainsExternalChecks()) {
+            ret.push_back(edge->second); // The guard will be evaulated later. Just assume truthyness right now.
+            continue;
         }
         auto res = calculator::calculate(edge->second.guardExpression.c_str(), symbolMap);
         if(res.asBool()) ret.push_back(edge->second);

@@ -40,7 +40,8 @@ struct VariablePredicate {
     std::string ToGuardString() const;
     static VariablePredicate Merge(const VariablePredicate& a, const VariablePredicate& b);
 
-    TTASymbol_t GetValueOverTheEdge() const;
+    [[nodiscard]] TTASymbol_t GetValueOverTheEdge() const;
+    [[nodiscard]] TTASymbol_t GetValueOnTheEdge() const; // i.e. Not within the zone
 
 };
 
