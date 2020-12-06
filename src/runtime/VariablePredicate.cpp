@@ -32,6 +32,16 @@ std::string VariablePredicate::ConvertToString(const PredicateComparator& cc) {
     }
 }
 
+VariablePredicate::PredicateComparator VariablePredicate::ConvertFromString(const std::string &cc) {
+    if(cc == "<") return PredicateComparator::LESS;
+    if(cc == "<=") return PredicateComparator::LESSEQ;
+    if(cc == "!=") return PredicateComparator::NEQ;
+    if(cc == "==") return PredicateComparator::EQ;
+    if(cc == ">") return PredicateComparator::GREATER;
+    if(cc == ">=") return PredicateComparator::GREATEREQ;
+    throw std::logic_error("Predicate Comparator string conversion error");
+}
+
 std::string VariablePredicate::ToGuardString() const {
     std::stringstream ss{};
     ss << variable << " " << ConvertToString(comparator) << " ";

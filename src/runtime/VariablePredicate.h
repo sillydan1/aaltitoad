@@ -37,6 +37,7 @@ struct VariablePredicate {
     PredicateComparator comparator;
     TTASymbol_t value;
     static std::string ConvertToString(const PredicateComparator& cc);
+    static PredicateComparator ConvertFromString(const std::string& cc);
     std::string ToGuardString() const;
     static VariablePredicate Merge(const VariablePredicate& a, const VariablePredicate& b);
 
