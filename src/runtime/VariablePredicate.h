@@ -37,8 +37,11 @@ struct VariablePredicate {
     PredicateComparator comparator;
     TTASymbol_t value;
     static std::string ConvertToString(const PredicateComparator& cc);
-    std::string ToGuardString();
+    std::string ToGuardString() const;
     static VariablePredicate Merge(const VariablePredicate& a, const VariablePredicate& b);
+
+    TTASymbol_t GetValueOverTheEdge() const;
+
 };
 
 #endif //AALTITOAD_VARIABLEPREDICATE_H
