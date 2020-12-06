@@ -222,13 +222,13 @@ std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strate
                 for(auto& edge : enabledEdges) {
                     auto changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents);
                     if(changes.has_value()) {
-                        if(changes.value().HasInterestingConsequences()) {
+                        /*if(changes.value().HasInterestingConsequences()) {
                             HandleInterestingConsequences(choiceChanges, component,
                                                           changes.value().externalInterestingConsequences,
                                                           overlappingComponents,
                                                           updateInfluenceOverlapGlobal, edge);
                             continue;
-                        }
+                        }*/
                         ApplyComponentLocation(changes->currentLocations, component, edge);
                         choiceChanges.push_back(changes.value());
                     }
@@ -265,6 +265,7 @@ void TTA::HandleInterestingConsequences(std::vector<StateMultiChoice> &choiceCha
             if(_changes.has_value()) {
                 ApplyComponentLocation(_changes->currentLocations, component, edge);
                 choiceChanges.push_back(_changes.value());
+                spdlog::debug("A: Guard is satisfied now");
             }
         }
         //      B: The negative path - e.g. The interesting guard is not satisfied, apply symbol changes
@@ -277,6 +278,7 @@ void TTA::HandleInterestingConsequences(std::vector<StateMultiChoice> &choiceCha
             if(_changes.has_value()) {
                 ApplyComponentLocation(_changes->currentLocations, component, edge);
                 choiceChanges.push_back(_changes.value());
+                spdlog::debug("B: Guard is satisfied now");
             }
         }
 
@@ -325,11 +327,6 @@ std::vector<TTA::Edge> TTA::Component::GetEnabledEdges(const SymbolMap& symbolMa
         if(edge->second.guardExpression.empty()) {
             ret.push_back(edge->second);
             continue; // Empty guards are considered to be always satisfied
-        }
-        // TODO: Only do this if we are verifying - This shouldn't be done for simulation
-        if(edge->second.ContainsExternalChecks()) {
-            ret.push_back(edge->second); // The guard will be evaulated later. Just assume truthyness right now.
-            continue;
         }
         auto res = calculator::calculate(edge->second.guardExpression.c_str(), symbolMap);
         if(res.asBool()) ret.push_back(edge->second);
