@@ -84,6 +84,7 @@ public:
     TTA();
     const SymbolMap& GetSymbols() const { return symbols; }
     const ExternalSymbolMap& GetExternalSymbols() const { return externalSymbols; }
+    bool IsSymbolExternal(const std::string& identifier) const;
     void InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys);
     void InsertInternalSymbols(const TTA::SymbolMap &internalSymbols) const;
     static std::size_t GetStateHash(const StateChange& state);

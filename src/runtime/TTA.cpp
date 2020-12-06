@@ -366,3 +366,7 @@ bool TTA::IsDeadlocked() const {
     });
 }
 
+bool TTA::IsSymbolExternal(const std::string &identifier) const {
+    return externalSymbols.find(identifier) != externalSymbols.end();
+}
+
