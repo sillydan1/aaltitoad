@@ -65,7 +65,8 @@ add_executable(${PROJECT_NAME}
         src/json_parsing/JSONParser.cpp
         src/verifier/ReachabilitySearcher.cpp
         src/runtime/VariablePredicate.cpp
-        src/verifier/TTASuccessorGenerator.cpp)
+        src/verifier/TTASuccessorGenerator.cpp
+        src/extensions/tree_extensions.cpp)
 
 target_link_libraries(${PROJECT_NAME}
         argvparse
