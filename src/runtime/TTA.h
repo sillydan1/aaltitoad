@@ -114,30 +114,16 @@ public:
     TokenMap GetSymbolChangesAsMap(std::vector<UpdateExpression> &symbolChanges) const;
     void WarnAboutComponentOverlap(std::map<std::string, std::vector<std::string>> &overlappingComponents) const;
     bool TypeCheck(const std::pair<const std::string, packToken> &symbol, const std::map<std::string, packToken>::iterator &changingSymbol) const;
-    void HandleInterestingConsequences(std::vector<StateMultiChoice> &choiceChanges,
-                                       const std::pair<const std::string, TTA::Component> &component,
-                                       std::vector<VariablePredicate> &changes,
-                                       std::map<std::string, std::vector<std::string>> &overlappingComponents,
-                                       bool &updateInfluenceOverlapGlobal, Edge &edge);
-    void AssignVariable(const std::string &varname, const TTASymbol_t &newValue);
 };
 
 struct StateMultiChoice {
     std::vector<UpdateExpression> symbolChanges{};
     std::multimap<std::string, UpdateExpression> symbolsToChange{};
     TTA::ComponentLocationMap currentLocations{};
-    // Consequences of taking this choice.
-    std::vector<VariablePredicate> externalInterestingConsequences{};
 
     void Merge(StateMultiChoice& other) {
         symbolChanges.insert(symbolChanges.end(), other.symbolChanges.begin(), other.symbolChanges.end());
         symbolsToChange.merge(other.symbolsToChange);
-        externalInterestingConsequences.insert(externalInterestingConsequences.end(),
-                                               other.externalInterestingConsequences.begin(),
-                                               other.externalInterestingConsequences.end());
-    }
-    bool HasInterestingConsequences() const {
-        return !externalInterestingConsequences.empty();
     }
 };
 

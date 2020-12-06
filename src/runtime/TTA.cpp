@@ -51,7 +51,7 @@ TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& 
                 if(valuestr[0] == '\"' && valuestr[valuestr.size()-1] == '\"')
                     value = valuestr.substr(1,valuestr.size()-2);
                 else {
-                    spdlog::error("Missing '\"' on string value '{0}' - Adding them manually, but this should be corrected", valuestr);
+                    spdlog::warn("Missing '\"' on string value '{0}' - Adding them manually, but this should be corrected", valuestr);
                     value = valuestr;
                 }
             }
@@ -163,9 +163,6 @@ std::optional<StateMultiChoice> TTA::GetChangesFromEdge(const TTA::Edge& choice,
     outInfluenceOverlap |= DoesUpdateInfluenceOverlap;
     if(!CLIConfig::getInstance()["ignore-update-influence"] && DoesUpdateInfluenceOverlap) return{}; // No changes
     for(auto& symbolChange : changes.symbolsToChange) changes.symbolChanges.push_back(symbolChange.second);
-    for(auto& elem : choice.externalGuardCollection) {
-        // TODO: Implement conversion
-    }
     return changes;
 }
 
@@ -222,13 +219,6 @@ std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strate
                 for(auto& edge : enabledEdges) {
                     auto changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents);
                     if(changes.has_value()) {
-                        /*if(changes.value().HasInterestingConsequences()) {
-                            HandleInterestingConsequences(choiceChanges, component,
-                                                          changes.value().externalInterestingConsequences,
-                                                          overlappingComponents,
-                                                          updateInfluenceOverlapGlobal, edge);
-                            continue;
-                        }*/
                         ApplyComponentLocation(changes->currentLocations, component, edge);
                         choiceChanges.push_back(changes.value());
                     }
@@ -242,61 +232,6 @@ std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strate
     for(auto& change : choiceChanges)
         retVal.push_back({change.currentLocations, GetSymbolChangesAsMap(change.symbolChanges)});
     return retVal;
-}
-
-void TTA::HandleInterestingConsequences(std::vector<StateMultiChoice> &choiceChanges,
-                                        const std::pair<const std::string, TTA::Component> &component,
-                                        std::vector<VariablePredicate> &changes,
-                                        std::map<std::string, std::vector<std::string>> &overlappingComponents,
-                                        bool &updateInfluenceOverlapGlobal, TTA::Edge &edge) {
-    for(auto& pred : changes) {
-        auto extsym = externalSymbols.find(pred.variable);
-        if(extsym == externalSymbols.end()) spdlog::critical("Something is very wrong here...");
-        if(extsym->second->token()->type == TIMER) spdlog::error("External interesting variable is a timer. Expect funky behavior now...");
-        auto previousVal = *extsym->second; // Copy the value, so that we may revert back
-
-        //      A: The positive path - e.g. The interesting guard is satisfied, apply symbol changes
-        AssignVariable(pred.variable, pred.GetValueOverTheEdge());
-
-        // Test if the guard is satisfied now
-        auto res = calculator::calculate(edge.guardExpression.c_str(), symbols);
-        if(res.asBool()) {
-            auto _changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents);
-            if(_changes.has_value()) {
-                ApplyComponentLocation(_changes->currentLocations, component, edge);
-                choiceChanges.push_back(_changes.value());
-                spdlog::debug("A: Guard is satisfied now");
-            }
-        }
-        //      B: The negative path - e.g. The interesting guard is not satisfied, apply symbol changes
-        AssignVariable(pred.variable, pred.GetValueOnTheEdge());
-
-        // Test if the guard is satisfied now
-        res = calculator::calculate(edge.guardExpression.c_str(), symbols);
-        if(res.asBool()) {
-            auto _changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents);
-            if(_changes.has_value()) {
-                ApplyComponentLocation(_changes->currentLocations, component, edge);
-                choiceChanges.push_back(_changes.value());
-                spdlog::debug("B: Guard is satisfied now");
-            }
-        }
-
-        // Revert back again
-        symbols.map()[pred.variable] = previousVal;
-        externalSymbols[pred.variable] = symbols.find(pred.variable);
-    }
-}
-
-void TTA::AssignVariable(const std::string &varname, const TTASymbol_t &newValue) {
-    std::visit(overload(
-            [&](const int& v)            { symbols.map()[varname] = v; },
-            [&](const float& v)          { symbols.map()[varname] = v; },
-            [&](const bool& v)           { symbols.map()[varname] = v; },
-            [&](const TTATimerSymbol& v) { symbols.map()[varname] = packToken(v.current_value, PACK_IS_TIMER); },
-            [&](const std::string& v)    { symbols.map()[varname] = v; }
-    ), newValue);
-    externalSymbols[varname] = symbols.find(varname);
 }
 
 bool TTA::WarnIfNondeterminism(const std::vector<Edge>& edges, const std::string& componentName) {
