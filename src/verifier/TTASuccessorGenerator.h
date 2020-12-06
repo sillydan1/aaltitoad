@@ -24,7 +24,15 @@
 class TTASuccessorGenerator {
 public:
     static std::vector<TTA::StateChange> GetNextTickStates(const TTA& tta);
+    /// Gets all the predicates
     static std::vector<VariablePredicate> GetInterestingVariablePredicatesInState(const TTA& ttaState);
+    /// A more efficient way of checking if the state is interesting, than getting an empty vector
+    static bool IsStateInteresting(const TTA& ttaState);
+
+    static void ApplyVariablePredicateToTTA(TTA& tta, const VariablePredicate& predicate);
+
+private:
+    static VariablePredicate ConvertFromGuardExpression(const TTA::GuardExpression& expressionTree, const TTA& ttaState);
 };
 
 #endif //AALTITOAD_TTASUCCESSORGENERATOR_H

@@ -16,12 +16,77 @@
     You should have received a copy of the GNU General Public License
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include <extensions/tree_extensions.h>
+#include <extensions/stringextensions.h>
 #include "TTASuccessorGenerator.h"
 
 std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTickStates(const TTA &tta) {
-    return std::vector<TTA::StateChange>();
+    return tta.GetNextTickStates(nondeterminism_strategy_t::VERIFICATION);
 }
 
 std::vector<VariablePredicate> TTASuccessorGenerator::GetInterestingVariablePredicatesInState(const TTA &ttaState) {
-    return std::vector<VariablePredicate>();
+    // Get all edges that we may be able to take.
+    auto currentEdges = ttaState.GetCurrentEdges();
+    // Filter over the "interesting" edges
+    currentEdges.erase(std::remove_if(currentEdges.begin(), currentEdges.end(),
+                                      [](const auto& edge){ return !edge.ContainsExternalChecks(); }), currentEdges.end());
+    // Extract predicates based on the guards of those edges
+    std::vector<VariablePredicate> preds{};
+    for(auto& edge : currentEdges) {
+        for(auto& expr : edge.externalGuardCollection)
+            preds.push_back(ConvertFromGuardExpression(expr, ttaState));
+    }
+    return preds;
+}
+
+VariablePredicate TTASuccessorGenerator::ConvertFromGuardExpression(const TTA::GuardExpression &expressionTree, const TTA& ttaState) {
+    std::optional<VariablePredicate> predicate;
+    bool searchFoundComparator = false;
+    auto conversionAlgorithm = [&predicate, &searchFoundComparator, &ttaState] (const Tree<ASTNode>& n) {
+        if(searchFoundComparator) return;
+        switch (n.root.type) {
+            case NodeType_t::CompLess:
+            case NodeType_t::CompLessEq:
+            case NodeType_t::CompNeq:
+            case NodeType_t::CompEq:
+            case NodeType_t::CompGreater:
+            case NodeType_t::CompGreaterEq: {
+                auto calcval = calculator::calculate(ConvertASTToString(n.children[1]).c_str(), ttaState.GetSymbols());
+                TTASymbol_t predRHS{};
+                switch (calcval.token()->type) {
+                    case STR:   predRHS = calcval.asString(); break;
+                    case REAL:  predRHS = static_cast<float>(calcval.asDouble()); break;
+                    case INT:   predRHS = static_cast<int>(calcval.asInt()); break;
+                    case BOOL:  predRHS = calcval.asBool(); break;
+                    case TIMER: predRHS = TTATimerSymbol{.current_value = static_cast<float>(calcval.asDouble()) }; break;
+                    default: spdlog::critical("Right hand side of expression is weird"); break;
+                }
+                predicate = VariablePredicate{.variable   = n.children[0].root.token,
+                                              .comparator = VariablePredicate::ConvertFromString(trim_copy(n.root.token)),
+                                              .value      = predRHS};
+                searchFoundComparator = true;
+                break;
+            }
+            default: break;
+        }
+    };
+    expressionTree.tree_apply(conversionAlgorithm);
+    if(predicate.has_value())
+        return predicate.value();
+    else {
+        spdlog::critical("Conversion of guard expression '{0}' didn't work!", ConvertASTToString(expressionTree));
+        return {};
+    }
+}
+
+void TTASuccessorGenerator::ApplyVariablePredicateToTTA(TTA& tta, const VariablePredicate& predicate) {
+    auto over = predicate.GetValueOverTheEdge();
+    auto on   = predicate.GetValueOnTheEdge();
+    // TODO: Implement this
+}
+
+bool TTASuccessorGenerator::IsStateInteresting(const TTA& ttaState) {
+    auto currentEdges = ttaState.GetCurrentEdges();
+    return std::any_of(currentEdges.begin(), currentEdges.end(),
+                [](const auto& edge){ return edge.ContainsExternalChecks(); });
 }
