@@ -196,7 +196,7 @@ void TTA::ApplyComponentLocation(TTA::ComponentLocationMap &currentLocations,
         currentLocations[component.first] = pickedEdge.targetLocation;
 }
 
-std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) {
+std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
     using ExpressionComponentMap = std::map<std::string, std::vector<std::string>>;
     // Result type: [0] is shared, [>0] are choice changes
     StateMultiChoice sharedChanges{};
@@ -364,3 +364,13 @@ bool TTA::IsSymbolExternal(const std::string &identifier) const {
     return externalSymbols.find(identifier) != externalSymbols.end();
 }
 
+std::vector<TTA::Edge> TTA::GetCurrentEdges() const {
+    std::vector<Edge> edges{};
+    for(auto& component : components) {
+        auto currentEdgesInComponent = component.second.edges.equal_range(component.second.currentLocation.identifier);
+        for(auto edge = currentEdgesInComponent.first; edge != currentEdgesInComponent.second; ++edge) {
+            edges.push_back(edge->second);
+        }
+    }
+    return edges;
+}

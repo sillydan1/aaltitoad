@@ -99,7 +99,8 @@ public:
     bool SetSymbols(const SymbolMap& symbolChange);
     bool SetComponentLocations(const ComponentLocationMap& locationChange);
     static bool IsStateImmediate(const StateChange& state);
-    std::vector<StateChange> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC);
+    std::vector<Edge> GetCurrentEdges() const;
+    std::vector<StateChange> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
     static bool WarnIfNondeterminism(const std::vector<TTA::Edge>& edges, const std::string& componentName) ;
     bool AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<std::string, UpdateExpression>& symbolsToChange, std::map<std::string, std::vector<std::string>>& overlappingComponents) const;
     bool IsDeadlocked() const;
