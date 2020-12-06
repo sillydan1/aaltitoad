@@ -16,16 +16,15 @@
     You should have received a copy of the GNU General Public License
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#ifndef MAVE_REACHABILITYSEARCHER_H
-#define MAVE_REACHABILITYSEARCHER_H
-#include <verifier/query_parsing/CTLQueryParser.h>
+#ifndef AALTITOAD_TTASUCCESSORGENERATOR_H
+#define AALTITOAD_TTASUCCESSORGENERATOR_H
+#include <aaltitoadpch.h>
 #include <runtime/TTA.h>
 
-class ReachabilitySearcher {
+class TTASuccessorGenerator {
 public:
-    static bool IsQuerySatisfied(const Query& query, const TTA& state);
-    static bool ForwardReachabilitySearch(const Query& query, const TTA& initialState);
+    static std::vector<TTA::StateChange> GetNextTickStates(const TTA& tta);
+    static std::vector<VariablePredicate> GetInterestingVariablePredicatesInState(const TTA& ttaState);
 };
 
-#endif //MAVE_REACHABILITYSEARCHER_H
+#endif //AALTITOAD_TTASUCCESSORGENERATOR_H

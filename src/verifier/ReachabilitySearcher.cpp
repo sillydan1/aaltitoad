@@ -64,3 +64,10 @@ bool ReachabilitySearcher::IsQuerySatisfied(const Query& query, const TTA &state
     }
     return IsQuerySatisfiedHelper(query, state);
 }
+
+bool ReachabilitySearcher::ForwardReachabilitySearch(const Query &query, const TTA &initialState) {
+    // Forward reachability search algorithm
+    // Waiting list
+    // Passed list
+    return false;
+}
