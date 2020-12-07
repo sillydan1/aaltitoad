@@ -319,7 +319,7 @@ TTA::GuardCollection TTAParser::ParseExternalVariablesUsedInGuardExpression(cons
         }
     };
     for(auto& expr : expressions) {
-        // TODO: Parentheses fuck everything up. I dont think it is a problem right now, but it should be fixed.
+        // TODO: Parentheses fuck everything up. It should be fixed.
         auto ge = ParseGuardExpression(expr);
         if(!ge) continue;
         ge->tree_apply(doesExpressionContainExternalVariable);

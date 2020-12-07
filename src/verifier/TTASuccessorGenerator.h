@@ -32,9 +32,6 @@ public:
     /// Finds and applies all available interesting predicates
     static std::vector<TTA::StateChange> GetNextTockStates(const TTA& ttaState);
 
-    // TODO: Remove this
-    static void ApplyVariablePredicateToTTA(TTA& tta, const VariablePredicate& predicate);
-
 private:
     static VariablePredicate ConvertFromGuardExpression(const TTA::GuardExpression& expressionTree, const TTA& ttaState);
 };

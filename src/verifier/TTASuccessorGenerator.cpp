@@ -36,7 +36,7 @@ std::vector<VariablePredicate> TTASuccessorGenerator::GetInterestingVariablePred
         for(auto& expr : edge.externalGuardCollection)
             preds.push_back(ConvertFromGuardExpression(expr, ttaState));
     }
-    return preds;
+    return preds; // TODO: Check for uniqueness and/or satisfiability
 }
 
 VariablePredicate TTASuccessorGenerator::ConvertFromGuardExpression(const TTA::GuardExpression &expressionTree, const TTA& ttaState) {
@@ -79,12 +79,6 @@ VariablePredicate TTASuccessorGenerator::ConvertFromGuardExpression(const TTA::G
     }
 }
 
-void TTASuccessorGenerator::ApplyVariablePredicateToTTA(TTA& tta, const VariablePredicate& predicate) {
-    auto over = predicate.GetValueOverTheEdge();
-    auto on   = predicate.GetValueOnTheEdge();
-    // TODO: Implement this
-}
-
 bool TTASuccessorGenerator::IsStateInteresting(const TTA& ttaState) {
     auto currentEdges = ttaState.GetCurrentEdges();
     return std::any_of(currentEdges.begin(), currentEdges.end(),
@@ -98,6 +92,7 @@ void AssignVariable(TTA::SymbolMap& symbols, const std::string &varname, const T
             [&](const int& v)            { symbols.map()[varname] = v; },
             [&](const float& v)          { symbols.map()[varname] = v; },
             [&](const bool& v)           { symbols.map()[varname] = v; },
+            // TODO: We should delay all timers, not just this single one...
             [&](const TTATimerSymbol& v) { symbols.map()[varname] = packToken(v.current_value, PACK_IS_TIMER); },
             [&](const std::string& v)    { symbols.map()[varname] = v; }
     ), newValue);
@@ -135,10 +130,11 @@ std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA
     VariableValueCollection positives{};
     VariableValueCollection negatives{};
     for(auto& predicate : interestingVarPredicates) {
+        // TODO: We should really do some Z3 SAT solving instead of this.
         positives.emplace_back(predicate.variable, predicate.GetValueOverTheEdge());
         positives.emplace_back(predicate.variable, predicate.GetValueOnTheEdge());
     }
     // Apply the cross product of all negatives, and positives.
-    std::vector<TTA::StateChange> crossProduct = bfs(positives, negatives);
-    return crossProduct;
+    std::vector<TTA::StateChange> allPermutations = bfs(positives, negatives);
+    return allPermutations;
 }

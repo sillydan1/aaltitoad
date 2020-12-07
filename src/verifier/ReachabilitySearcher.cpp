@@ -17,6 +17,7 @@
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "ReachabilitySearcher.h"
+#include "TTASuccessorGenerator.h"
 
 bool IsQuerySatisfiedHelper(const Query& query, const TTA& state) {
     switch (query.root.type) {
@@ -64,7 +65,30 @@ bool ReachabilitySearcher::IsQuerySatisfied(const Query& query, const TTA &state
     return IsQuerySatisfiedHelper(query, state);
 }
 
+// TODO: Extract TTA into TTAState and TTAGraph, to minimize the memory footprint
 bool ReachabilitySearcher::ForwardReachabilitySearch(const Query &query, const TTA &initialState) {
+    std::unordered_map<size_t, bool> Passed{}; // TODO: This should be stored in a manner that makes it possible to provide traces
+    std::unordered_map<size_t, TTA> Waiting{};
+    Waiting[initialState.GetCurrentStateHash()] = initialState;
+    auto stateit = Waiting.begin();
+    while(stateit != Waiting.end()) {
+        auto& state = stateit->second;
+        if(IsQuerySatisfied(query, state)) return true; // The query has been reached
+        // If the state is interesting, apply tock changes
+        // TODO: Timers being wrongly applied.
+        // TODO: Guards with parentheses that checks on interesting variables are not parsed properly. Expect weird behavior
+        if(!state.IsCurrentStateImmediate() && TTASuccessorGenerator::IsStateInteresting(state)) {
+            auto allTockStateChanges = TTASuccessorGenerator::GetNextTockStates(state);
+        }
+        auto allStateChanges = TTASuccessorGenerator::GetNextTickStates(state);
+
+
+
+        Passed[stateit->first] = true;
+        Waiting.erase(stateit->first); // Remove this state from the waiting list
+        stateit = Waiting.begin();
+    }
+    return false;
     /***  Forward reachability search algorithm
      * Passed = Ø
      * Waiting = {initial}
@@ -73,9 +97,8 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const Query &query, const T
      *      if (state |= Q) return true
      *      for all (state -> state'):
      *           add (state') to waiting
-     *           move (state) to Passed
+     *      move (state) to Passed
      *      Until Waiting = Ø
      * return false
      * */
-    return false;
 }
