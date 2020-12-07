@@ -23,12 +23,16 @@
 
 class TTASuccessorGenerator {
 public:
-    static std::vector<TTA::StateChange> GetNextTickStates(const TTA& tta);
+    /// Gets the set of states that are reachable in the given state (no tocking implications)
+    static std::vector<TTA::StateChange> GetNextTickStates(const TTA& ttaStateAndGraph);
     /// Gets all the predicates
     static std::vector<VariablePredicate> GetInterestingVariablePredicatesInState(const TTA& ttaState);
     /// A more efficient way of checking if the state is interesting, than getting an empty vector
     static bool IsStateInteresting(const TTA& ttaState);
+    /// Finds and applies all available interesting predicates
+    static std::vector<TTA::StateChange> GetNextTockStates(const TTA& ttaState);
 
+    // TODO: Remove this
     static void ApplyVariablePredicateToTTA(TTA& tta, const VariablePredicate& predicate);
 
 private:
