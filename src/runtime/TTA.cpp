@@ -21,10 +21,16 @@
 #include <extensions/cparse_extensions.h>
 #include <tinytimer/Timer.hpp>
 
-inline TTA::StateChange operator+(TTA::StateChange a, TTA::StateChange b) {
+TTA::StateChange operator+(TTA::StateChange a, TTA::StateChange b) {
     // Merge a and b
     a.symbols.map().merge(b.symbols.map());
     a.componentLocations.merge(b.componentLocations);
+    return a;
+}
+
+TTA operator<<(TTA a, const TTA::StateChange& b) {
+    bool changedSuccessfully = a.SetCurrentState(b);
+    if(!changedSuccessfully) spdlog::critical("Something went wrong when trying to apply a statechange.");
     return a;
 }
 
@@ -93,11 +99,12 @@ std::size_t TTA::GetStateHash(const StateChange& state) {
         auto symbol_hash = std::hash<std::string>{}(symbol.first);   // hash of the symbol identifier
         // Combine with the symbol value
         switch(symbol.second->type) {
-            case INT:  hash_combine(symbol_hash, symbol.second.asInt());    break;
-            case BOOL: hash_combine(symbol_hash, symbol.second.asBool());   break;
-            case REAL: hash_combine(symbol_hash, symbol.second.asDouble()); break;
-            case STR:  hash_combine(symbol_hash, symbol.second.asString()); break;
-            default: spdlog::error("Symbol type '{0}' is not supported!", symbol.second->type); break;
+            case INT:   hash_combine(symbol_hash, symbol.second.asInt());    break;
+            case BOOL:  hash_combine(symbol_hash, symbol.second.asBool());   break;
+            case REAL:  hash_combine(symbol_hash, symbol.second.asDouble()); break;
+            case STR:   hash_combine(symbol_hash, symbol.second.asString()); break;
+            case TIMER: hash_combine(symbol_hash, symbol.second.asDouble()); break;
+            default: spdlog::error("Symbol type '{0}' is not supported!", tokenTypeToString(symbol.second->type)); break;
         }
         hash_combine(state_hash, symbol_hash); // Combine with the overall state
     }

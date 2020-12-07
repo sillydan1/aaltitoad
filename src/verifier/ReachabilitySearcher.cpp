@@ -33,9 +33,9 @@ bool IsQuerySatisfiedHelper(const Query& query, const TTA& state) {
         case NodeType_t::CompGreater:
         case NodeType_t::CompGreaterEq: {
             std::string exprstring = ""; // This string can technically be precompiled.
-            query.children[0].tree_apply([&exprstring]( const auto& node ){ exprstring += node.token; });
+            query.children[0].tree_apply([&exprstring]( const ASTNode& node ){ exprstring += node.token; });
             exprstring += query.root.token;
-            query.children[1].tree_apply([&exprstring]( const auto& node ){ exprstring += node.token; });
+            query.children[1].tree_apply([&exprstring]( const ASTNode& node ){ exprstring += node.token; });
             spdlog::debug("Assembled expression '{0}'", exprstring);
             calculator c(exprstring.c_str());
             return c.eval(state.GetSymbols()).asBool();
@@ -65,25 +65,38 @@ bool ReachabilitySearcher::IsQuerySatisfied(const Query& query, const TTA &state
     return IsQuerySatisfiedHelper(query, state);
 }
 
+struct TTAIsTockStatePair {
+    TTA tta;
+    bool justTocked;
+};
+
 // TODO: Extract TTA into TTAState and TTAGraph, to minimize the memory footprint
 bool ReachabilitySearcher::ForwardReachabilitySearch(const Query &query, const TTA &initialState) {
     std::unordered_map<size_t, bool> Passed{}; // TODO: This should be stored in a manner that makes it possible to provide traces
-    std::unordered_map<size_t, TTA> Waiting{};
-    Waiting[initialState.GetCurrentStateHash()] = initialState;
+    std::unordered_map<size_t, TTAIsTockStatePair> Waiting{};
+    Waiting[initialState.GetCurrentStateHash()] = TTAIsTockStatePair{initialState, false};
+    auto add_to_waiting_list = [&](const TTA& state, const std::vector<TTA::StateChange>& statechanges, bool justTocked){
+        for(auto& change : statechanges) {
+            /// This is a lot of copying large data objects... Figure something out with maybe std::move
+            auto nstate = state << change;
+            auto nstatehash = state.GetCurrentStateHash();
+            if(Passed.find(nstatehash) == Passed.end())
+                Waiting[nstatehash] = TTAIsTockStatePair{nstate, justTocked};
+        }
+    };
     auto stateit = Waiting.begin();
     while(stateit != Waiting.end()) {
         auto& state = stateit->second;
-        if(IsQuerySatisfied(query, state)) return true; // The query has been reached
+        if(IsQuerySatisfied(query, state.tta)) return true; // The query has been reached
         // If the state is interesting, apply tock changes
         // TODO: Timers being wrongly applied.
         // TODO: Guards with parentheses that checks on interesting variables are not parsed properly. Expect weird behavior
-        if(!state.IsCurrentStateImmediate() && TTASuccessorGenerator::IsStateInteresting(state)) {
-            auto allTockStateChanges = TTASuccessorGenerator::GetNextTockStates(state);
+        if(!state.justTocked && !state.tta.IsCurrentStateImmediate() && TTASuccessorGenerator::IsStateInteresting(state.tta)) {
+            auto allTockStateChanges = TTASuccessorGenerator::GetNextTockStates(state.tta);
+            add_to_waiting_list(state.tta, allTockStateChanges, true);
         }
-        auto allStateChanges = TTASuccessorGenerator::GetNextTickStates(state);
-
-
-
+        auto allTickStateChanges = TTASuccessorGenerator::GetNextTickStates(state.tta);
+        add_to_waiting_list(state.tta, allTickStateChanges, false);
         Passed[stateit->first] = true;
         Waiting.erase(stateit->first); // Remove this state from the waiting list
         stateit = Waiting.begin();

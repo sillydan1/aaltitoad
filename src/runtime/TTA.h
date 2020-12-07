@@ -129,6 +129,7 @@ struct StateMultiChoice {
 /// Merges the changes of a and b.
 /// Note: a's changes will override b's changes if they change the same things.
 // TODO: This should work without copying b
-inline TTA::StateChange operator+(TTA::StateChange a, TTA::StateChange b);
+TTA::StateChange operator+(TTA::StateChange a, TTA::StateChange b);
+TTA operator<<(TTA a, const TTA::StateChange& b);
 
 #endif //MAVE_TTA_H
