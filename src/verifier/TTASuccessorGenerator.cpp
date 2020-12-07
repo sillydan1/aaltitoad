@@ -132,7 +132,7 @@ std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA
     for(auto& predicate : interestingVarPredicates) {
         // TODO: We should really do some Z3 SAT solving instead of this.
         positives.emplace_back(predicate.variable, predicate.GetValueOverTheEdge());
-        positives.emplace_back(predicate.variable, predicate.GetValueOnTheEdge());
+        negatives.emplace_back(predicate.variable, predicate.GetValueOnTheEdge());
     }
     // Apply the cross product of all negatives, and positives.
     std::vector<TTA::StateChange> allPermutations = bfs(positives, negatives);
