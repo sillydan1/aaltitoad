@@ -90,3 +90,55 @@ bool TTASuccessorGenerator::IsStateInteresting(const TTA& ttaState) {
     return std::any_of(currentEdges.begin(), currentEdges.end(),
                 [](const auto& edge){ return edge.ContainsExternalChecks(); });
 }
+
+using VariableValueCollection = std::vector<std::pair<std::string, TTASymbol_t>>;
+
+void AssignVariable(TTA::SymbolMap& symbols, const std::string &varname, const TTASymbol_t &newValue) {
+    std::visit(overload(
+            [&](const int& v)            { symbols.map()[varname] = v; },
+            [&](const float& v)          { symbols.map()[varname] = v; },
+            [&](const bool& v)           { symbols.map()[varname] = v; },
+            [&](const TTATimerSymbol& v) { symbols.map()[varname] = packToken(v.current_value, PACK_IS_TIMER); },
+            [&](const std::string& v)    { symbols.map()[varname] = v; }
+    ), newValue);
+}
+
+std::vector<TTA::StateChange> bfs(const VariableValueCollection& a, const VariableValueCollection& b) {
+    std::vector<TTA::StateChange> crossProduct{};
+    std::stack<std::pair<TTA::StateChange, int>> frontier{};
+    frontier.push(std::make_pair(TTA::StateChange{},0));
+    while(!frontier.empty()) {
+        auto statechange = frontier.top();
+        frontier.pop();
+        auto& curr = statechange.first;
+        auto& idx  = statechange.second;
+        if(statechange.second >= a.size()) {
+            crossProduct.push_back(statechange.first);
+        } else {
+            TTA::StateChange stA{};
+            AssignVariable(stA.symbols, a[idx].first, a[idx].second);
+            TTA::StateChange stB{};
+            AssignVariable(stB.symbols, a[idx].first, a[idx].second);
+            frontier.push(std::make_pair(curr + stA, idx+1));
+            frontier.push(std::make_pair(curr + stB, idx+1));
+        }
+    }
+    return crossProduct;
+}
+
+/// PERSONAL_NOTE: This only changes the variables. No component locations
+std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA &ttaState) {
+    // Get all the interesting variable predicates
+    auto interestingVarPredicates = GetInterestingVariablePredicatesInState(ttaState);
+    if(interestingVarPredicates.empty()) return {};
+    // Get all the positive and negative values that the predicates describe
+    VariableValueCollection positives{};
+    VariableValueCollection negatives{};
+    for(auto& predicate : interestingVarPredicates) {
+        positives.emplace_back(predicate.variable, predicate.GetValueOverTheEdge());
+        positives.emplace_back(predicate.variable, predicate.GetValueOnTheEdge());
+    }
+    // Apply the cross product of all negatives, and positives.
+    std::vector<TTA::StateChange> crossProduct = bfs(positives, negatives);
+    return crossProduct;
+}
