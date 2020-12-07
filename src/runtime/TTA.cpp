@@ -21,6 +21,13 @@
 #include <extensions/cparse_extensions.h>
 #include <tinytimer/Timer.hpp>
 
+inline TTA::StateChange operator+(TTA::StateChange a, TTA::StateChange b) {
+    // Merge a and b
+    a.symbols.map().merge(b.symbols.map());
+    a.componentLocations.merge(b.componentLocations);
+    return a;
+}
+
 TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr) {
     return PopulateValueFromString(TTASymbolTypeFromString(typestr), valuestr);
 }
