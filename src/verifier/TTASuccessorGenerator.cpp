@@ -97,7 +97,10 @@ void AssignVariable(TTA::SymbolMap& symbols, const std::string &varname, const T
             [&](const std::string& v)    { symbols.map()[varname] = v; }
     ), newValue);
 }
-
+/// This absolutely explodes into a billion pieces if the sizeof(a) or b becomes too large.
+/// i.e. just 16 changes equals 65536 stateChanges (2^N)
+/// - which is not something that doesnt happen
+/// Also, this approach is not very memory efficient, so the size limit will be even more stringed
 std::vector<TTA::StateChange> bfs(const VariableValueCollection& a, const VariableValueCollection& b) {
     std::vector<TTA::StateChange> crossProduct{};
     std::stack<std::pair<TTA::StateChange, int>> frontier{};
@@ -107,7 +110,7 @@ std::vector<TTA::StateChange> bfs(const VariableValueCollection& a, const Variab
         frontier.pop();
         auto& curr = statechange.first;
         auto& idx  = statechange.second;
-        if(statechange.second >= a.size()) {
+        if(idx >= a.size()) {
             crossProduct.push_back(statechange.first);
         } else {
             TTA::StateChange stA{};
@@ -126,15 +129,29 @@ std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA
     // Get all the interesting variable predicates
     auto interestingVarPredicates = GetInterestingVariablePredicatesInState(ttaState);
     if(interestingVarPredicates.empty()) return {};
+    // TODO: This is technically incorrect. These state changes may have an effect on the reachable state space if they are applied together
+    std::vector<TTA::StateChange> allChanges{};
+    for(auto& predicate : interestingVarPredicates) {
+        TTA::StateChange stP{}; // Positive path
+        AssignVariable(stP.symbols, predicate.variable, predicate.GetValueOverTheEdge());
+        TTA::StateChange stN{}; // Negative path
+        AssignVariable(stN.symbols, predicate.variable, predicate.GetValueOnTheEdge());
+        allChanges.push_back(stP);
+        allChanges.push_back(stN);
+    }
+    /*
     // Get all the positive and negative values that the predicates describe
     VariableValueCollection positives{};
     VariableValueCollection negatives{};
     for(auto& predicate : interestingVarPredicates) {
-        // TODO: We should really do some Z3 SAT solving instead of this.
         positives.emplace_back(predicate.variable, predicate.GetValueOverTheEdge());
         negatives.emplace_back(predicate.variable, predicate.GetValueOnTheEdge());
     }
     // Apply the cross product of all negatives, and positives.
-    std::vector<TTA::StateChange> allPermutations = bfs(positives, negatives);
+    // TODO: We should do some Z3 SAT solving instead of this.
+    // If positives.size() == 64, then we will result in 18,446,744,073,709,551,616 permutations. This is bad.
+    // std::vector<TTA::StateChange> allPermutations = bfs(positives, negatives);
     return allPermutations;
+     */
+    return allChanges;
 }
