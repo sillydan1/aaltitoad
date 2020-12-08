@@ -26,7 +26,8 @@ bool IsQuerySatisfiedHelper(const Query& query, const TTA& state) {
     switch (query.root.type) {
         case NodeType_t::Location: {
             auto ddd = state.GetCurrentLocationsLocationsOnly();
-            return std::find(ddd.begin(), ddd.end(), TTAResugarizer::Unsugar(query.root.token)) != ddd.end();
+            bool ret = std::find(ddd.begin(), ddd.end(), TTAResugarizer::Unsugar(query.root.token)) != ddd.end();
+            return ret;
         }
         case NodeType_t::Deadlock: return state.IsDeadlocked(); //// Deadlocked and is immediate. If we are not immediate, we can still tock (unless the interesting variables set is empty)
         case NodeType_t::LogicAnd: return IsQuerySatisfiedHelper(query.children[0], state) && IsQuerySatisfiedHelper(query.children[1], state);
@@ -37,7 +38,7 @@ bool IsQuerySatisfiedHelper(const Query& query, const TTA& state) {
         case NodeType_t::CompEq:
         case NodeType_t::CompGreater:
         case NodeType_t::CompGreaterEq: {
-            std::string exprstring = ""; // This string can technically be precompiled.
+            std::string exprstring{}; // This string can technically be precompiled.
             query.children[0].tree_apply([&exprstring]( const ASTNode& node ){ exprstring += node.token; });
             exprstring += query.root.token;
             query.children[1].tree_apply([&exprstring]( const ASTNode& node ){ exprstring += node.token; });

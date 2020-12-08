@@ -87,13 +87,25 @@ bool TTASuccessorGenerator::IsStateInteresting(const TTA& ttaState) {
 
 using VariableValueCollection = std::vector<std::pair<std::string, TTASymbol_t>>;
 
-void AssignVariable(TTA::SymbolMap& symbols, const std::string &varname, const TTASymbol_t &newValue) {
+void AssignVariable(TTA::SymbolMap& symbols, const TTA::SymbolMap& derivedSymbols, const std::string &varname, const TTASymbol_t &newValue) {
     std::visit(overload(
             [&](const int& v)            { symbols.map()[varname] = v; },
-            [&](const float& v)          { symbols.map()[varname] = v; },
+            [&](const float& v)          {
+                symbols.map()[varname] = v;
+                },
             [&](const bool& v)           { symbols.map()[varname] = v; },
             // TODO: We should delay all timers, not just this single one...
-            [&](const TTATimerSymbol& v) { symbols.map()[varname] = packToken(v.current_value, PACK_IS_TIMER); },
+            [&](const TTATimerSymbol& v) {
+                auto current = static_cast<float>(derivedSymbols.map()[varname].asDouble());
+                float delta = std::abs(current - v.current_value);
+                spdlog::critical("Delaying all timers {0}", delta);
+                for(auto& s : derivedSymbols.map()) {
+                    if(s.second->type == TIMER)
+                        symbols.map()[s.first] = s.second; // This is a cpy, right?
+                }
+                TTA::StateChange::DelayTimerSymbols(symbols, delta);
+                // symbols.map()[varname] = packToken(v.current_value, PACK_IS_TIMER);
+            },
             [&](const std::string& v)    { symbols.map()[varname] = v; }
     ), newValue);
 }
@@ -114,9 +126,9 @@ std::vector<TTA::StateChange> bfs(const VariableValueCollection& a, const Variab
             crossProduct.push_back(statechange.first);
         } else {
             TTA::StateChange stA{};
-            AssignVariable(stA.symbols, a[idx].first, a[idx].second);
+           // AssignVariable(stA.symbols, a[idx].first, a[idx].second);
             TTA::StateChange stB{};
-            AssignVariable(stB.symbols, a[idx].first, a[idx].second);
+           // AssignVariable(stB.symbols, a[idx].first, a[idx].second);
             frontier.push(std::make_pair(curr + stA, idx+1));
             frontier.push(std::make_pair(curr + stB, idx+1));
         }
@@ -133,12 +145,13 @@ std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA
     std::vector<TTA::StateChange> allChanges{};
     for(auto& predicate : interestingVarPredicates) {
         TTA::StateChange stP{}; // Positive path
-        AssignVariable(stP.symbols, predicate.variable, predicate.GetValueOverTheEdge());
+        AssignVariable(stP.symbols, ttaState.GetSymbols(), predicate.variable, predicate.GetValueOverTheEdge());
         TTA::StateChange stN{}; // Negative path
-        AssignVariable(stN.symbols, predicate.variable, predicate.GetValueOnTheEdge());
+        AssignVariable(stN.symbols, ttaState.GetSymbols(), predicate.variable, predicate.GetValueOnTheEdge());
         allChanges.push_back(stP);
         allChanges.push_back(stN);
     }
+    spdlog::critical("Tock Changes: {0}", allChanges.size());
     /*
     // Get all the positive and negative values that the predicates describe
     VariableValueCollection positives{};

@@ -70,6 +70,8 @@ struct TTA {
     struct StateChange {
         ComponentLocationMap componentLocations;
         SymbolMap symbols;
+
+        static void DelayTimerSymbols(SymbolMap& symbols, float delayDelta);
     };
     ComponentMap components = {};
 

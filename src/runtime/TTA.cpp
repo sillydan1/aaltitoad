@@ -74,7 +74,26 @@ TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& 
 
 // TODO: This can be optimized by caching hashes on the state changes only. And there's no need to copy the symbols.
 std::size_t TTA::GetCurrentStateHash() const {
-    return GetStateHash(GetCurrentState());
+    std::size_t state_hash = 0;
+    for(auto& component : components)
+        state_hash == 0 ?
+        [&state_hash, &component](){ state_hash = std::hash<std::string>{}(component.second.currentLocation.identifier);}() :
+        hash_combine(state_hash, component.first);
+
+    for(auto& symbol : symbols.map()) {
+        auto symbol_hash = std::hash<std::string>{}(symbol.first);   // hash of the symbol identifier
+        // Combine with the symbol value
+        switch(symbol.second->type) {
+            case INT:   hash_combine(symbol_hash, symbol.second.asInt());    break;
+            case BOOL:  hash_combine(symbol_hash, symbol.second.asBool());   break;
+            case REAL:  hash_combine(symbol_hash, symbol.second.asDouble()); break;
+            case STR:   hash_combine(symbol_hash, symbol.second.asString()); break;
+            case TIMER: hash_combine(symbol_hash, symbol.second.asDouble()); break;
+            default: spdlog::error("Symbol type '{0}' is not supported!", tokenTypeToString(symbol.second->type)); break;
+        }
+        hash_combine(state_hash, symbol_hash); // Combine with the overall state
+    }
+    return state_hash;
 }
 
 TTA::StateChange TTA::GetCurrentState() const {
@@ -358,6 +377,13 @@ void TTA::SetAllTimers(double exactTime) {
     for(auto& symbol : symbols.map()) {
         if(symbol.second->type == TIMER)
             symbols[symbol.first] = packToken(exactTime, PACK_IS_TIMER);
+    }
+}
+
+void TTA::StateChange::DelayTimerSymbols(SymbolMap& symbols, float delayDelta) {
+    for(auto& symbol : symbols.map()) {
+        if(symbol.second->type == TIMER)
+            symbols[symbol.first] = packToken(static_cast<double>(symbol.second.asDouble() + delayDelta), PACK_IS_TIMER);
     }
 }
 
