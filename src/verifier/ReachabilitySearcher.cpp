@@ -19,6 +19,8 @@
 #include "ReachabilitySearcher.h"
 #include "TTASuccessorGenerator.h"
 
+#include <tinytimer/Timer.hpp>
+
 bool IsQuerySatisfiedHelper(const Query& query, const TTA& state) {
     switch (query.root.type) {
         case NodeType_t::Location:
@@ -73,6 +75,8 @@ struct TTAIsTockStatePair {
 
 // TODO: Extract TTA into TTAState and TTAGraph, to minimize the memory footprint
 bool ReachabilitySearcher::ForwardReachabilitySearch(const Query &query, const TTA &initialState) {
+    int counter = 0;
+    Timer<int> tt{};
     std::unordered_map<size_t, bool> Passed{}; // TODO: This should be stored in a manner that makes it possible to provide traces
     std::unordered_map<size_t, TTAIsTockStatePair> Waiting{};
     Waiting[initialState.GetCurrentStateHash()] = TTAIsTockStatePair{initialState, false};
@@ -87,6 +91,7 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const Query &query, const T
     };
     auto stateit = Waiting.begin();
     while(stateit != Waiting.end()) {
+        tt.start();
         auto& state = stateit->second;
         if(IsQuerySatisfied(query, state.tta)) return true; // The query has been reached
         // If the state is interesting, apply tock changes
@@ -94,6 +99,7 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const Query &query, const T
         // TODO: Guards with parentheses that checks on interesting variables are not parsed properly. Expect weird behavior
         if(!state.justTocked && !state.tta.IsCurrentStateImmediate() && TTASuccessorGenerator::IsStateInteresting(state.tta)) {
             auto allTockStateChanges = TTASuccessorGenerator::GetNextTockStates(state.tta);
+            spdlog::critical("All Tock State Changes: {0}", allTockStateChanges.size());
             add_to_waiting_list(state.tta, allTockStateChanges, true);
         }
         auto allTickStateChanges = TTASuccessorGenerator::GetNextTickStates(state.tta);
@@ -101,6 +107,9 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const Query &query, const T
         Passed[stateit->first] = true;
         Waiting.erase(stateit->first); // Remove this state from the waiting list
         stateit = Waiting.begin();
+        counter++;
+        spdlog::critical("Time it took in frontier exploration: {0}", tt.milliseconds_elapsed());
+        spdlog::critical("Waiting list size: {0}", Waiting.size());
     }
     return false;
     /***  Forward reachability search algorithm
