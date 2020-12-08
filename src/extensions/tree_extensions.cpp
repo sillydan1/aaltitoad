@@ -46,10 +46,10 @@ void ConverterHelper(std::stringstream& ss, const Tree<ASTNode>& n) {
         case NodeType_t::Until:
         case NodeType_t::Exists:
         case NodeType_t::Forall:
-            ss << n.root.token;
+            ss << n.root.token << " ";
             ConverterHelper(ss, n.children[0]);break;
         case NodeType_t::UNKNOWN:
-        default: ss << n.root.token;break;
+        default: ss << n.root.token << " ";break;
     }
 }
 

@@ -20,12 +20,14 @@
 #include "TTASuccessorGenerator.h"
 
 #include <tinytimer/Timer.hpp>
+#include <extensions/tree_extensions.h>
 
 bool IsQuerySatisfiedHelper(const Query& query, const TTA& state) {
     switch (query.root.type) {
-        case NodeType_t::Location:
-            return state.GetCurrentLocations().find(TTAResugarizer::Unsugar(query.root.token)) != state.GetCurrentLocations().end();
-        // TODO: ↓ What about tock changes? - Maybe NextTickStates should be done via a successor generator class
+        case NodeType_t::Location: {
+            auto ddd = state.GetCurrentLocationsLocationsOnly();
+            return std::find(ddd.begin(), ddd.end(), TTAResugarizer::Unsugar(query.root.token)) != ddd.end();
+        }
         case NodeType_t::Deadlock: return state.IsDeadlocked(); //// Deadlocked and is immediate. If we are not immediate, we can still tock (unless the interesting variables set is empty)
         case NodeType_t::LogicAnd: return IsQuerySatisfiedHelper(query.children[0], state) && IsQuerySatisfiedHelper(query.children[1], state);
         case NodeType_t::LogicOr:  return IsQuerySatisfiedHelper(query.children[0], state) || IsQuerySatisfiedHelper(query.children[1], state);
@@ -68,6 +70,16 @@ bool ReachabilitySearcher::IsQuerySatisfied(const Query& query, const TTA &state
     return IsQuerySatisfiedHelper(query, state);
 }
 
+void ReachabilitySearcher::AreQueriesSatisfied(std::vector<QueryResultPair>& queries, const TTA& state) {
+    for(auto & query : queries) {
+        if(!query.answer) {
+            query.answer = IsQuerySatisfied(*query.query, state);
+            if (query.answer)
+                spdlog::critical("Query '{0}' is satisfied!", ConvertASTToString(*query.query));
+        }
+    }
+}
+
 struct TTAIsTockStatePair {
     TTA tta;
     bool justTocked;
@@ -75,8 +87,19 @@ struct TTAIsTockStatePair {
 
 // TODO: Extract TTA into TTAState and TTAGraph, to minimize the memory footprint
 bool ReachabilitySearcher::ForwardReachabilitySearch(const Query &query, const TTA &initialState) {
-    int counter = 0;
-    Timer<int> tt{};
+    return ForwardReachabilitySearch({&query}, initialState);
+}
+
+void PrintResults(const std::vector<QueryResultPair>& results) {
+    spdlog::critical("==== QUERY RESULTS ====");
+    for(auto& r : results) {
+        spdlog::critical("{0} : {1}", ConvertASTToString(*r.query), r.answer);
+    }
+}
+
+bool ReachabilitySearcher::ForwardReachabilitySearch(const std::vector<const Query*>& queries, const TTA& initialState) {
+    std::vector<QueryResultPair> query_results{}; query_results.reserve(queries.size());
+    for(auto& q : queries) query_results.push_back({.answer = false, .query = q});
     std::unordered_map<size_t, bool> Passed{}; // TODO: This should be stored in a manner that makes it possible to provide traces
     std::unordered_map<size_t, TTAIsTockStatePair> Waiting{};
     Waiting[initialState.GetCurrentStateHash()] = TTAIsTockStatePair{initialState, false};
@@ -91,15 +114,18 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const Query &query, const T
     };
     auto stateit = Waiting.begin();
     while(stateit != Waiting.end()) {
-        tt.start();
         auto& state = stateit->second;
-        if(IsQuerySatisfied(query, state.tta)) return true; // The query has been reached
+        AreQueriesSatisfied(query_results, state.tta);
+        if(std::all_of(query_results.begin(), query_results.end(), [](const auto& r){ return r.answer; })) {
+            PrintResults(query_results);
+            spdlog::critical("Found a result after searching: {0} states", Passed.size());
+            return true; // All the queries has been reached
+        }
         // If the state is interesting, apply tock changes
         // TODO: Timers being wrongly applied.
         // TODO: Guards with parentheses that checks on interesting variables are not parsed properly. Expect weird behavior
         if(!state.justTocked && !state.tta.IsCurrentStateImmediate() && TTASuccessorGenerator::IsStateInteresting(state.tta)) {
             auto allTockStateChanges = TTASuccessorGenerator::GetNextTockStates(state.tta);
-            spdlog::critical("All Tock State Changes: {0}", allTockStateChanges.size());
             add_to_waiting_list(state.tta, allTockStateChanges, true);
         }
         auto allTickStateChanges = TTASuccessorGenerator::GetNextTickStates(state.tta);
@@ -107,10 +133,9 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const Query &query, const T
         Passed[stateit->first] = true;
         Waiting.erase(stateit->first); // Remove this state from the waiting list
         stateit = Waiting.begin();
-        counter++;
-        spdlog::critical("Time it took in frontier exploration: {0}", tt.milliseconds_elapsed());
-        spdlog::critical("Waiting list size: {0}", Waiting.size());
     }
+    PrintResults(query_results);
+    spdlog::critical("Found a result after searching: {0} states", Passed.size());
     return false;
     /***  Forward reachability search algorithm
      * Passed = Ø
@@ -125,3 +150,5 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const Query &query, const T
      * return false
      * */
 }
+
+

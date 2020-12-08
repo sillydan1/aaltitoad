@@ -45,11 +45,7 @@ int main(int argc, char** argv) {
     // Parse the queries
     if(config["query"]) {
         auto queryList = CTLQueryParser::ParseQueriesFile(config["query"].as_string(), t);
-        for(auto& query : queryList) {
-            bool res = ReachabilitySearcher::ForwardReachabilitySearch(*query, t);
-            if(res) std::cout << "----------------- QUERY SATISFIED ----------------- (" << ConvertASTToString(*query) << ")" << std::endl;
-            else    std::cout << "--------------- QUERY NOT SATISFIED --------------- (" << ConvertASTToString(*query) << ")" << std::endl;
-        }
+        ReachabilitySearcher::ForwardReachabilitySearch(queryList, t);
         return 0;
     }
 

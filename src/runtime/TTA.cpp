@@ -88,6 +88,13 @@ TTA::ComponentLocationMap TTA::GetCurrentLocations() const {
     return componentLocations;
 }
 
+std::vector<std::string> TTA::GetCurrentLocationsLocationsOnly() const {
+    std::vector<std::string> componentLocations = {};
+    for(auto& component : components)
+        componentLocations.push_back(component.second.currentLocation.identifier);
+    return componentLocations;
+}
+
 std::size_t TTA::GetStateHash(const StateChange& state) {
     std::size_t state_hash = 0;
     for(auto& component : state.componentLocations)

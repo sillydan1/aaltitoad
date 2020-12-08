@@ -22,10 +22,17 @@
 #include <verifier/query_parsing/CTLQueryParser.h>
 #include <runtime/TTA.h>
 
+struct QueryResultPair {
+    bool answer;
+    const Query* query;
+};
+
 class ReachabilitySearcher {
 public:
     static bool IsQuerySatisfied(const Query& query, const TTA& state);
+    static void AreQueriesSatisfied(std::vector<QueryResultPair>& queries, const TTA& state);
     static bool ForwardReachabilitySearch(const Query& query, const TTA& initialState);
+    static bool ForwardReachabilitySearch(const std::vector<const Query*>& queries, const TTA& initialState);
 };
 
 #endif //MAVE_REACHABILITYSEARCHER_H

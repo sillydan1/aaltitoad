@@ -28,7 +28,7 @@ using Query = Tree<ASTNode>;
 
 class CTLQueryParser {
 public:
-    static std::vector<Query*> ParseQueriesFile(const std::string& filepath, const TTA& tta);
+    static std::vector<const Query*> ParseQueriesFile(const std::string& filepath, const TTA& tta);
 
 private:
     static Query* ParseQueryFromDoc(const rapidjson::Document::ValueType& document, const TTA& tta);

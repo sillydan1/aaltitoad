@@ -91,6 +91,7 @@ public:
     std::size_t GetCurrentStateHash() const;
     StateChange GetCurrentState() const;
     ComponentLocationMap GetCurrentLocations() const;
+    std::vector<std::string> GetCurrentLocationsLocationsOnly() const; // TODO: This is a patch solution. Make this good
     std::string GetCurrentStateString() const;
     bool IsCurrentStateImmediate() const;
     bool SetCurrentState(const StateChange& newstate);
