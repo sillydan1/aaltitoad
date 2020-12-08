@@ -23,6 +23,7 @@
 #include <verifier/trace_output/TTATracer.h>
 #include <verifier/query_parsing/CTLQueryParser.h>
 #include <verifier/ReachabilitySearcher.h>
+#include <extensions/tree_extensions.h>
 
 int main(int argc, char** argv) {
     // Initialize CLI configuration (based on CLI Args)
@@ -40,12 +41,14 @@ int main(int argc, char** argv) {
     // Parse the TTA
     TTAParser ttaParser{};
     TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
-    
+
     // Parse the queries
     if(config["query"]) {
         auto queryList = CTLQueryParser::ParseQueriesFile(config["query"].as_string(), t);
         for(auto& query : queryList) {
-            ReachabilitySearcher::ForwardReachabilitySearch(*query, t);
+            bool res = ReachabilitySearcher::ForwardReachabilitySearch(*query, t);
+            if(res) std::cout << "----------------- QUERY SATISFIED ----------------- (" << ConvertASTToString(*query) << ")" << std::endl;
+            else    std::cout << "--------------- QUERY NOT SATISFIED --------------- (" << ConvertASTToString(*query) << ")" << std::endl;
         }
         return 0;
     }
