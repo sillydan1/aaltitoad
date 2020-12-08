@@ -214,7 +214,6 @@ std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strate
     using ExpressionComponentMap = std::map<std::string, std::vector<std::string>>;
     // Result type: [0] is shared, [>0] are choice changes
     StateMultiChoice sharedChanges{};
-    sharedChanges.currentLocations = GetCurrentLocations();
     std::vector<StateMultiChoice> choiceChanges{};
 
     ExpressionComponentMap overlappingComponents{}; // expr.lhs -> componentIdentifiers mapping
@@ -223,12 +222,22 @@ std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strate
         auto enabledEdges = component.second.GetEnabledEdges(symbols); // TODO: Take Interesting variables into account
         if(!enabledEdges.empty()) {
             bool hasNondeterminism = WarnIfNondeterminism(enabledEdges, component.first);
-            if(!hasNondeterminism || strategy != nondeterminism_strategy_t::VERIFICATION) {
+            if(!hasNondeterminism) {
                 // Simply pick the edge and apply it to the shared changes
-                auto &pickedEdge = PickEdge(enabledEdges, strategy);
-                auto changes = GetChangesFromEdge(pickedEdge, updateInfluenceOverlapGlobal, overlappingComponents);
-                if(changes.has_value()) sharedChanges.Merge(changes.value());
-                ApplyComponentLocation(sharedChanges.currentLocations, component, pickedEdge);
+                if(strategy != nondeterminism_strategy_t::VERIFICATION) {
+                    auto &pickedEdge = PickEdge(enabledEdges, strategy);
+                    auto changes = GetChangesFromEdge(pickedEdge, updateInfluenceOverlapGlobal, overlappingComponents);
+                    if (changes.has_value()) sharedChanges.Merge(changes.value());
+                    ApplyComponentLocation(sharedChanges.currentLocations, component, pickedEdge);
+                } else {
+                    for(auto& edge : enabledEdges) {
+                        auto changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents);
+                        if(changes.has_value()) {
+                            sharedChanges.Merge(changes.value());
+                            ApplyComponentLocation(sharedChanges.currentLocations, component, edge);
+                        }
+                    }
+                }
             } else {
                 for(auto& edge : enabledEdges) {
                     auto changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents);
