@@ -26,6 +26,10 @@ struct TTATimerSymbol {
     float current_value;
 };
 
+inline auto operator<(const TTATimerSymbol& a, const TTATimerSymbol& b) {
+    return a.current_value < b.current_value;
+}
+
 using TTASymbol_t = std::variant<
         int,
         float,

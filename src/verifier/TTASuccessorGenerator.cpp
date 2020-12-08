@@ -85,7 +85,7 @@ bool TTASuccessorGenerator::IsStateInteresting(const TTA& ttaState) {
                 [](const auto& edge){ return edge.ContainsExternalChecks(); });
 }
 
-using VariableValueCollection = std::vector<std::pair<std::string, TTASymbol_t>>;
+using VariableValueCollection = std::set<std::pair<std::string, TTASymbol_t>>;
 
 void AssignVariable(TTA::SymbolMap& symbols, const TTA::SymbolMap& derivedSymbols, const std::string &varname, const TTASymbol_t &newValue) {
     std::visit(overload(
@@ -141,6 +141,16 @@ std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA
     // Get all the interesting variable predicates
     auto interestingVarPredicates = GetInterestingVariablePredicatesInState(ttaState);
     if(interestingVarPredicates.empty()) return {};
+    if(interestingVarPredicates.size() < 16) {
+        VariableValueCollection positives{};
+        VariableValueCollection negatives{};
+        for (auto &predicate : interestingVarPredicates) {
+            positives.insert(std::make_pair(predicate.variable, predicate.GetValueOverTheEdge()));
+            negatives.insert(std::make_pair(predicate.variable, predicate.GetValueOnTheEdge()));
+        }
+        std::vector<TTA::StateChange> allPermutations = bfs(positives, negatives);
+        return allPermutations;
+    }
     // TODO: This is technically incorrect. These state changes may have an effect on the reachable state space if they are applied together
     std::vector<TTA::StateChange> allChanges{};
     for(auto& predicate : interestingVarPredicates) {
