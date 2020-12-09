@@ -75,7 +75,7 @@ struct TTA {
     };
     ComponentMap components = {};
 
-private:
+public:
     SymbolMap symbols = {};
     // This only works because we don't add or remove symbols during runtime
     ExternalSymbolMap externalSymbols = {}; // Still. Beware of dangling pointers!
@@ -88,6 +88,7 @@ public:
     const ExternalSymbolMap& GetExternalSymbols() const { return externalSymbols; }
     bool IsSymbolExternal(const std::string& identifier) const;
     void InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys);
+    void InsertExternalSymbols(const ExternalSymbolMap& externalSymbols);
     void InsertInternalSymbols(const TTA::SymbolMap &internalSymbols) const;
     static std::size_t GetStateHash(const StateChange& state);
     std::size_t GetCurrentStateHash() const;
@@ -133,6 +134,6 @@ struct StateMultiChoice {
 /// Note: a's changes will override b's changes if they change the same things.
 // TODO: This should work without copying b
 TTA::StateChange operator+(TTA::StateChange a, TTA::StateChange b);
-TTA operator<<(TTA a, const TTA::StateChange& b);
+TTA operator<<(const TTA& a, const TTA::StateChange& b);
 
 #endif //MAVE_TTA_H

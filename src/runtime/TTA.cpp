@@ -28,7 +28,11 @@ TTA::StateChange operator+(TTA::StateChange a, TTA::StateChange b) {
     return a;
 }
 
-TTA operator<<(TTA a, const TTA::StateChange& b) {
+TTA operator<<(const TTA& aa, const TTA::StateChange& b) {
+    TTA a{};
+    a.components = aa.components;
+    a.InsertInternalSymbols(aa.symbols);
+    a.InsertExternalSymbols(aa.GetExternalSymbols());
     bool changedSuccessfully = a.SetCurrentState(b);
     if(!changedSuccessfully) spdlog::critical("Something went wrong when trying to apply a statechange.");
     return a;
@@ -78,7 +82,7 @@ std::size_t TTA::GetCurrentStateHash() const {
     for(auto& component : components)
         state_hash == 0 ?
         [&state_hash, &component](){ state_hash = std::hash<std::string>{}(component.second.currentLocation.identifier);}() :
-        hash_combine(state_hash, component.first);
+        hash_combine(state_hash, component.second.currentLocation.identifier);
 
     for(auto& symbol : symbols.map()) {
         auto symbol_hash = std::hash<std::string>{}(symbol.first);   // hash of the symbol identifier
@@ -429,4 +433,10 @@ std::vector<TTA::Edge> TTA::GetCurrentEdges() const {
         }
     }
     return edges;
+}
+
+void TTA::InsertExternalSymbols(const TTA::ExternalSymbolMap &externalSymbolKeys) {
+    for(auto& elem : externalSymbolKeys) {
+        externalSymbols[elem.first] = symbols.find(elem.first);
+    }
 }

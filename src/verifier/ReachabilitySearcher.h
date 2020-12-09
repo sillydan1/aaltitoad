@@ -30,7 +30,7 @@ struct QueryResultPair {
 class ReachabilitySearcher {
 public:
     static bool IsQuerySatisfied(const Query& query, const TTA& state);
-    static void AreQueriesSatisfied(std::vector<QueryResultPair>& queries, const TTA& state);
+    static void AreQueriesSatisfied(std::vector<QueryResultPair>& queries, const TTA& state, int dbgsize = 0);
     static bool ForwardReachabilitySearch(const Query& query, const TTA& initialState);
     static bool ForwardReachabilitySearch(const std::vector<const Query*>& queries, const TTA& initialState);
 };

@@ -71,12 +71,12 @@ bool ReachabilitySearcher::IsQuerySatisfied(const Query& query, const TTA &state
     return IsQuerySatisfiedHelper(query, state);
 }
 
-void ReachabilitySearcher::AreQueriesSatisfied(std::vector<QueryResultPair>& queries, const TTA& state) {
+void ReachabilitySearcher::AreQueriesSatisfied(std::vector<QueryResultPair>& queries, const TTA& state, int dbgsize) {
     for(auto & query : queries) {
         if(!query.answer) {
             query.answer = IsQuerySatisfied(*query.query, state);
             if (query.answer)
-                spdlog::critical("Query '{0}' is satisfied!", ConvertASTToString(*query.query));
+                spdlog::critical("Query '{0}' is satisfied! - {1}", ConvertASTToString(*query.query), dbgsize);
         }
     }
 }
@@ -108,7 +108,7 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const std::vector<const Que
         for(auto& change : statechanges) {
             /// This is a lot of copying large data objects... Figure something out with maybe std::move
             auto nstate = state << change;
-            auto nstatehash = state.GetCurrentStateHash();
+            auto nstatehash = nstate.GetCurrentStateHash();
             if(Passed.find(nstatehash) == Passed.end())
                 Waiting[nstatehash] = TTAIsTockStatePair{nstate, justTocked};
         }
@@ -116,10 +116,11 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const std::vector<const Que
     auto stateit = Waiting.begin();
     while(stateit != Waiting.end()) {
         auto& state = stateit->second;
-        AreQueriesSatisfied(query_results, state.tta);
+        auto curstatehash = stateit->first;
+        AreQueriesSatisfied(query_results, state.tta, Passed.size());
         if(std::all_of(query_results.begin(), query_results.end(), [](const auto& r){ return r.answer; })) {
             PrintResults(query_results);
-            spdlog::critical("Found a result after searching: {0} states", Passed.size());
+            spdlog::critical("Found a positive result after searching: {0} states", Passed.size());
             return true; // All the queries has been reached
         }
         // If the state is interesting, apply tock changes
@@ -131,12 +132,12 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const std::vector<const Que
         }
         auto allTickStateChanges = TTASuccessorGenerator::GetNextTickStates(state.tta);
         add_to_waiting_list(state.tta, allTickStateChanges, false);
-        Passed[stateit->first] = true;
-        Waiting.erase(stateit->first); // Remove this state from the waiting list
+        Passed[curstatehash] = true;
+        Waiting.erase(curstatehash); // Remove this state from the waiting list
         stateit = Waiting.begin();
     }
     PrintResults(query_results);
-    spdlog::critical("Found a result after searching: {0} states", Passed.size());
+    spdlog::critical("Found a negative result after searching: {0} states", Passed.size());
     return false;
     /***  Forward reachability search algorithm
      * Passed = Ø

@@ -86,6 +86,7 @@ bool TTASuccessorGenerator::IsStateInteresting(const TTA& ttaState) {
 }
 
 using VariableValueCollection = std::set<std::pair<std::string, TTASymbol_t>>;
+using VariableValueVector = std::vector<std::pair<std::string, TTASymbol_t>>;
 
 void AssignVariable(TTA::SymbolMap& symbols, const TTA::SymbolMap& derivedSymbols, const std::string &varname, const TTASymbol_t &newValue) {
     std::visit(overload(
@@ -113,7 +114,7 @@ void AssignVariable(TTA::SymbolMap& symbols, const TTA::SymbolMap& derivedSymbol
 /// i.e. just 16 changes equals 65536 stateChanges (2^N)
 /// - which is not something that doesnt happen
 /// Also, this approach is not very memory efficient, so the size limit will be even more stringed
-std::vector<TTA::StateChange> bfs(const VariableValueCollection& a, const VariableValueCollection& b) {
+std::vector<TTA::StateChange> bfs(const VariableValueVector& a, const VariableValueVector& b, const TTA::SymbolMap& derivedSymbols) {
     std::vector<TTA::StateChange> crossProduct{};
     std::stack<std::pair<TTA::StateChange, int>> frontier{};
     frontier.push(std::make_pair(TTA::StateChange{},0));
@@ -126,9 +127,9 @@ std::vector<TTA::StateChange> bfs(const VariableValueCollection& a, const Variab
             crossProduct.push_back(statechange.first);
         } else {
             TTA::StateChange stA{};
-           // AssignVariable(stA.symbols, a[idx].first, a[idx].second);
+            AssignVariable(stA.symbols, derivedSymbols, a[idx].first, a[idx].second);
             TTA::StateChange stB{};
-           // AssignVariable(stB.symbols, a[idx].first, a[idx].second);
+            AssignVariable(stB.symbols, derivedSymbols, a[idx].first, a[idx].second);
             frontier.push(std::make_pair(curr + stA, idx+1));
             frontier.push(std::make_pair(curr + stB, idx+1));
         }
@@ -141,24 +142,29 @@ std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA
     // Get all the interesting variable predicates
     auto interestingVarPredicates = GetInterestingVariablePredicatesInState(ttaState);
     if(interestingVarPredicates.empty()) return {};
-    if(interestingVarPredicates.size() < 16) {
-        VariableValueCollection positives{};
-        VariableValueCollection negatives{};
-        for (auto &predicate : interestingVarPredicates) {
-            positives.insert(std::make_pair(predicate.variable, predicate.GetValueOverTheEdge()));
-            negatives.insert(std::make_pair(predicate.variable, predicate.GetValueOnTheEdge()));
-        }
-        std::vector<TTA::StateChange> allPermutations = bfs(positives, negatives);
+    VariableValueCollection positives{};
+    VariableValueCollection negatives{};
+    for (auto &predicate : interestingVarPredicates) {
+        positives.insert(std::make_pair(predicate.variable, predicate.GetValueOverTheEdge()));
+        negatives.insert(std::make_pair(predicate.variable, predicate.GetValueOnTheEdge()));
+    }
+    spdlog::critical("Trying to be proper with {0}", positives.size());
+    if(positives.size() < 16) {
+        VariableValueVector ps{positives.begin(), positives.end()};
+        VariableValueVector ns{negatives.begin(), negatives.end()};
+        std::vector<TTA::StateChange> allPermutations = bfs(ps, ns, ttaState.GetSymbols());
         return allPermutations;
     }
     // TODO: This is technically incorrect. These state changes may have an effect on the reachable state space if they are applied together
     std::vector<TTA::StateChange> allChanges{};
-    for(auto& predicate : interestingVarPredicates) {
+    for(auto& positive : positives) {
         TTA::StateChange stP{}; // Positive path
-        AssignVariable(stP.symbols, ttaState.GetSymbols(), predicate.variable, predicate.GetValueOverTheEdge());
-        TTA::StateChange stN{}; // Negative path
-        AssignVariable(stN.symbols, ttaState.GetSymbols(), predicate.variable, predicate.GetValueOnTheEdge());
+        AssignVariable(stP.symbols, ttaState.GetSymbols(), positive.first, positive.second);
         allChanges.push_back(stP);
+    }
+    for(auto& negative : negatives) {
+        TTA::StateChange stN{}; // Negative path
+        AssignVariable(stN.symbols, ttaState.GetSymbols(), negative.first, negative.second);
         allChanges.push_back(stN);
     }
     spdlog::critical("Tock Changes: {0}", allChanges.size());

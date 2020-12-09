@@ -351,8 +351,8 @@ bool TTAParser::IsDocumentAProperPartsFile(const rapidjson::Document &document) 
 
 bool TTAParser::IsDocumentAProperPart(const rapidjson::Document::ValueType &document) {
     return JSONParser::DoesMemberExistAndIsString(document, "PartName") &&
-           JSONParser::DoesMemberExistAndIsString(document, "ExternalType") &&
-           IsDocumentAProperExternalType(document["ExternalType"]) &&
+           JSONParser::DoesMemberExistAndIsString(document, "VariableEnvironment") &&
+           IsDocumentAProperExternalType(document["VariableEnvironment"]) &&
            JSONParser::DoesMemberExistAndIsObject(document, "Access") &&
            IsDocumentAProperAccessType(document["Access"]) &&
            JSONParser::DoesMemberExistAndIsObject(document, "GenericType") &&
@@ -382,21 +382,21 @@ bool TTAParser::IsDocumentAProperAccessType(const rapidjson::Document::ValueType
 
 bool TTAParser::IsDocumentAProperExternalType(const rapidjson::Document::ValueType &document) {
     return document.IsString() && (
-           document.GetString() == std::string("External") ||
-           document.GetString() == std::string("Internal") ||
-           document.GetString() == std::string("Timer")); // TODO: What does Timer mean in terms of external/internal?
+           document.GetString() == std::string("EXTERNAL") ||
+           document.GetString() == std::string("INTERNAL") ||
+           document.GetString() == std::string("TIMER")); // TODO: What does Timer mean in terms of external/internal?
 }
 
 bool TTAParser::IsDocumentExternalType(const rapidjson::Document::ValueType &document) {
     return document.IsString() && (
-            document.GetString() == std::string("External") ||
-            document.GetString() == std::string("Timer"));
+            document.GetString() == std::string("EXTERNAL") ||
+            document.GetString() == std::string("TIMER"));
 }
 
 TTAParser::SymbolExternalPair TTAParser::ParsePart(const rapidjson::Document::ValueType &document) {
     return {.symbol = {.identifier = std::string(document["PartName"].GetString()),
             .value = ParseGenericType(document["GenericType"])},
-            .isExternal = IsDocumentExternalType(document["ExternalType"])
+            .isExternal = IsDocumentExternalType(document["VariableEnvironment"])
     };
 }
 
