@@ -19,6 +19,7 @@
 #include <aaltitoadpch.h>
 #include <cctype>
 #include <locale>
+#include <regex>
 #include "stringextensions.h"
 
 std::vector<std::string> split(const std::string& s, char delimiter)  {
@@ -41,6 +42,13 @@ std::vector<std::string> split(const std::string& s, const std::string& delimite
         sc.erase(0, pos + delimiter.length());
     }
     tokens.push_back(sc);
+    return tokens;
+}
+
+std::vector<std::string> regex_split(const std::string& s, const std::string& regex) {
+    std::regex re(regex);
+    std::sregex_token_iterator first{s.begin(), s.end(), re, -1}, last;//the '-1' is what makes the regex split (-1 := what was not matched)
+    std::vector<std::string> tokens{first, last};
     return tokens;
 }
 

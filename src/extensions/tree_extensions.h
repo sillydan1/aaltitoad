@@ -17,24 +17,13 @@
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MAVE_CTLQUERYPARSER_H
-#define MAVE_CTLQUERYPARSER_H
-#include <ctlparser/include/types.h>
+
+#ifndef AALTITOAD_TREE_EXTENSIONS_H
+#define AALTITOAD_TREE_EXTENSIONS_H
 #include <ctlparser/include/Tree.hpp>
-#include <rapidjson/document.h>
+#include <aaltitoadpch.h>
 #include <runtime/TTA.h>
 
-using Query = Tree<ASTNode>;
+std::string ConvertASTToString(const Tree<ASTNode>& tree);
 
-class CTLQueryParser {
-public:
-    static std::vector<const Query*> ParseQueriesFile(const std::string& filepath, const TTA& tta);
-
-private:
-    static Query* ParseQueryFromDoc(const rapidjson::Document::ValueType& document, const TTA& tta);
-    static bool IsDocumentProperQueryDocument(const rapidjson::Document::ValueType& document);
-    static bool IsElementProperQuery(const rapidjson::Document::ValueType& document);
-};
-
-
-#endif //MAVE_CTLQUERYPARSER_H
+#endif //AALTITOAD_TREE_EXTENSIONS_H

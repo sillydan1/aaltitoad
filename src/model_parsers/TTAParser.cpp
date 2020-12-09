@@ -229,7 +229,7 @@ TTA TTAParser::ConvertToModelType(const TTAIR_t &intermediateRep) {
                 .endLocation               = { comp.endLocation.isImmediate, comp.endLocation.identifier },
                 .currentLocation           = { comp.initialLocation.isImmediate, comp.initialLocation.identifier },
                 .isMain                    = comp.isMain,
-                .edges                     = ConvertEdgeListToEdgeMap(comp.edges, tta.GetSymbols(), comp.name),
+                .edges                     = ConvertEdgeListToEdgeMap(comp.edges, tta.GetSymbols(), tta.GetExternalSymbols(), comp.name),
         };
     }
     return tta;
@@ -264,17 +264,18 @@ TTA::SymbolMap TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t
 }
 
 std::unordered_multimap<std::string, TTA::Edge>
-TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, const TTA::SymbolMap& symbolMap, const std::string& debugCompName) {
+TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, const TTA::SymbolMap& symbolMap, const TTA::ExternalSymbolMap& externalSymbolMap, const std::string& debugCompName) {
     std::unordered_multimap<std::string, TTA::Edge> edgeMap{};
     calculator calc;
     for(auto& edge : edgeList) {
         // Compile the expressions (guard and update)
+
         try {
             if (!edge.guardExpression.empty()) {
                 calc.compile(edge.guardExpression.c_str(), symbolMap);
                 auto type = calc.eval()->type; // We can "safely" eval() guards, because they have no side-effects.
                 if(type != BOOL)
-                    spdlog::critical("Guard expression '{0}' is not a boolean expression. It is a {1} expression. Component: '{2}'",
+                    spdlog::critical("GuardExpression expression '{0}' is not a boolean expression. It is a '{1}' expression. Component: '{2}'",
                                      edge.guardExpression, static_cast<const tokType>(type), debugCompName.c_str());
             }
         } catch (...) {
@@ -297,10 +298,49 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
                 .sourceLocation           = {edge.sourceLocation.isImmediate,edge.sourceLocation.identifier},
                 .targetLocation           = {edge.targetLocation.isImmediate,edge.targetLocation.identifier},
                 .guardExpression          = edge.guardExpression, // TODO: Store this as a compiled tree. Strings are nasty
+                .externalGuardCollection  = ParseExternalVariablesUsedInGuardExpression(edge.guardExpression, externalSymbolMap),
                 .updateExpressions        = updateExpressions
         } });
     }
     return edgeMap;
+}
+extern void SetVerbosity(unsigned int level);
+TTA::GuardCollection TTAParser::ParseExternalVariablesUsedInGuardExpression(const std::string& guardExpression, const TTA::ExternalSymbolMap& externalSymbolMap) {
+    SetVerbosity(0); // TODO: We should really do this properly
+    if(guardExpression.empty()) return {};
+    auto expressions = regex_split(guardExpression, "&&|\\|\\||and|or");
+    TTA::GuardCollection coll = {};
+    bool doesExpressionContainExternalVariableBool = false;
+    auto doesExpressionContainExternalVariable = [&externalSymbolMap, &doesExpressionContainExternalVariableBool](const ASTNode& n) {
+        switch (n.type) {
+            case NodeType_t::Var:
+                doesExpressionContainExternalVariableBool |= externalSymbolMap.find(n.token) != externalSymbolMap.end();
+            default: break;
+        }
+    };
+    for(auto& expr : expressions) {
+        // TODO: Parentheses fuck everything up. It should be fixed.
+        auto ge = ParseGuardExpression(expr);
+        if(!ge) continue;
+        ge->tree_apply(doesExpressionContainExternalVariable);
+        if(doesExpressionContainExternalVariableBool) {
+            // Extract the expression only. TODO: Write a more flexible parser
+            auto& expressionOnly = ge->children[0].children[0]; // E->c[0](F)->c[0](expression)
+            coll.push_back(expressionOnly); // copy into the collection
+        }
+        doesExpressionContainExternalVariableBool = false;
+        delete ge;
+    }
+    SetVerbosity(1); // TODO: We should really do this properly
+    return coll;
+}
+extern Tree<ASTNode>* ParseQuery(const std::string&);
+TTA::GuardExpression* TTAParser::ParseGuardExpression(const std::string &guardExpression) {
+    // Reuse the query parser
+    std::stringstream ss{};
+    ss << "E F " << guardExpression;
+    auto query = ParseQuery(ss.str());
+    return query;
 }
 
 bool TTAParser::IsDocumentAProperPartsFile(const rapidjson::Document &document) {
@@ -311,8 +351,8 @@ bool TTAParser::IsDocumentAProperPartsFile(const rapidjson::Document &document) 
 
 bool TTAParser::IsDocumentAProperPart(const rapidjson::Document::ValueType &document) {
     return JSONParser::DoesMemberExistAndIsString(document, "PartName") &&
-           JSONParser::DoesMemberExistAndIsString(document, "ExternalType") &&
-           IsDocumentAProperExternalType(document["ExternalType"]) &&
+           JSONParser::DoesMemberExistAndIsString(document, "VariableEnvironment") &&
+           IsDocumentAProperExternalType(document["VariableEnvironment"]) &&
            JSONParser::DoesMemberExistAndIsObject(document, "Access") &&
            IsDocumentAProperAccessType(document["Access"]) &&
            JSONParser::DoesMemberExistAndIsObject(document, "GenericType") &&
@@ -342,21 +382,21 @@ bool TTAParser::IsDocumentAProperAccessType(const rapidjson::Document::ValueType
 
 bool TTAParser::IsDocumentAProperExternalType(const rapidjson::Document::ValueType &document) {
     return document.IsString() && (
-           document.GetString() == std::string("External") ||
-           document.GetString() == std::string("Internal") ||
-           document.GetString() == std::string("Timer")); // TODO: What does Timer mean in terms of external/internal?
+           document.GetString() == std::string("EXTERNAL") ||
+           document.GetString() == std::string("INTERNAL") ||
+           document.GetString() == std::string("TIMER")); // TODO: What does Timer mean in terms of external/internal?
 }
 
 bool TTAParser::IsDocumentExternalType(const rapidjson::Document::ValueType &document) {
     return document.IsString() && (
-            document.GetString() == std::string("External") ||
-            document.GetString() == std::string("Timer"));
+            document.GetString() == std::string("EXTERNAL") ||
+            document.GetString() == std::string("TIMER"));
 }
 
 TTAParser::SymbolExternalPair TTAParser::ParsePart(const rapidjson::Document::ValueType &document) {
     return {.symbol = {.identifier = std::string(document["PartName"].GetString()),
             .value = ParseGenericType(document["GenericType"])},
-            .isExternal = IsDocumentExternalType(document["ExternalType"])
+            .isExternal = IsDocumentExternalType(document["VariableEnvironment"])
     };
 }
 
@@ -381,3 +421,5 @@ bool TTAParser::IsUpdateResettingATimerProperly(const UpdateExpression& expr, co
         return expr.rhs == "0";
     return true;
 }
+
+

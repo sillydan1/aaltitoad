@@ -22,8 +22,8 @@
 
 extern Tree<ASTNode>* ParseQuery(const std::string&);
 
-std::vector<Query*> CTLQueryParser::ParseQueriesFile(const std::string &filepath, const TTA& tta) {
-    std::vector<Query*> queries{};
+std::vector<const Query*> CTLQueryParser::ParseQueriesFile(const std::string &filepath, const TTA& tta) {
+    std::vector<const Query*> queries{};
     auto file = std::ifstream{filepath};
     if(file) {
         spdlog::debug("Parsing '{0}' as a Query JSON file.", filepath);

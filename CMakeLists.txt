@@ -30,6 +30,7 @@ include_directories(
 set (CMAKE_CXX_STANDARD 17)
 set (SPDLOG_BUILD_SHARED)
 set (CMAKE_CXX_STANDARD_LIBRARIES -lstdc++fs)
+add_definitions(-DYYERROR_VERBOSE)
 
 # Third party libraries, compiled with CMAKE
 add_subdirectory(dep/argvparse/)
@@ -62,7 +63,10 @@ add_executable(${PROJECT_NAME}
         src/verifier/trace_output/TTATracer.cpp
         src/verifier/trace_output/TTAResugarizer.cpp
         src/json_parsing/JSONParser.cpp
-        src/verifier/ReachabilitySearcher.cpp)
+        src/verifier/ReachabilitySearcher.cpp
+        src/runtime/VariablePredicate.cpp
+        src/verifier/TTASuccessorGenerator.cpp
+        src/extensions/tree_extensions.cpp)
 
 target_link_libraries(${PROJECT_NAME}
         argvparse

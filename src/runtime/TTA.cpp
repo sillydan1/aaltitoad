@@ -21,6 +21,23 @@
 #include <extensions/cparse_extensions.h>
 #include <tinytimer/Timer.hpp>
 
+TTA::StateChange operator+(TTA::StateChange a, TTA::StateChange b) {
+    // Merge a and b
+    a.symbols.map().merge(b.symbols.map());
+    a.componentLocations.merge(b.componentLocations);
+    return a;
+}
+
+TTA operator<<(const TTA& aa, const TTA::StateChange& b) {
+    TTA a{};
+    a.components = aa.components;
+    a.InsertInternalSymbols(aa.symbols);
+    a.InsertExternalSymbols(aa.GetExternalSymbols());
+    bool changedSuccessfully = a.SetCurrentState(b);
+    if(!changedSuccessfully) spdlog::critical("Something went wrong when trying to apply a statechange.");
+    return a;
+}
+
 TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr) {
     return PopulateValueFromString(TTASymbolTypeFromString(typestr), valuestr);
 }
@@ -51,7 +68,7 @@ TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& 
                 if(valuestr[0] == '\"' && valuestr[valuestr.size()-1] == '\"')
                     value = valuestr.substr(1,valuestr.size()-2);
                 else {
-                    spdlog::error("Missing '\"' on string value '{0}' - Adding them manually, but this should be corrected", valuestr);
+                    spdlog::warn("Missing '\"' on string value '{0}' - Adding them manually, but this should be corrected", valuestr);
                     value = valuestr;
                 }
             }
@@ -61,10 +78,29 @@ TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& 
 
 // TODO: This can be optimized by caching hashes on the state changes only. And there's no need to copy the symbols.
 std::size_t TTA::GetCurrentStateHash() const {
-    return GetStateHash(GetCurrentState());
+    std::size_t state_hash = 0;
+    for(auto& component : components)
+        state_hash == 0 ?
+        [&state_hash, &component](){ state_hash = std::hash<std::string>{}(component.second.currentLocation.identifier);}() :
+        hash_combine(state_hash, component.second.currentLocation.identifier);
+
+    for(auto& symbol : symbols.map()) {
+        auto symbol_hash = std::hash<std::string>{}(symbol.first);   // hash of the symbol identifier
+        // Combine with the symbol value
+        switch(symbol.second->type) {
+            case INT:   hash_combine(symbol_hash, symbol.second.asInt());    break;
+            case BOOL:  hash_combine(symbol_hash, symbol.second.asBool());   break;
+            case REAL:  hash_combine(symbol_hash, symbol.second.asDouble()); break;
+            case STR:   hash_combine(symbol_hash, symbol.second.asString()); break;
+            case TIMER: hash_combine(symbol_hash, symbol.second.asDouble()); break;
+            default: spdlog::error("Symbol type '{0}' is not supported!", tokenTypeToString(symbol.second->type)); break;
+        }
+        hash_combine(state_hash, symbol_hash); // Combine with the overall state
+    }
+    return state_hash;
 }
 
-TTA::State TTA::GetCurrentState() const {
+TTA::StateChange TTA::GetCurrentState() const {
     return { .componentLocations = GetCurrentLocations(), .symbols = symbols };
 }
 
@@ -75,7 +111,14 @@ TTA::ComponentLocationMap TTA::GetCurrentLocations() const {
     return componentLocations;
 }
 
-std::size_t TTA::GetStateHash(const State& state) {
+std::vector<std::string> TTA::GetCurrentLocationsLocationsOnly() const {
+    std::vector<std::string> componentLocations = {};
+    for(auto& component : components)
+        componentLocations.push_back(component.second.currentLocation.identifier);
+    return componentLocations;
+}
+
+std::size_t TTA::GetStateHash(const StateChange& state) {
     std::size_t state_hash = 0;
     for(auto& component : state.componentLocations)
         state_hash == 0 ?
@@ -86,124 +129,98 @@ std::size_t TTA::GetStateHash(const State& state) {
         auto symbol_hash = std::hash<std::string>{}(symbol.first);   // hash of the symbol identifier
         // Combine with the symbol value
         switch(symbol.second->type) {
-            case INT:  hash_combine(symbol_hash, symbol.second.asInt());    break;
-            case BOOL: hash_combine(symbol_hash, symbol.second.asBool());   break;
-            case REAL: hash_combine(symbol_hash, symbol.second.asDouble()); break;
-            case STR:  hash_combine(symbol_hash, symbol.second.asString()); break;
-            default: spdlog::error("Symbol type '{0}' is not supported!", symbol.second->type); break;
+            case INT:   hash_combine(symbol_hash, symbol.second.asInt());    break;
+            case BOOL:  hash_combine(symbol_hash, symbol.second.asBool());   break;
+            case REAL:  hash_combine(symbol_hash, symbol.second.asDouble()); break;
+            case STR:   hash_combine(symbol_hash, symbol.second.asString()); break;
+            case TIMER: hash_combine(symbol_hash, symbol.second.asDouble()); break;
+            default: spdlog::error("Symbol type '{0}' is not supported!", tokenTypeToString(symbol.second->type)); break;
         }
         hash_combine(state_hash, symbol_hash); // Combine with the overall state
     }
     return state_hash;
 }
 
-bool TTA::SetCurrentState(const State& newstate) {
-    for(auto& componentLocation : newstate.componentLocations) {
+bool TTA::SetCurrentState(const StateChange& newstate) {
+    bool result = SetComponentLocations(newstate.componentLocations);
+    result &= SetSymbols(newstate.symbols);
+    tickCount++;
+    return result;
+}
+
+bool TTA::SetComponentLocations(const ComponentLocationMap &locationChange) {
+    for(auto& componentLocation : locationChange) {
         auto compit = components.find(componentLocation.first);
         if(compit != components.end())
             compit->second.currentLocation = componentLocation.second;
         else {
-            spdlog::critical("Attempted to change the state of TTA failed. Component '{0}' does not exist.",
-                             componentLocation.first);
+            spdlog::critical("Attempted to change the state of TTA failed. Component '{0}' does not exist.", componentLocation.first);
             return false;
         }
     }
+    return true;
+}
 
-    for(auto& symbol : newstate.symbols.map()) {
+bool TTA::SetSymbols(const SymbolMap &symbolChange) {
+    for(auto& symbol : symbolChange.map()) {
         auto symbolit = symbols.map().find(symbol.first);
-        bool error = false;
-        auto x = symbol.second->type;
-        auto y = symbolit->second->type;
-        if(symbolit == symbols.map().end()) { spdlog::critical("Attempted to change the state of TTA failed. Symbol '{0}' does not exist.", symbol.first); error = true; }
-        else if(!(NUM & x & y) && !(x == VAR && (NUM & y))) {
-            auto a = tokenTypeToString(symbolit->second->type);
-            auto b = tokenTypeToString(symbol.second->type);
-            spdlog::critical(
-                    "Attempted to change the state of TTA failed. Symbol '{0}' does not have the correct type. ({1} vs {2} (a := b))",
-                    symbol.first, a, b);
-            error = true;
+        bool noerror = TypeCheck(symbol, symbolit);
+        if(noerror) {
+            symbols.map()[symbol.first] = symbol.second;
+            if(externalSymbols.find(symbol.first) != externalSymbols.end())
+                externalSymbols[symbol.first] = symbols.find(symbol.first);
         }
-        if(!error) symbols.map()[symbol.first] = symbol.second;
         else return false;
     }
-    tickCount++;
+    return true;
+}
+
+bool TTA::TypeCheck(const std::pair<const std::string, packToken> &symbol,
+                    const std::map<std::string, packToken>::iterator &changingSymbol) const {
+    auto x = symbol.second->type;
+    auto y = changingSymbol->second->type;
+    if(changingSymbol == symbols.map().end()) {
+        spdlog::critical("Attempted to change the state of TTA failed. Symbol '{0}' does not exist.", symbol.first);
+        return false;
+    } else if(!(NUM & x & y) && !(x == VAR && (NUM & y))) {
+        auto a = tokenTypeToString(changingSymbol->second->type);
+        auto b = tokenTypeToString(symbol.second->type);
+        spdlog::critical(
+                "Attempted to change the state of TTA failed. Symbol '{0}' does not have the correct type. ({1} vs {2} (a := b))",
+                symbol.first, a, b);
+        return false;
+    }
     return true;
 }
 
 bool TTA::IsCurrentStateImmediate() const {
-    for(auto& component : components)
-        if(component.second.currentLocation.isImmediate) return true;
-    return false;
+    return std::any_of(components.begin(), components.end(), [](const auto& c){ return c.second.currentLocation.isImmediate; });
 }
 
-bool TTA::IsStateImmediate(const TTA::State &state) {
-    for(auto& component : state.componentLocations)
-        if(component.second.isImmediate) return true;
-    return false;
+bool TTA::IsStateImmediate(const TTA::StateChange &state) {
+    return std::any_of(state.componentLocations.begin(), state.componentLocations.end(), [](const auto& c){ return c.second.isImmediate; });
 }
 
-// TODO: Clean this function up, it stinks!
-// TODO: We need something in the query checking that can check for deadlock-ness (other than just calling this function)
-std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
-    auto currentLocations = GetCurrentLocations();
-    std::vector<UpdateExpression> symbolChanges{};
+std::optional<StateMultiChoice> TTA::GetChangesFromEdge(const TTA::Edge& choice, bool& outInfluenceOverlap, std::map<std::string, std::vector<std::string>>& overlappingComponents) const {
+    StateMultiChoice changes{};
+    bool DoesUpdateInfluenceOverlap = AccumulateUpdateInfluences(choice, changes.symbolsToChange, overlappingComponents);
+    outInfluenceOverlap |= DoesUpdateInfluenceOverlap;
+    if(!CLIConfig::getInstance()["ignore-update-influence"] && DoesUpdateInfluenceOverlap) return{}; // No changes
+    for(auto& symbolChange : changes.symbolsToChange) changes.symbolChanges.push_back(symbolChange.second);
+    return changes;
+}
 
-    std::multimap<std::string, UpdateExpression> symbolsToChange{};
-    std::map<std::string, std::vector<std::string>> overlappingComponents{}; // expr.lhs -> componentIdentifiers mapping
-    bool updateInfluenceOverlapGlobal = false;
-    for(auto& component : components) {
-        auto enabledEdges = component.second.GetEnabledEdges(symbols);
-        if(!enabledEdges.empty()) {
-            // TODO: Stop picking the first. e.g. Implement divergent behaviour. NOTE: You wanna do this with a multimap of components.
-            if(enabledEdges.size() > 1) {
-                spdlog::error("Non-deterministic choice in Component '{0}'.",
-                              TTAResugarizer::Resugar(component.first));
-                spdlog::debug("Enabled edges in component '{0}':", TTAResugarizer::Resugar(component.first));
-                for(auto& e : enabledEdges)
-                    spdlog::debug("{0} --> {1}",
-                                  TTAResugarizer::Resugar(e.sourceLocation.identifier),
-                                  TTAResugarizer::Resugar(e.targetLocation.identifier));
-                spdlog::debug("----- / -----");
-            }
-            auto& pickedEdge = PickEdge(enabledEdges, strategy);
-            bool updateInfluenceOverlap = false;
-            for(auto& expr : pickedEdge.updateExpressions) {
-                overlappingComponents[expr.lhs].push_back(TTAResugarizer::Resugar(
-                        expr.lhs + " : " +
-                        pickedEdge.sourceLocation.identifier + " --> " +
-                        pickedEdge.targetLocation.identifier));
-                if(symbolsToChange.count(expr.lhs) > 0) {
-                    spdlog::warn("Overlapping update influence on evaluation of update on edge {0} --> {1}. "
-                                      "Variable '{2}' is already being written to in this tick! - For more info, run with higher verbosity",
-                                      TTAResugarizer::Resugar(pickedEdge.sourceLocation.identifier),
-                                      TTAResugarizer::Resugar(pickedEdge.targetLocation.identifier),
-                                      TTAResugarizer::Resugar(expr.lhs)); // TODO: Idempotent variable assignment
-                    updateInfluenceOverlap = true;
-                    updateInfluenceOverlapGlobal = true;
-                    continue;
-                }
-                else
-                    symbolsToChange.insert({ expr.lhs, expr });
-            }
-            if(!CLIConfig::getInstance()["ignore-update-influence"] && updateInfluenceOverlap) continue;
-            for(auto& symbolChange : symbolsToChange) symbolChanges.push_back(symbolChange.second);
-            // If we transition to the end location, immediately change to first location
-            if(component.second.endLocation.identifier == pickedEdge.targetLocation.identifier)
-                currentLocations[component.first] = component.second.initialLocation;
-            else
-                currentLocations[component.first] = pickedEdge.targetLocation;
+void TTA::WarnAboutComponentOverlap(std::map<std::string, std::vector<std::string>> &overlappingComponents) const {
+    spdlog::debug("Overlapping Components: (Tick#: {0})", tickCount);
+    for (auto& componentCollection : overlappingComponents) {
+        if (componentCollection.second.size() > 1) {
+            for (auto& compname : componentCollection.second)
+                spdlog::debug("{0}", compname);
         }
     }
-    if(updateInfluenceOverlapGlobal) {
-        spdlog::debug("Overlapping Components: (Tick#: {0})", tickCount);
-        for (auto& componentCollection : overlappingComponents) {
-            if (componentCollection.second.size() > 1) {
-                for (auto& compname : componentCollection.second) {
-                    spdlog::debug("{0}", compname);
-                }
-            }
-        }
-    }
+}
+
+TokenMap TTA::GetSymbolChangesAsMap(std::vector<UpdateExpression> &symbolChanges) const {
     SymbolMap symbolsCopy{};
     for(auto& symbolChange : symbolChanges) {
         if(symbols.map()[symbolChange.lhs]->type == TIMER)
@@ -211,7 +228,78 @@ std::vector<TTA::State> TTA::GetNextTickStates(const nondeterminism_strategy_t& 
         else
             symbolsCopy[symbolChange.lhs] = symbolChange.Evaluate(symbols);
     }
-    return {{ currentLocations, symbolsCopy }};
+    return symbolsCopy;
+}
+
+void TTA::ApplyComponentLocation(TTA::ComponentLocationMap &currentLocations,
+                                 const std::pair<const std::string, TTA::Component> &component,
+                                 TTA::Edge &pickedEdge) {// If we transition to the end location, immediately change to first location
+    if(component.second.endLocation.identifier == pickedEdge.targetLocation.identifier)
+        currentLocations[component.first] = component.second.initialLocation;
+    else
+        currentLocations[component.first] = pickedEdge.targetLocation;
+}
+
+std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
+    using ExpressionComponentMap = std::map<std::string, std::vector<std::string>>;
+    // Result type: [0] is shared, [>0] are choice changes
+    StateMultiChoice sharedChanges{};
+    std::vector<StateMultiChoice> choiceChanges{};
+
+    ExpressionComponentMap overlappingComponents{}; // expr.lhs -> componentIdentifiers mapping
+    bool updateInfluenceOverlapGlobal = false;
+    for(auto& component : components) {
+        auto enabledEdges = component.second.GetEnabledEdges(symbols); // TODO: Take Interesting variables into account
+        if(!enabledEdges.empty()) {
+            bool hasNondeterminism = WarnIfNondeterminism(enabledEdges, component.first);
+            if(!hasNondeterminism) {
+                // Simply pick the edge and apply it to the shared changes
+                if(strategy != nondeterminism_strategy_t::VERIFICATION) {
+                    auto &pickedEdge = PickEdge(enabledEdges, strategy);
+                    auto changes = GetChangesFromEdge(pickedEdge, updateInfluenceOverlapGlobal, overlappingComponents);
+                    if (changes.has_value()) sharedChanges.Merge(changes.value());
+                    ApplyComponentLocation(sharedChanges.currentLocations, component, pickedEdge);
+                } else {
+                    for(auto& edge : enabledEdges) {
+                        auto changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents);
+                        if(changes.has_value()) {
+                            sharedChanges.Merge(changes.value());
+                            ApplyComponentLocation(sharedChanges.currentLocations, component, edge);
+                        }
+                    }
+                }
+            } else {
+                for(auto& edge : enabledEdges) {
+                    auto changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents);
+                    if(changes.has_value()) {
+                        ApplyComponentLocation(changes->currentLocations, component, edge);
+                        choiceChanges.push_back(changes.value());
+                    }
+                }
+            }
+        }
+    }
+    if(updateInfluenceOverlapGlobal) WarnAboutComponentOverlap(overlappingComponents);
+    auto symbolsCopy = GetSymbolChangesAsMap(sharedChanges.symbolChanges);
+    std::vector<TTA::StateChange> retVal{{ sharedChanges.currentLocations, symbolsCopy }};
+    for(auto& change : choiceChanges)
+        retVal.push_back({change.currentLocations, GetSymbolChangesAsMap(change.symbolChanges)});
+    return retVal;
+}
+
+bool TTA::WarnIfNondeterminism(const std::vector<Edge>& edges, const std::string& componentName) {
+    if(edges.size() > 1) {
+        spdlog::error("Non-deterministic choice in Component '{0}'.",
+                      TTAResugarizer::Resugar(componentName));
+        spdlog::debug("Enabled edges in component '{0}':", TTAResugarizer::Resugar(componentName));
+        for(auto& e : edges)
+            spdlog::debug("{0} --> {1}",
+                          TTAResugarizer::Resugar(e.sourceLocation.identifier),
+                          TTAResugarizer::Resugar(e.targetLocation.identifier));
+        spdlog::debug("----- / -----");
+        return true;
+    }
+    return false;
 }
 
 std::string TTA::GetCurrentStateString() const {
@@ -245,10 +333,10 @@ void TTA::Tick(const nondeterminism_strategy_t& nondeterminismStrategy) {
 void TTA::InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys) {
     symbols.map().insert(externalSymbolKeys.map().begin(), externalSymbolKeys.map().end());
     for(auto& elem : externalSymbolKeys.map())
-        externalSymbols.push_back(symbols.find(elem.first));
+        externalSymbols[elem.first] = symbols.find(elem.first);
 }
 
-void TTA::InsertInternalSymbols(const TTA::SymbolMap &internalSymbols) {
+void TTA::InsertInternalSymbols(const TTA::SymbolMap &internalSymbols) const {
     GetSymbols().map().insert(internalSymbols.map().begin(), internalSymbols.map().end());
 }
 
@@ -293,5 +381,62 @@ void TTA::SetAllTimers(double exactTime) {
     for(auto& symbol : symbols.map()) {
         if(symbol.second->type == TIMER)
             symbols[symbol.first] = packToken(exactTime, PACK_IS_TIMER);
+    }
+}
+
+void TTA::StateChange::DelayTimerSymbols(SymbolMap& symbols, float delayDelta) {
+    for(auto& symbol : symbols.map()) {
+        if(symbol.second->type == TIMER)
+            symbols[symbol.first] = packToken(static_cast<double>(symbol.second.asDouble() + delayDelta), PACK_IS_TIMER);
+    }
+}
+
+bool TTA::AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<std::string, UpdateExpression>& symbolsToChange, std::map<std::string, std::vector<std::string>>& overlappingComponents) const {
+    bool updateInfluenceOverlap = false;
+    for(auto& expr : pickedEdge.updateExpressions) {
+        overlappingComponents[expr.lhs].push_back(TTAResugarizer::Resugar(
+                expr.lhs + " : " +
+                pickedEdge.sourceLocation.identifier + " --> " +
+                pickedEdge.targetLocation.identifier));
+        if(symbolsToChange.count(expr.lhs) > 0) {
+            spdlog::warn("Overlapping update influence on evaluation of update on edge {0} --> {1}. "
+                         "Variable '{2}' is already being written to in this tick! - For more info, run with higher verbosity",
+                         TTAResugarizer::Resugar(pickedEdge.sourceLocation.identifier),
+                         TTAResugarizer::Resugar(pickedEdge.targetLocation.identifier),
+                         TTAResugarizer::Resugar(expr.lhs)); // TODO: Idempotent variable assignment
+            updateInfluenceOverlap = true;
+            continue;
+        }
+        else
+            symbolsToChange.insert({ expr.lhs, expr });
+    }
+    return updateInfluenceOverlap;
+}
+
+bool TTA::IsDeadlocked() const {
+    return std::all_of(components.begin(), components.end(), [&] (const auto& component) {
+        auto enabledEdges = component.second.GetEnabledEdges(symbols);
+        return enabledEdges.empty();
+    });
+}
+
+bool TTA::IsSymbolExternal(const std::string &identifier) const {
+    return externalSymbols.find(identifier) != externalSymbols.end();
+}
+
+std::vector<TTA::Edge> TTA::GetCurrentEdges() const {
+    std::vector<Edge> edges{};
+    for(auto& component : components) {
+        auto currentEdgesInComponent = component.second.edges.equal_range(component.second.currentLocation.identifier);
+        for(auto edge = currentEdgesInComponent.first; edge != currentEdgesInComponent.second; ++edge) {
+            edges.push_back(edge->second);
+        }
+    }
+    return edges;
+}
+
+void TTA::InsertExternalSymbols(const TTA::ExternalSymbolMap &externalSymbolKeys) {
+    for(auto& elem : externalSymbolKeys) {
+        externalSymbols[elem.first] = symbols.find(elem.first);
     }
 }

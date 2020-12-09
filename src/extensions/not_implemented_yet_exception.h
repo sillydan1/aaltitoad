@@ -16,25 +16,13 @@
     You should have received a copy of the GNU General Public License
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
+#ifndef AALTITOAD_NOT_IMPLEMENTED_YET_EXCEPTION_H
+#define AALTITOAD_NOT_IMPLEMENTED_YET_EXCEPTION_H
+#include <aaltitoadpch.h>
 
-#ifndef MAVE_CTLQUERYPARSER_H
-#define MAVE_CTLQUERYPARSER_H
-#include <ctlparser/include/types.h>
-#include <ctlparser/include/Tree.hpp>
-#include <rapidjson/document.h>
-#include <runtime/TTA.h>
-
-using Query = Tree<ASTNode>;
-
-class CTLQueryParser {
+class not_implemented_yet_exception : public std::logic_error {
 public:
-    static std::vector<const Query*> ParseQueriesFile(const std::string& filepath, const TTA& tta);
-
-private:
-    static Query* ParseQueryFromDoc(const rapidjson::Document::ValueType& document, const TTA& tta);
-    static bool IsDocumentProperQueryDocument(const rapidjson::Document::ValueType& document);
-    static bool IsElementProperQuery(const rapidjson::Document::ValueType& document);
+    not_implemented_yet_exception () : std::logic_error{"Function not yet implemented."} {}
 };
 
-
-#endif //MAVE_CTLQUERYPARSER_H
+#endif //AALTITOAD_NOT_IMPLEMENTED_YET_EXCEPTION_H

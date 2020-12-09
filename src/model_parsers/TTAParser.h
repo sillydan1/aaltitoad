@@ -55,7 +55,7 @@ private:
     static std::vector<TTAIR_t::Symbol> ParseSymbolDeclarations(const rapidjson::Document& document);
     static std::optional<TTAIR_t::Symbol> ParseSymbolDeclaration(const std::string& declaration);
     static TTA::SymbolMap ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t::Symbol>& symbolList);
-    static std::unordered_multimap<std::string, TTA::Edge> ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge>& edge, const TTA::SymbolMap& symbolMap, const std::string& debugCompName);
+    static std::unordered_multimap<std::string, TTA::Edge> ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge>& edge, const TTA::SymbolMap& symbolMap, const TTA::ExternalSymbolMap& externalSymbolMap, const std::string& debugCompName);
     static bool IsUpdateResettingATimerProperly(const UpdateExpression& expr, const TTA::SymbolMap& context);
 
     static std::vector<SymbolExternalPair> ParsePartsFile(const std::string& filepath);
@@ -67,6 +67,9 @@ private:
     static bool IsDocumentAProperAccessType(const rapidjson::Document::ValueType& document);
     static bool IsDocumentAProperExternalType(const rapidjson::Document::ValueType& document);
     static bool IsDocumentExternalType(const rapidjson::Document::ValueType& document);
+
+    static TTA::GuardExpression* ParseGuardExpression(const std::string& guardExpression);
+    static TTA::GuardCollection ParseExternalVariablesUsedInGuardExpression(const std::string& guardExpression, const TTA::ExternalSymbolMap& externalSymbolMap);
 };
 
 #endif //MAVE_TTAPARSER_H

@@ -17,24 +17,29 @@
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MAVE_CTLQUERYPARSER_H
-#define MAVE_CTLQUERYPARSER_H
-#include <ctlparser/include/types.h>
-#include <ctlparser/include/Tree.hpp>
-#include <rapidjson/document.h>
-#include <runtime/TTA.h>
 
-using Query = Tree<ASTNode>;
+#ifndef AALTITOAD_TTASYMBOL_H
+#define AALTITOAD_TTASYMBOL_H
+#include <aaltitoadpch.h>
 
-class CTLQueryParser {
-public:
-    static std::vector<const Query*> ParseQueriesFile(const std::string& filepath, const TTA& tta);
-
-private:
-    static Query* ParseQueryFromDoc(const rapidjson::Document::ValueType& document, const TTA& tta);
-    static bool IsDocumentProperQueryDocument(const rapidjson::Document::ValueType& document);
-    static bool IsElementProperQuery(const rapidjson::Document::ValueType& document);
+struct TTATimerSymbol {
+    float current_value;
 };
 
+inline auto operator<(const TTATimerSymbol& a, const TTATimerSymbol& b) {
+    return a.current_value < b.current_value;
+}
 
-#endif //MAVE_CTLQUERYPARSER_H
+using TTASymbol_t = std::variant<
+        int,
+        float,
+        bool,
+        TTATimerSymbol,
+        std::string
+>;
+
+TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr);
+TTASymbol_t TTASymbolTypeFromString(const std::string& typestr);
+TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& valuestr);
+
+#endif //AALTITOAD_TTASYMBOL_H

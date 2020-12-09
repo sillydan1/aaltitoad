@@ -21,36 +21,28 @@
 #include <aaltitoadpch.h>
 #include <extensions/hash_combine>
 #include <shunting-yard.h>
+#include <ctlparser/include/Tree.hpp>
+#include <ctlparser/include/types.h>
 #include "UpdateExpression.h"
-
-struct TTATimerSymbol {
-    float current_value;
-};
-
-using TTASymbol_t = std::variant<
-        int,
-        float,
-        bool,
-        TTATimerSymbol,
-        std::string
->;
-
-TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr);
-TTASymbol_t TTASymbolTypeFromString(const std::string& typestr);
-TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& valuestr);
+#include "VariablePredicate.h"
+#include "TTASymbol.h"
 
 enum class nondeterminism_strategy_t {
     PANIC = 0,
     PICK_FIRST = 1,
     PICK_LAST = 2,
-    PICK_RANDOM = 3
+    PICK_RANDOM = 3,
+    VERIFICATION = 4 /// Used for the verification engine.
 };
-
+struct StateMultiChoice;
 /***
  * Tick Tock Automata datastructure
  */
 struct TTA {
     using SymbolMap = TokenMap;
+    using ExternalSymbolMap = std::unordered_map<std::string, packToken*>;
+    using GuardExpression = Tree<ASTNode>;
+    using GuardCollection = std::vector<GuardExpression>;
     struct Location {
         bool isImmediate;
         std::string identifier;
@@ -59,7 +51,9 @@ struct TTA {
         Location sourceLocation;
         Location targetLocation;
         std::string guardExpression;
+        GuardCollection externalGuardCollection;
         std::vector<UpdateExpression> updateExpressions;
+        bool ContainsExternalChecks() const { return ! externalGuardCollection.empty(); }
     };
     struct Component {
         // TODO: I dont like storing full strings.
@@ -73,41 +67,73 @@ struct TTA {
     };
     using ComponentMap = std::unordered_map<std::string, Component>;
     using ComponentLocationMap = std::unordered_map<std::string, Location>;
-    struct State {
+    struct StateChange {
         ComponentLocationMap componentLocations;
         SymbolMap symbols;
+
+        static void DelayTimerSymbols(SymbolMap& symbols, float delayDelta);
     };
     ComponentMap components = {};
 
-private:
+public:
     SymbolMap symbols = {};
     // This only works because we don't add or remove symbols during runtime
-    std::vector<packToken*> externalSymbols = {}; // Still. Beware of dangling pointers!
+    ExternalSymbolMap externalSymbols = {}; // Still. Beware of dangling pointers!
     unsigned int tickCount = 0;
 
 public:
+    // TODO: Simplify this fucking class
     TTA();
-    const SymbolMap& GetSymbols() const { return symbols; } // TODO: Am I still allowed to edit the symbol values themselves?
+    const SymbolMap& GetSymbols() const { return symbols; }
+    const ExternalSymbolMap& GetExternalSymbols() const { return externalSymbols; }
+    bool IsSymbolExternal(const std::string& identifier) const;
     void InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys);
-    void InsertInternalSymbols(const TTA::SymbolMap &internalSymbols);
-    static std::size_t GetStateHash(const State& state);
+    void InsertExternalSymbols(const ExternalSymbolMap& externalSymbols);
+    void InsertInternalSymbols(const TTA::SymbolMap &internalSymbols) const;
+    static std::size_t GetStateHash(const StateChange& state);
     std::size_t GetCurrentStateHash() const;
-    State GetCurrentState() const;
+    StateChange GetCurrentState() const;
     ComponentLocationMap GetCurrentLocations() const;
+    std::vector<std::string> GetCurrentLocationsLocationsOnly() const; // TODO: This is a patch solution. Make this good
     std::string GetCurrentStateString() const;
     bool IsCurrentStateImmediate() const;
-    bool SetCurrentState(const State& newstate);
-    static bool IsStateImmediate(const State& state);
-    std::vector<State> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
+    bool SetCurrentState(const StateChange& newstate);
+    bool SetSymbols(const SymbolMap& symbolChange);
+    bool SetComponentLocations(const ComponentLocationMap& locationChange);
+    static bool IsStateImmediate(const StateChange& state);
+    std::vector<Edge> GetCurrentEdges() const;
+    std::vector<StateChange> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
+    static bool WarnIfNondeterminism(const std::vector<TTA::Edge>& edges, const std::string& componentName) ;
+    bool AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<std::string, UpdateExpression>& symbolsToChange, std::map<std::string, std::vector<std::string>>& overlappingComponents) const;
+    bool IsDeadlocked() const;
     void DelayAllTimers(double delayDelta);
     void SetAllTimers(double exactTime);
     std::optional<const Component*> GetComponent(const std::string& componentName) const;
     TTA::Edge& PickEdge(std::vector<TTA::Edge>& edges, const nondeterminism_strategy_t& strategy) const;
-
     void Tick(const nondeterminism_strategy_t& nondeterminismStrategy = nondeterminism_strategy_t::PANIC);
-    void Tock();
-
     inline unsigned int GetTickCount() const { return tickCount; }
+    std::optional<StateMultiChoice> GetChangesFromEdge(const TTA::Edge& choice, bool& outInfluenceOverlap, std::map<std::string, std::vector<std::string>>& overlappingComponents) const;
+    static void ApplyComponentLocation(ComponentLocationMap &currentLocations, const std::pair<const std::string, TTA::Component> &component, Edge &pickedEdge);
+    TokenMap GetSymbolChangesAsMap(std::vector<UpdateExpression> &symbolChanges) const;
+    void WarnAboutComponentOverlap(std::map<std::string, std::vector<std::string>> &overlappingComponents) const;
+    bool TypeCheck(const std::pair<const std::string, packToken> &symbol, const std::map<std::string, packToken>::iterator &changingSymbol) const;
 };
+
+struct StateMultiChoice {
+    std::vector<UpdateExpression> symbolChanges{};
+    std::multimap<std::string, UpdateExpression> symbolsToChange{};
+    TTA::ComponentLocationMap currentLocations{};
+
+    void Merge(StateMultiChoice& other) {
+        symbolChanges.insert(symbolChanges.end(), other.symbolChanges.begin(), other.symbolChanges.end());
+        symbolsToChange.merge(other.symbolsToChange);
+    }
+};
+
+/// Merges the changes of a and b.
+/// Note: a's changes will override b's changes if they change the same things.
+// TODO: This should work without copying b
+TTA::StateChange operator+(TTA::StateChange a, TTA::StateChange b);
+TTA operator<<(const TTA& a, const TTA::StateChange& b);
 
 #endif //MAVE_TTA_H

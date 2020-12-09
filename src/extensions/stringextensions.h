@@ -21,6 +21,7 @@
 
 std::vector<std::string> split(const std::string& s, char delimiter);
 std::vector<std::string> split(const std::string& s, const std::string& delimiter);
+std::vector<std::string> regex_split(const std::string& s, const std::string& regex);
 // TODO: IFDEF WINDOWS default delimiter is '\\'
 std::string GetFileNameOnly(const std::string& fullpath, char delimiter = '/');
 

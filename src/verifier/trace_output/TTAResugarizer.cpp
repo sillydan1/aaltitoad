@@ -26,6 +26,7 @@ const std::unordered_map<std::string, std::string> unsugar_map = {
         { "đ", ")" },
 };
 
+/// Main€L32 -> Main.L32
 std::string TTAResugarizer::Resugar(const std::string& unsugared_string) {
     auto cpy = unsugared_string;
     for(auto& key : unsugar_map) {
@@ -38,6 +39,7 @@ std::string TTAResugarizer::Resugar(const std::string& unsugared_string) {
     return cpy;
 }
 
+/// Main.L32 -> Main€L32
 std::string TTAResugarizer::Unsugar(const std::string &unsugared_string) {
     auto cpy = unsugared_string;
     for(auto& key : unsugar_map) {
