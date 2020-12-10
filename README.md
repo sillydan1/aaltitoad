@@ -12,7 +12,7 @@ The TTA parser assumes models modelled in the [H-UPPAAL](https://github.com/DEIS
 First, make sure that you have initialized all git submodules.
 ```
 mkdir build && cd build
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 ```
 If you want to compile release version, simply do:
@@ -24,7 +24,7 @@ make RELEASE=1
 This will install the `aaltitoad` commandline tool to `/usr/local/bin/` or `REDACTED` on windows/macOS  
 ```
 mkdir build && cd build
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make install
 ```
 
