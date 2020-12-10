@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
         return config.GetStatusCode();
     }
     if(config["verbosity"])
-        spdlog::set_level(static_cast<spdlog::level::level_enum>(5-config["verbosity"].as_integer()));
+        spdlog::set_level(static_cast<spdlog::level::level_enum>(6-config["verbosity"].as_integer()));
     else
         spdlog::set_level(spdlog::level::level_enum::warn);
 

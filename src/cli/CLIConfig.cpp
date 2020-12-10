@@ -32,7 +32,7 @@ CLIConfig::CLIConfig() {
                  "[DIR]/[FILENAME] File with queries to be verified. This flag is required for verification"} },
             { option_requirement::OPTIONAL,
               {"verbosity",'v', argument_requirement::REQUIRE_ARG,
-                 "[0-6] The level of verbosity. Default is 2"} },
+                 "[0-6] The level of verbosity. (0: OFF | 1: CRITICAL | 2: ERROR | 3: WARN | 4: INFO | 5: DEBUG | 6: TRACE). Default is 2"} },
             { option_requirement::OPTIONAL,
                     {"nondeterminism-strategy", 'n', argument_requirement::REQUIRE_ARG,
                             "[0-3] Determines which edge to pick when encountering nondeterministic choice. Default is 0 (0: PANIC | 1: PICK_FIRST | 2: PICK_LAST | 3: PICK_RANDOM)"} },
