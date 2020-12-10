@@ -19,6 +19,7 @@
 #include <extensions/tree_extensions.h>
 #include <extensions/stringextensions.h>
 #include "TTASuccessorGenerator.h"
+#include <cmath>
 
 std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTickStates(const TTA &tta) {
     return tta.GetNextTickStates(nondeterminism_strategy_t::VERIFICATION);
@@ -148,13 +149,17 @@ std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA
         positives.insert(std::make_pair(predicate.variable, predicate.GetValueOverTheEdge()));
         negatives.insert(std::make_pair(predicate.variable, predicate.GetValueOnTheEdge()));
     }
-    spdlog::critical("Trying to be proper with {0}", positives.size());
-    if(positives.size() < 16) {
+    int limit = -1;
+    if(CLIConfig::getInstance()["explosion-limit"]) limit = CLIConfig::getInstance()["explosion-limit"].as_integer();
+    spdlog::debug("Size of the set of interesting changes is {0}, this means you will get {1} new states",
+                 positives.size(), static_cast<int>(pow(2, positives.size())));
+    if(limit == -1 || positives.size() < limit) {
         VariableValueVector ps{positives.begin(), positives.end()};
         VariableValueVector ns{negatives.begin(), negatives.end()};
         std::vector<TTA::StateChange> allPermutations = bfs(ps, ns, ttaState.GetSymbols());
         return allPermutations;
     }
+    spdlog::warn("The tock explosion was too large, trying a weaker strategy - This will likely result in wrong answers.");
     // TODO: This is technically incorrect. These state changes may have an effect on the reachable state space if they are applied together
     std::vector<TTA::StateChange> allChanges{};
     for(auto& positive : positives) {
@@ -167,7 +172,7 @@ std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA
         AssignVariable(stN.symbols, ttaState.GetSymbols(), negative.first, negative.second);
         allChanges.push_back(stN);
     }
-    spdlog::critical("Tock Changes: {0}", allChanges.size());
+    spdlog::warn("Tock Changes: {0}", allChanges.size());
     /*
     // Get all the positive and negative values that the predicates describe
     VariableValueCollection positives{};

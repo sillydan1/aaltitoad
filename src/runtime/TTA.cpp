@@ -289,9 +289,10 @@ std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strate
 }
 
 bool TTA::WarnIfNondeterminism(const std::vector<Edge>& edges, const std::string& componentName) {
+    // If we aren't simulating, we should not warn about nondeterminism
+    if(!CLIConfig::getInstance()["trace"]) return false;
     if(edges.size() > 1) {
-        spdlog::error("Non-deterministic choice in Component '{0}'.",
-                      TTAResugarizer::Resugar(componentName));
+        spdlog::warn("Non-deterministic choice in Component '{0}'.", TTAResugarizer::Resugar(componentName));
         spdlog::debug("Enabled edges in component '{0}':", TTAResugarizer::Resugar(componentName));
         for(auto& e : edges)
             spdlog::debug("{0} --> {1}",

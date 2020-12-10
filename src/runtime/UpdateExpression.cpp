@@ -48,7 +48,7 @@ std::vector<UpdateExpression> UpdateExpression::ParseExpressions(const std::stri
 packToken UpdateExpression::Evaluate(const TokenMap& map) const {
     auto val = calculator::calculate(rhs.c_str(), map);
     auto xx = map.find(lhs)->token()->type;
-    if(val->type != xx) spdlog::warn("This is annoying, but I am out of time");
+    // TODO: Figure this out... if(val->type != xx) spdlog::warn("This is annoying, but I am out of time");
     switch (xx) {
         case INT: return val.asInt();
         case REAL: return val.asDouble();

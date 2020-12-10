@@ -77,7 +77,7 @@ void ReachabilitySearcher::AreQueriesSatisfied(std::vector<QueryResultPair>& que
         if(!query.answer) {
             query.answer = IsQuerySatisfied(*query.query, state);
             if (query.answer)
-                spdlog::critical("Query '{0}' is satisfied! - {1}", ConvertASTToString(*query.query), dbgsize);
+                spdlog::info("Query '{0}' is satisfied! - {1}", ConvertASTToString(*query.query), dbgsize);
         }
     }
 }
@@ -93,10 +93,9 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const Query &query, const T
 }
 
 void PrintResults(const std::vector<QueryResultPair>& results) {
-    spdlog::critical("==== QUERY RESULTS ====");
-    for(auto& r : results) {
-        spdlog::critical("{0} : {1}", ConvertASTToString(*r.query), r.answer);
-    }
+    spdlog::info("==== QUERY RESULTS ====");
+    for(auto& r : results)
+        spdlog::info("{0} : {1}", ConvertASTToString(*r.query), r.answer);
 }
 
 bool ReachabilitySearcher::ForwardReachabilitySearch(const std::vector<const Query*>& queries, const TTA& initialState) {
@@ -121,7 +120,7 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const std::vector<const Que
         AreQueriesSatisfied(query_results, state.tta, Passed.size());
         if(std::all_of(query_results.begin(), query_results.end(), [](const auto& r){ return r.answer; })) {
             PrintResults(query_results);
-            spdlog::critical("Found a positive result after searching: {0} states", Passed.size());
+            spdlog::info("Found a positive result after searching: {0} states", Passed.size());
             return true; // All the queries has been reached
         }
         // If the state is interesting, apply tock changes
@@ -138,7 +137,7 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const std::vector<const Que
         stateit = Waiting.begin();
     }
     PrintResults(query_results);
-    spdlog::critical("Found a negative result after searching: {0} states", Passed.size());
+    spdlog::info("Found a negative result after searching: {0} states", Passed.size());
     return false;
     /***  Forward reachability search algorithm
      * Passed = Ø

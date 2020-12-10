@@ -51,6 +51,9 @@ CLIConfig::CLIConfig() {
             { option_requirement::OPTIONAL,
                     {"ignore-update-influence", 'z', argument_requirement::NO_ARG,
                             "Forces transitions to be taken, no matter if they have an overlapping update influence. NOTE: Does not disable the warning"} },
+            { option_requirement::OPTIONAL,
+                    {"explosion-limit", 'l', argument_requirement::REQUIRE_ARG,
+                            "[INTEGER] Sets a limit on what the maximum amount of interesting changes. -1 means no limit. Default is -1. NB! This will result in incorrect answers"} },
     };
     status_code = EXIT_SUCCESS;
 }
