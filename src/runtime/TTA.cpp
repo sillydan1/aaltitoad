@@ -20,6 +20,7 @@
 #include <extensions/overload>
 #include <extensions/cparse_extensions.h>
 #include <tinytimer/Timer.hpp>
+#include <verifier/trace_output/TTAResugarizer.h>
 
 TTA::StateChange operator+(TTA::StateChange a, TTA::StateChange b) {
     // Merge a and b

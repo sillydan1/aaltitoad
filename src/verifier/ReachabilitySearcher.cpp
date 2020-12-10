@@ -21,6 +21,7 @@
 
 #include <tinytimer/Timer.hpp>
 #include <extensions/tree_extensions.h>
+#include <verifier/trace_output/TTAResugarizer.h>
 
 bool IsQuerySatisfiedHelper(const Query& query, const TTA& state) {
     switch (query.root.type) {
