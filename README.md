@@ -28,6 +28,8 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make install
 ```
 
+If you want to uninstall again, run `cat install_manifest.txt | xargs sudo rm`.
+
 ## How to use
 ```
 USAGE: aaltitoad -i /path/to/project/dir/ [OPTIONS]

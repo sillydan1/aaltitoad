@@ -57,6 +57,8 @@ packToken UpdateExpression::Evaluate(const TokenMap& map) const {
         case VAR: {
             return val.asBool(); // TODO: This is not right, right?
         }
+        case TIMER:
+            return packToken(val.asDouble(), PACK_IS_TIMER);
         case NUM: // We do not support just "numbers" in general. You need to have an actual type.
         case FUNC:
         case IT:
