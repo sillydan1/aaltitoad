@@ -151,7 +151,7 @@ std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA
     }
     int limit = -1;
     if(CLIConfig::getInstance()["explosion-limit"]) limit = CLIConfig::getInstance()["explosion-limit"].as_integer();
-    spdlog::debug("Size of the set of interesting changes is {0}, this means you will get {1} new states",
+    spdlog::trace("Size of the set of interesting changes is {0}, this means you will get {1} new states",
                  positives.size(), static_cast<int>(pow(2, positives.size())));
     if(limit == -1 || positives.size() < limit) {
         VariableValueVector ps{positives.begin(), positives.end()};

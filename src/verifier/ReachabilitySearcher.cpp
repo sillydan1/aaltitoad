@@ -76,8 +76,11 @@ void ReachabilitySearcher::AreQueriesSatisfied(std::vector<QueryResultPair>& que
     for(auto & query : queries) {
         if(!query.answer) {
             query.answer = IsQuerySatisfied(*query.query, state);
-            if (query.answer)
-                spdlog::info("Query '{0}' is satisfied! - {1}", ConvertASTToString(*query.query), dbgsize);
+            if (query.answer) {
+                auto ss = ConvertASTToString(*query.query);
+                spdlog::info("Query '{0}' is satisfied! - {1}", ss, dbgsize);
+                spdlog::debug("Query '{0}' was satisfied in state: \n{1}", ss, state.GetCurrentStateString());
+            }
         }
     }
 }

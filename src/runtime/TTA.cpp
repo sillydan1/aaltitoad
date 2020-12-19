@@ -202,7 +202,7 @@ bool TTA::IsStateImmediate(const TTA::StateChange &state) {
     return std::any_of(state.componentLocations.begin(), state.componentLocations.end(), [](const auto& c){ return c.second.isImmediate; });
 }
 
-std::optional<StateMultiChoice> TTA::GetChangesFromEdge(const TTA::Edge& choice, bool& outInfluenceOverlap, std::map<std::string, std::vector<std::string>>& overlappingComponents) const {
+std::optional<StateMultiChoice> TTA::GetChangesFromEdge(const TTA::Edge& choice, bool& outInfluenceOverlap, std::map<std::string, std::vector<std::pair<std::string,std::string>>>& overlappingComponents) const {
     StateMultiChoice changes{};
     bool DoesUpdateInfluenceOverlap = AccumulateUpdateInfluences(choice, changes.symbolsToChange, overlappingComponents);
     outInfluenceOverlap |= DoesUpdateInfluenceOverlap;
@@ -211,12 +211,12 @@ std::optional<StateMultiChoice> TTA::GetChangesFromEdge(const TTA::Edge& choice,
     return changes;
 }
 
-void TTA::WarnAboutComponentOverlap(std::map<std::string, std::vector<std::string>> &overlappingComponents) const {
+void TTA::WarnAboutComponentOverlap(std::map<std::string, std::vector<std::pair<std::string,std::string>>> &overlappingComponents) const {
     spdlog::debug("Overlapping Components: (Tick#: {0})", tickCount);
     for (auto& componentCollection : overlappingComponents) {
         if (componentCollection.second.size() > 1) {
             for (auto& compname : componentCollection.second)
-                spdlog::debug("{0}", compname);
+                spdlog::debug("{0}", compname.first);
         }
     }
 }
@@ -242,7 +242,7 @@ void TTA::ApplyComponentLocation(TTA::ComponentLocationMap &currentLocations,
 }
 
 std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
-    using ExpressionComponentMap = std::map<std::string, std::vector<std::string>>;
+    using ExpressionComponentMap = std::map<std::string, std::vector<std::pair<std::string,std::string>>>;
     // Result type: [0] is shared, [>0] are choice changes
     StateMultiChoice sharedChanges{};
     std::vector<StateMultiChoice> choiceChanges{};
@@ -307,6 +307,7 @@ bool TTA::WarnIfNondeterminism(const std::vector<Edge>& edges, const std::string
 std::string TTA::GetCurrentStateString() const {
     std::stringstream ss{};
     for(auto& component : components) ss<<component.first<<": "<<component.second.currentLocation.identifier<<"\n";
+    for(auto& symbol : symbols.map()) ss << symbol.first<<": "<<symbol.second.str()<<"\n";
     return ss.str();
 }
 
@@ -393,15 +394,31 @@ void TTA::StateChange::DelayTimerSymbols(SymbolMap& symbols, float delayDelta) {
     }
 }
 
-bool TTA::AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<std::string, UpdateExpression>& symbolsToChange, std::map<std::string, std::vector<std::string>>& overlappingComponents) const {
+bool AreRightHandSidesIndempotent(const std::map<std::string, std::vector<std::pair<std::string,std::string>>>& overlappingComponents, const std::string& key, const TTA::SymbolMap& symbols) {
+    auto xx = overlappingComponents.find(key);
+    bool indempotence = true;
+    auto origval = calculator::calculate(xx->second.begin()->second.c_str(), symbols);
+    for(auto& x : xx->second) {
+        auto val = calculator::calculate(x.second.c_str(), symbols);
+        if(origval != val)
+            return false;
+    }
+    return indempotence;
+}
+
+bool TTA::AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<std::string, UpdateExpression>& symbolsToChange, std::map<std::string, std::vector<std::pair<std::string,std::string>>>& overlappingComponents) const {
     bool updateInfluenceOverlap = false;
     for(auto& expr : pickedEdge.updateExpressions) {
-        overlappingComponents[expr.lhs].push_back(TTAResugarizer::Resugar(
+        overlappingComponents[expr.lhs].push_back(std::make_pair(TTAResugarizer::Resugar(
                 expr.lhs + " : " +
                 pickedEdge.sourceLocation.identifier + " --> " +
-                pickedEdge.targetLocation.identifier));
-        if(symbolsToChange.count(expr.lhs) > 0) {
-            spdlog::warn("Overlapping update influence on evaluation of update on edge {0} --> {1}. "
+                pickedEdge.targetLocation.identifier), expr.rhs));
+        if(overlappingComponents.count(expr.lhs) > 0) {
+            if(AreRightHandSidesIndempotent(overlappingComponents, expr.lhs, symbols)) {
+                symbolsToChange.insert({expr.lhs, expr});
+                continue;
+            }
+            spdlog::debug("Non-indempotent overlapping update influence on evaluation of update on edge {0} --> {1}. "
                          "Variable '{2}' is already being written to in this tick! - For more info, run with higher verbosity",
                          TTAResugarizer::Resugar(pickedEdge.sourceLocation.identifier),
                          TTAResugarizer::Resugar(pickedEdge.targetLocation.identifier),
