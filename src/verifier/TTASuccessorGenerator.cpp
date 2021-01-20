@@ -89,33 +89,30 @@ bool TTASuccessorGenerator::IsStateInteresting(const TTA& ttaState) {
 using VariableValueCollection = std::set<std::pair<std::string, TTASymbol_t>>;
 using VariableValueVector = std::vector<std::pair<std::string, TTASymbol_t>>;
 
-void AssignVariable(TTA::SymbolMap& symbols, const TTA::SymbolMap& derivedSymbols, const std::string &varname, const TTASymbol_t &newValue) {
+void AssignVariable(TTA::SymbolMap& outputMap, const TTA::SymbolMap& currentValues, const std::string &varname, const TTASymbol_t &newValue) {
     std::visit(overload(
-            [&](const int& v)            { symbols.map()[varname] = v; },
-            [&](const float& v)          {
-                symbols.map()[varname] = v;
-                },
-            [&](const bool& v)           { symbols.map()[varname] = v; },
-            // TODO: We should delay all timers, not just this single one...
+            [&](const int& v)            { outputMap.map()[varname] = v; },
+            [&](const float& v)          { outputMap.map()[varname] = v; },
+            [&](const bool& v)           { outputMap.map()[varname] = v; },
             [&](const TTATimerSymbol& v) {
-                auto current = static_cast<float>(derivedSymbols.map()[varname].asDouble());
+                auto current = static_cast<float>(currentValues.map()[varname].asDouble());
                 float delta = std::abs(current - v.current_value);
-                spdlog::critical("Delaying all timers {0}", delta);
-                for(auto& s : derivedSymbols.map()) {
+                spdlog::trace("Delaying all timers {0}", delta);
+                for(auto& s : currentValues.map()) {
                     if(s.second->type == TIMER)
-                        symbols.map()[s.first] = s.second; // This is a cpy, right?
+                        outputMap.map()[s.first] = s.second;
                 }
-                TTA::StateChange::DelayTimerSymbols(symbols, delta);
-                // symbols.map()[varname] = packToken(v.current_value, PACK_IS_TIMER);
+                TTA::StateChange::DelayTimerSymbols(outputMap, delta);
+                // outputMap.map()[varname] = packToken(v.current_value, PACK_IS_TIMER);
             },
-            [&](const std::string& v)    { symbols.map()[varname] = v; }
+            [&](const std::string& v)    { outputMap.map()[varname] = v; }
     ), newValue);
 }
 /// This absolutely explodes into a billion pieces if the sizeof(a) or b becomes too large.
 /// i.e. just 16 changes equals 65536 stateChanges (2^N)
 /// - which is not something that doesnt happen
 /// Also, this approach is not very memory efficient, so the size limit will be even more stringed
-std::vector<TTA::StateChange> bfs(const VariableValueVector& a, const VariableValueVector& b, const TTA::SymbolMap& derivedSymbols) {
+std::vector<TTA::StateChange> BFSCrossProduct(const VariableValueVector& a, const VariableValueVector& b, const TTA::SymbolMap& derivedSymbols) {
     std::vector<TTA::StateChange> crossProduct{};
     std::stack<std::pair<TTA::StateChange, int>> frontier{};
     frontier.push(std::make_pair(TTA::StateChange{},0));
@@ -138,7 +135,6 @@ std::vector<TTA::StateChange> bfs(const VariableValueVector& a, const VariableVa
     return crossProduct;
 }
 
-/// PERSONAL_NOTE: This only changes the variables. No component locations
 std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA &ttaState) {
     // Get all the interesting variable predicates
     auto interestingVarPredicates = GetInterestingVariablePredicatesInState(ttaState);
@@ -156,10 +152,10 @@ std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA
     if(limit == -1 || positives.size() < limit) {
         VariableValueVector ps{positives.begin(), positives.end()};
         VariableValueVector ns{negatives.begin(), negatives.end()};
-        std::vector<TTA::StateChange> allPermutations = bfs(ps, ns, ttaState.GetSymbols());
+        std::vector<TTA::StateChange> allPermutations = BFSCrossProduct(ps, ns, ttaState.GetSymbols());
         return allPermutations;
     }
-    spdlog::warn("The tock explosion was too large, trying a weaker strategy - This will likely result in wrong answers.");
+    spdlog::warn("The Tock explosion was too large, trying a weaker strategy - This will likely result in wrong answers.");
     // TODO: This is technically incorrect. These state changes may have an effect on the reachable state space if they are applied together
     std::vector<TTA::StateChange> allChanges{};
     for(auto& positive : positives) {
@@ -172,20 +168,6 @@ std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA
         AssignVariable(stN.symbols, ttaState.GetSymbols(), negative.first, negative.second);
         allChanges.push_back(stN);
     }
-    spdlog::warn("Tock Changes: {0}", allChanges.size());
-    /*
-    // Get all the positive and negative values that the predicates describe
-    VariableValueCollection positives{};
-    VariableValueCollection negatives{};
-    for(auto& predicate : interestingVarPredicates) {
-        positives.emplace_back(predicate.variable, predicate.GetValueOverTheEdge());
-        negatives.emplace_back(predicate.variable, predicate.GetValueOnTheEdge());
-    }
-    // Apply the cross product of all negatives, and positives.
-    // TODO: We should do some Z3 SAT solving instead of this.
-    // If positives.size() == 64, then we will result in 18,446,744,073,709,551,616 permutations. This is bad.
-    // std::vector<TTA::StateChange> allPermutations = bfs(positives, negatives);
-    return allPermutations;
-     */
+    spdlog::trace("Amount of Tock changes: {0}", allChanges.size());
     return allChanges;
 }
