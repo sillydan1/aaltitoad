@@ -70,6 +70,7 @@ std::vector<option_t> CLIConfig::GetCLIOptionsOnly() {
     std::transform(cliOptions.begin(), cliOptions.end(),
                    std::back_inserter(output),
                    [](std::pair<option_requirement, option_t> element) -> option_t { return element.second; });
+    add_help_option(output);
     return output;
 }
 
