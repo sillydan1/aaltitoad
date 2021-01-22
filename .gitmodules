@@ -16,3 +16,6 @@
 [submodule "dep/ctlparser"]
 	path = dep/ctlparser
 	url = https://github.com/sillydan1/CTLParser
+[submodule "dep/z3"]
+	path = dep/z3
+	url = https://github.com/Z3Prover/z3

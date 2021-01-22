@@ -24,6 +24,7 @@ include_directories(
         dep/rapidjson/include
         dep/spdlog/include
         dep/cparse
+        dep/z3
         dep
         src
 )
@@ -32,6 +33,7 @@ set (CMAKE_CXX_STANDARD 17)
 set (CXX_STANDARD_REQUIRED ON)
 set (SPDLOG_BUILD_SHARED)
 set (CMAKE_CXX_STANDARD_LIBRARIES -lstdc++fs)
+set (SUBMODULE_DIR_NAME dep)
 add_compile_options(-lpthread)
 add_compile_options(-lstdc++fs)
 add_definitions(-DYYERROR_VERBOSE)
@@ -43,6 +45,7 @@ endif()
 add_subdirectory(dep/argvparse/)
 add_subdirectory(dep/spdlog)
 add_subdirectory(dep/ctlparser)
+add_subdirectory(dep/z3)
 
 # Third party libraries, compiled with something else
 ####
