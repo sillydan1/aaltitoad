@@ -117,6 +117,29 @@ std::vector<std::string> TTA::GetCurrentLocationsLocationsOnly() const {
     return componentLocations;
 }
 
+std::size_t TTA::GetStateHash(const StateChange& state) {
+    std::size_t state_hash = 0;
+    for(auto& component : state.componentLocations)
+        state_hash == 0 ?
+        [&state_hash, &component](){ state_hash = std::hash<std::string>{}(component.second.identifier);}() :
+        hash_combine(state_hash, component.first);
+
+    for(auto& symbol : state.symbols.map()) {
+        auto symbol_hash = std::hash<std::string>{}(symbol.first);   // hash of the symbol identifier
+        // Combine with the symbol value
+        switch(symbol.second->type) {
+            case INT:   hash_combine(symbol_hash, symbol.second.asInt()    * COMBINE_MAGIC_NUM); break;
+            case BOOL:  hash_combine(symbol_hash, symbol.second.asBool()   * COMBINE_MAGIC_NUM); break;
+            case REAL:  hash_combine(symbol_hash, symbol.second.asDouble() * COMBINE_MAGIC_NUM); break;
+            case STR:   hash_combine(symbol_hash, symbol.second.asString()); break;
+            case TIMER: hash_combine(symbol_hash, symbol.second.asDouble() * COMBINE_MAGIC_NUM); break;
+            default: spdlog::error("Symbol type '{0}' is not supported!", tokenTypeToString(symbol.second->type)); break;
+        }
+        hash_combine(state_hash, symbol_hash * COMBINE_MAGIC_NUM); // Combine with the overall state
+    }
+    return state_hash;
+}
+
 bool TTA::SetCurrentState(const StateChange& newstate) {
     bool result = SetComponentLocations(newstate.componentLocations);
     result &= SetSymbols(newstate.symbols);
