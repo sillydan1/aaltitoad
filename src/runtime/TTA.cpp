@@ -101,10 +101,6 @@ std::size_t TTA::GetCurrentStateHash() const {
     return state_hash;
 }
 
-TTA::StateChange TTA::GetCurrentState() const {
-    return { .componentLocations = GetCurrentLocations(), .symbols = symbols };
-}
-
 TTA::ComponentLocationMap TTA::GetCurrentLocations() const {
     // TODO: Maybe this should be cached
     ComponentLocationMap componentLocations = {};
@@ -117,29 +113,6 @@ std::vector<std::string> TTA::GetCurrentLocationsLocationsOnly() const {
     for(auto& component : components)
         componentLocations.push_back(component.second.currentLocation.identifier);
     return componentLocations;
-}
-
-std::size_t TTA::GetStateHash(const StateChange& state) {
-    std::size_t state_hash = 0;
-    for(auto& component : state.componentLocations)
-        state_hash == 0 ?
-        [&state_hash, &component](){ state_hash = std::hash<std::string>{}(component.second.identifier);}() :
-        hash_combine(state_hash, component.first);
-
-    for(auto& symbol : state.symbols.map()) {
-        auto symbol_hash = std::hash<std::string>{}(symbol.first);   // hash of the symbol identifier
-        // Combine with the symbol value
-        switch(symbol.second->type) {
-            case INT:   hash_combine(symbol_hash, symbol.second.asInt());    break;
-            case BOOL:  hash_combine(symbol_hash, symbol.second.asBool());   break;
-            case REAL:  hash_combine(symbol_hash, symbol.second.asDouble()); break;
-            case STR:   hash_combine(symbol_hash, symbol.second.asString()); break;
-            case TIMER: hash_combine(symbol_hash, symbol.second.asDouble()); break;
-            default: spdlog::error("Symbol type '{0}' is not supported!", tokenTypeToString(symbol.second->type)); break;
-        }
-        hash_combine(state_hash, symbol_hash); // Combine with the overall state
-    }
-    return state_hash;
 }
 
 bool TTA::SetCurrentState(const StateChange& newstate) {
@@ -196,10 +169,6 @@ bool TTA::TypeCheck(const std::pair<const std::string, packToken> &symbol,
 
 bool TTA::IsCurrentStateImmediate() const {
     return std::any_of(components.begin(), components.end(), [](const auto& c){ return c.second.currentLocation.isImmediate; });
-}
-
-bool TTA::IsStateImmediate(const TTA::StateChange &state) {
-    return std::any_of(state.componentLocations.begin(), state.componentLocations.end(), [](const auto& c){ return c.second.isImmediate; });
 }
 
 std::optional<StateMultiChoice> TTA::GetChangesFromEdge(const TTA::Edge& choice, bool& outInfluenceOverlap, std::map<std::string, std::vector<std::pair<std::string,std::string>>>& overlappingComponents) const {
@@ -380,7 +349,7 @@ void TTA::DelayAllTimers(double delayDelta) {
     }
 }
 
-void TTA::SetAllTimers(double exactTime) {
+[[maybe_unused]] void TTA::SetAllTimers(double exactTime) {
     for(auto& symbol : symbols.map()) {
         if(symbol.second->type == TIMER)
             symbols[symbol.first] = packToken(exactTime, PACK_IS_TIMER);

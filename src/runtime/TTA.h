@@ -90,9 +90,7 @@ public:
     void InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys);
     void InsertExternalSymbols(const ExternalSymbolMap& externalSymbols);
     void InsertInternalSymbols(const TTA::SymbolMap &internalSymbols) const;
-    static std::size_t GetStateHash(const StateChange& state);
     std::size_t GetCurrentStateHash() const;
-    StateChange GetCurrentState() const;
     ComponentLocationMap GetCurrentLocations() const;
     std::vector<std::string> GetCurrentLocationsLocationsOnly() const; // TODO: This is a patch solution. Make this good
     std::string GetCurrentStateString() const;
@@ -100,7 +98,7 @@ public:
     bool SetCurrentState(const StateChange& newstate);
     bool SetSymbols(const SymbolMap& symbolChange);
     bool SetComponentLocations(const ComponentLocationMap& locationChange);
-    static bool IsStateImmediate(const StateChange& state);
+
     std::vector<Edge> GetCurrentEdges() const;
     std::vector<StateChange> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
     static bool WarnIfNondeterminism(const std::vector<TTA::Edge>& edges, const std::string& componentName) ;
