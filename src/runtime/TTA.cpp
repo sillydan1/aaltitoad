@@ -89,14 +89,14 @@ std::size_t TTA::GetCurrentStateHash() const {
         auto symbol_hash = std::hash<std::string>{}(symbol.first);   // hash of the symbol identifier
         // Combine with the symbol value
         switch(symbol.second->type) {
-            case INT:   hash_combine(symbol_hash, symbol.second.asInt());    break;
-            case BOOL:  hash_combine(symbol_hash, symbol.second.asBool());   break;
-            case REAL:  hash_combine(symbol_hash, symbol.second.asDouble()); break;
+            case INT:   hash_combine(symbol_hash, symbol.second.asInt() * 2654435761);    break;
+            case BOOL:  hash_combine(symbol_hash, symbol.second.asBool() * 2654435761);   break;
+            case REAL:  hash_combine(symbol_hash, symbol.second.asDouble() * 2654435761); break;
             case STR:   hash_combine(symbol_hash, symbol.second.asString()); break;
-            case TIMER: hash_combine(symbol_hash, symbol.second.asDouble()); break;
+            case TIMER: hash_combine(symbol_hash, symbol.second.asDouble() * 2654435761); break;
             default: spdlog::error("Symbol type '{0}' is not supported!", tokenTypeToString(symbol.second->type)); break;
         }
-        hash_combine(state_hash, symbol_hash); // Combine with the overall state
+        hash_combine(state_hash, symbol_hash * 2654435761); // Combine with the overall state
     }
     return state_hash;
 }
