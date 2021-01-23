@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
     // Parse the queries
     if(config["query"]) {
         auto queryList = CTLQueryParser::ParseQueriesFile(config["query"].as_string(), t);
-        ReachabilitySearcher::ForwardReachabilitySearch(queryList, t);
+        ReachabilitySearcher s{queryList, t}; s.Search();
         return 0;
     }
 

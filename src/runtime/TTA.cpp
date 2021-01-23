@@ -274,9 +274,10 @@ bool TTA::WarnIfNondeterminism(const std::vector<Edge>& edges, const std::string
 }
 
 std::string TTA::GetCurrentStateString() const {
-    std::stringstream ss{};
-    for(auto& component : components) ss<<component.first<<": "<<component.second.currentLocation.identifier<<"\n";
-    for(auto& symbol : symbols.map()) ss << symbol.first<<": "<<symbol.second.str()<<"\n";
+    std::stringstream ss{}; ss << "{";
+    for(auto& component : components) ss<<"\""<<component.first<<"\""<<": "<<"\""<<component.second.currentLocation.identifier<<"\",";
+    for(auto& symbol : symbols.map()) ss<<"\""<<symbol.first<<"\""<<": "<<"\""<<symbol.second.str()<<"\",";
+    ss << R"("OBJECT_END":"true"})"; // This is just a bad way of ending a json object. 
     return ss.str();
 }
 

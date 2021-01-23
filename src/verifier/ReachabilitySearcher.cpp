@@ -72,88 +72,95 @@ bool ReachabilitySearcher::IsQuerySatisfied(const Query& query, const TTA &state
     return IsQuerySatisfiedHelper(query, state);
 }
 
-void ReachabilitySearcher::AreQueriesSatisfied(std::vector<QueryResultPair>& queries, const TTA& state, int dbgsize) {
+void ReachabilitySearcher::AreQueriesSatisfied(std::vector<QueryResultPair>& queries, const TTA& state) {
     for(auto & query : queries) {
         if(!query.answer) {
             query.answer = IsQuerySatisfied(*query.query, state);
             if (query.answer) {
+                query.acceptingStateHash = state.GetCurrentStateHash();
                 auto ss = ConvertASTToString(*query.query);
-                spdlog::info("Query '{0}' is satisfied! - {1}", ss, dbgsize);
+                spdlog::info("Query '{0}' is satisfied!", ss);
                 spdlog::debug("Query '{0}' was satisfied in state: \n{1}", ss, state.GetCurrentStateString());
             }
         }
     }
 }
 
-struct TTAIsTockStatePair {
-    TTA tta;
-    bool justTocked;
-};
-
-// TODO: Extract TTA into TTAState and TTAGraph, to minimize the memory footprint
-bool ReachabilitySearcher::ForwardReachabilitySearch(const Query &query, const TTA &initialState) {
-    return ForwardReachabilitySearch({&query}, initialState);
-}
-
-void PrintResults(const std::vector<QueryResultPair>& results) {
+void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& results) {
     spdlog::info("==== QUERY RESULTS ====");
-    for(auto& r : results)
+    for(auto& r : results) {
+        spdlog::info("===================="); // Delimiter to make it easier to read
         spdlog::info("{0} : {1}", ConvertASTToString(*r.query), r.answer);
+        auto stateHash = r.acceptingStateHash;
+        std::vector<std::string> trace{};
+        while(stateHash != 0) {
+            auto prevState = Passed.find(stateHash);
+            if(prevState != Passed.end()) {
+                trace.push_back(prevState->second.tta.GetCurrentStateString());
+                stateHash = Passed[stateHash].prevStateHash;
+            } else {
+                spdlog::critical("Unable to resolve witnessing trace");
+                break;
+            }
+        }
+        std::reverse(trace.begin(), trace.end());
+        for(auto& state : trace)
+            spdlog::info("{0}", state);
+    }
 }
 
-bool ReachabilitySearcher::ForwardReachabilitySearch(const std::vector<const Query*>& queries, const TTA& initialState) {
-    std::vector<QueryResultPair> query_results{}; query_results.reserve(queries.size());
-    for(auto& q : queries) query_results.push_back({.answer = false, .query = q});
-    std::unordered_map<size_t, bool> Passed{}; // TODO: This should be stored in a manner that makes it possible to provide traces
-    std::unordered_map<size_t, TTAIsTockStatePair> Waiting{};
-    Waiting[initialState.GetCurrentStateHash()] = TTAIsTockStatePair{initialState, false};
-    auto add_to_waiting_list = [&](const TTA& state, const std::vector<TTA::StateChange>& statechanges, bool justTocked){
-        for(auto& change : statechanges) {
-            /// This is a lot of copying large data objects... Figure something out with maybe std::move
-            auto nstate = state << change;
-            auto nstatehash = nstate.GetCurrentStateHash();
-            if(Passed.find(nstatehash) == Passed.end())
-                Waiting[nstatehash] = TTAIsTockStatePair{nstate, justTocked};
-        }
-    };
+bool ReachabilitySearcher::ForwardReachabilitySearch() {
     auto stateit = Waiting.begin();
     while(stateit != Waiting.end()) {
         auto& state = stateit->second;
         auto curstatehash = stateit->first;
-        AreQueriesSatisfied(query_results, state.tta, Passed.size());
-        if(std::all_of(query_results.begin(), query_results.end(), [](const auto& r){ return r.answer; })) {
+        AreQueriesSatisfied(query_results, state.tta);
+        if(AreQueriesAnswered(query_results)) {
+            Passed[curstatehash] = Waiting[curstatehash];
             PrintResults(query_results);
             spdlog::info("Found a positive result after searching: {0} states", Passed.size());
             return true; // All the queries has been reached
         }
         // If the state is interesting, apply tock changes
-        // TODO: Timers being wrongly applied.
         // TODO: Guards with parentheses that checks on interesting variables are not parsed properly. Expect weird behavior
-        if(!state.justTocked && !state.tta.IsCurrentStateImmediate() && TTASuccessorGenerator::IsStateInteresting(state.tta)) {
+        if(IsSearchStateTockable(state) && TTASuccessorGenerator::IsStateInteresting(state.tta)) {
             auto allTockStateChanges = TTASuccessorGenerator::GetNextTockStates(state.tta);
-            add_to_waiting_list(state.tta, allTockStateChanges, true);
+            AddToWaitingList(state.tta, allTockStateChanges, true);
         }
         auto allTickStateChanges = TTASuccessorGenerator::GetNextTickStates(state.tta);
-        add_to_waiting_list(state.tta, allTickStateChanges, false);
-        Passed[curstatehash] = true;
-        Waiting.erase(curstatehash); // Remove this state from the waiting list
+        AddToWaitingList(state.tta, allTickStateChanges, false);
+        Passed[curstatehash] = Waiting[curstatehash];
+        Waiting.erase(curstatehash);
         stateit = Waiting.begin();
     }
     PrintResults(query_results);
     spdlog::info("Found a negative result after searching: {0} states", Passed.size());
     return false;
-    /***  Forward reachability search algorithm
-     * Passed = Ø
-     * Waiting = {initial}
-     *
-     * pick (state) in waiting <DFS,BFS etc>
-     *      if (state |= Q) return true
-     *      for all (state -> state'):
-     *           add (state') to waiting
-     *      move (state) to Passed
-     *      Until Waiting = Ø
-     * return false
-     * */
 }
 
+ReachabilitySearcher::ReachabilitySearcher(const std::vector<const Query *> &queries, const TTA &initialState)
+ : Passed{}, Waiting{}, query_results{}
+{
+    query_results.reserve(queries.size());
+    for(auto& q : queries) query_results.push_back({.answer = false, .query = q, .acceptingStateHash = 0});
+    Waiting[initialState.GetCurrentStateHash()] = SearchState{initialState, 0, false};
+}
 
+void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<TTA::StateChange> &statechanges, bool justTocked) {
+    for(auto& change : statechanges) {
+        /// This is a lot of copying large data objects... Figure something out with maybe std::move
+        auto prevstatehash = state.GetCurrentStateHash();
+        auto nstate = state << change;
+        auto nstatehash = nstate.GetCurrentStateHash();
+        if(Passed.find(nstatehash) == Passed.end())
+            Waiting[nstatehash] = SearchState{nstate, prevstatehash, justTocked};
+    }
+}
+
+bool ReachabilitySearcher::AreQueriesAnswered(const std::vector<QueryResultPair> &qres) {
+    return std::all_of(query_results.begin(), query_results.end(), [](const auto& r){ return r.answer; });
+}
+
+bool ReachabilitySearcher::IsSearchStateTockable(const SearchState& state) {
+    return (!state.justTocked && !state.tta.IsCurrentStateImmediate());
+}

@@ -25,14 +25,31 @@
 struct QueryResultPair {
     bool answer;
     const Query* query;
+    size_t acceptingStateHash;
+};
+
+struct SearchState {
+    TTA tta;
+    size_t prevStateHash;
+    bool justTocked;
 };
 
 class ReachabilitySearcher {
+    using StateList = std::unordered_map<size_t, SearchState>;
+    StateList Passed;
+    StateList Waiting;
+    std::vector<QueryResultPair> query_results;
 public:
-    static bool IsQuerySatisfied(const Query& query, const TTA& state);
-    static void AreQueriesSatisfied(std::vector<QueryResultPair>& queries, const TTA& state, int dbgsize = 0);
-    static bool ForwardReachabilitySearch(const Query& query, const TTA& initialState);
-    static bool ForwardReachabilitySearch(const std::vector<const Query*>& queries, const TTA& initialState);
+    ReachabilitySearcher(const std::vector<const Query*>& queries, const TTA& initialState);
+    inline bool Search() { return ForwardReachabilitySearch(); }
+    void AddToWaitingList(const TTA& state, const std::vector<TTA::StateChange>& statechanges, bool justTocked);
+private:
+    static bool IsSearchStateTockable(const SearchState& state);
+    bool AreQueriesAnswered(const std::vector<QueryResultPair>& qres);
+    bool IsQuerySatisfied(const Query& query, const TTA& state);
+    void AreQueriesSatisfied(std::vector<QueryResultPair>& queries, const TTA& state);
+    bool ForwardReachabilitySearch();
+    void PrintResults(const std::vector<QueryResultPair>& results);
 };
 
 #endif //MAVE_REACHABILITYSEARCHER_H
