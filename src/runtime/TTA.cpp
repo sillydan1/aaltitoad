@@ -96,7 +96,7 @@ std::size_t TTA::GetCurrentStateHash() const {
             case tokType_TIMER: hash_combine(symbol_hash, symbol.second.asDouble()); break;
             default: spdlog::error("Symbol type '{0}' is not supported!", tokenTypeToString(symbol.second->type)); break;
         }
-        hash_combine(state_hash, symbol_hash); // Combine with the overall state
+        hash_combine(state_hash, symbol_hash * 2654435761); // Combine with the overall state
     }
     return state_hash;
 }
