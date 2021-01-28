@@ -23,7 +23,7 @@
 #include <verifier/trace_output/TTATracer.h>
 #include <verifier/query_parsing/CTLQueryParser.h>
 #include <verifier/ReachabilitySearcher.h>
-#include <extensions/tree_extensions.h>
+#include <extensions/stringextensions.h>
 
 int main(int argc, char** argv) {
     // Initialize CLI configuration (based on CLI Args)
@@ -32,6 +32,10 @@ int main(int argc, char** argv) {
     if(config.GetStatusCode() != EXIT_SUCCESS || config["help"]) {
         config.PrintHelpMessage(argv);
         return config.GetStatusCode();
+    }
+    if(config["version"]) {
+        std::cout << GetFileNameOnly(argv[0]) << " version 0.9b" << std::endl;
+        return 0;
     }
     if(config["verbosity"])
         spdlog::set_level(static_cast<spdlog::level::level_enum>(6-config["verbosity"].as_integer()));
