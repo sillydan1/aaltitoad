@@ -4,12 +4,16 @@
 
 (**Aal**borg **Ti**ck T**o**ck **A**utomata Vali**d**ator) is a verification engine and simulator for Tick Tock Automata. 
 
-TTA's (Tick Tock Automatas) are an Automata based theory. [This](https://projekter.aau.dk/projekter/da/studentthesis/tick-tock-automata-a-modelling-formalism-for-real-world-industrial-systems(8cb83e04-9b9a-4261-b457-1d09d85e593e).html) paper describes the theory behind it all, but the verification itself is not described there. (paper for that is WIP)
+TTA's (Tick Tock Automatas) are an Automata based theory. [This](https://projekter.aau.dk/projekter/da/studentthesis/tick-tock-automata-a-modelling-formalism-for-real-world-industrial-systems(8cb83e04-9b9a-4261-b457-1d09d85e593e).html) paper describes the Tick Tock Automata theory, and [this](https://gtz.dk/resources/SW9___AALTITOAD.pdf) paper describes the tool and presents test case results.
 
 The TTA parser assumes models modelled in the [H-UPPAAL](https://github.com/DEIS-Tools/H-Uppaal) tool.  
 
 ## Compile
 First, make sure that you have initialized all git submodules.
+```
+git submodule init
+```
+Then you should be able to build the tool like so:
 ```
 mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
@@ -21,7 +25,7 @@ make RELEASE=1
 ```
 
 ## Install
-This will install the `aaltitoad` commandline tool to `/usr/local/bin/` or `REDACTED` on windows/macOS  
+This will install the `aaltitoad` commandline tool and the associated libraries to `/usr/local/bin/`. Mac OSX and Windows builds are not tested yet.
 ```
 mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
@@ -45,4 +49,8 @@ OPTIONS:
  -u, --trace-output             | [DIR]/[FILENAME] Output file for traces. Use together with '--trace' option
  -f, --timing-info              | [DIR]/[FILENAME] Input file for timing information/instructions. Use together with '--trace' option
  -z, --ignore-update-influence	| Forces transitions to be taken, no matter if they have an overlapping update influence. NOTE: Does not disable the warning
+ -h, --help                     | Print this message
 ```
+
+## Contributing
+If you want to contribute to the project either raise an issue, or fork the repo and register a pull request on Github.
