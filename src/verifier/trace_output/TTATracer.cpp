@@ -36,12 +36,12 @@ void TTATracer::TraceSteps(const std::string &output_json_file, TTA &automata, u
         AppendStateToFile(automata, file);
         if(i != stepAmount-1) file << ","; // Put commas after all states, except the last one.
 
-        auto state = automata.GetNextTickStates(nondetstrat);
+        auto state = automata.GetNextTickState(nondetstrat);
 
         if(CLIConfig::getInstance()["timing-info"] && timinginfo.has_value())
             automata.DelayAllTimers(GetTimerDelay(i, timinginfo.value()));
 
-        automata.SetCurrentState(state[0]);
+        automata.SetCurrentState(state);
     }
     CloseFile(file);
 }

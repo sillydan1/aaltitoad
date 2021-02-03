@@ -117,29 +117,6 @@ std::vector<std::string> TTA::GetCurrentLocationsLocationsOnly() const {
     return componentLocations;
 }
 
-std::size_t TTA::GetStateHash(const StateChange& state) {
-    std::size_t state_hash = 0;
-    for(auto& component : state.componentLocations)
-        state_hash == 0 ?
-        [&state_hash, &component](){ state_hash = std::hash<std::string>{}(component.second.identifier);}() :
-        hash_combine(state_hash, component.first);
-
-    for(auto& symbol : state.symbols.map()) {
-        auto symbol_hash = std::hash<std::string>{}(symbol.first);   // hash of the symbol identifier
-        // Combine with the symbol value
-        switch(symbol.second->type) {
-            case INT:   hash_combine(symbol_hash, symbol.second.asInt()    * COMBINE_MAGIC_NUM); break;
-            case BOOL:  hash_combine(symbol_hash, symbol.second.asBool()   * COMBINE_MAGIC_NUM); break;
-            case REAL:  hash_combine(symbol_hash, symbol.second.asDouble() * COMBINE_MAGIC_NUM); break;
-            case STR:   hash_combine(symbol_hash, symbol.second.asString()); break;
-            case TIMER: hash_combine(symbol_hash, symbol.second.asDouble() * COMBINE_MAGIC_NUM); break;
-            default: spdlog::error("Symbol type '{0}' is not supported!", tokenTypeToString(symbol.second->type)); break;
-        }
-        hash_combine(state_hash, symbol_hash * COMBINE_MAGIC_NUM); // Combine with the overall state
-    }
-    return state_hash;
-}
-
 bool TTA::SetCurrentState(const StateChange& newstate) {
     bool result = SetComponentLocations(newstate.componentLocations);
     result &= SetSymbols(newstate.symbols);
@@ -235,41 +212,42 @@ void TTA::ApplyComponentLocation(TTA::ComponentLocationMap &currentLocations,
         currentLocations[component.first] = pickedEdge.targetLocation;
 }
 
+TTA::StateChange TTA::GetNextTickState(const nondeterminism_strategy_t& strategy) const {
+    ExpressionComponentMap overlappingComponents{}; // expr.lhs -> componentIdentifiers mapping
+    bool updateInfluenceOverlapGlobal = false;
+    StateMultiChoice sharedChanges{};
+    for(auto& component : components) {
+        auto enabledEdges = component.second.GetEnabledEdges(symbols); // TODO: Take Interesting variables into account
+        if(enabledEdges.empty()) continue;
+        auto &pickedEdge = PickEdge(enabledEdges, strategy);
+        auto changes = GetChangesFromEdge(pickedEdge, updateInfluenceOverlapGlobal, overlappingComponents);
+        if (changes.has_value()) sharedChanges.Merge(changes.value());
+        ApplyComponentLocation(sharedChanges.currentLocations, component, pickedEdge);
+    }
+    if(updateInfluenceOverlapGlobal) WarnAboutComponentOverlap(overlappingComponents);
+    auto symbolsCopy = GetSymbolChangesAsMap(sharedChanges.symbolChanges);
+    return { sharedChanges.currentLocations, symbolsCopy };
+}
+
 std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
-    using ExpressionComponentMap = std::map<std::string, std::vector<std::pair<std::string,std::string>>>;
     // Result type: [0] is shared, [>0] are choice changes
     StateMultiChoice sharedChanges{};
     std::vector<StateMultiChoice> choiceChanges{};
-
     ExpressionComponentMap overlappingComponents{}; // expr.lhs -> componentIdentifiers mapping
     bool updateInfluenceOverlapGlobal = false;
     for(auto& component : components) {
         auto enabledEdges = component.second.GetEnabledEdges(symbols); // TODO: Take Interesting variables into account
-        if(!enabledEdges.empty()) {
-            bool hasNondeterminism = WarnIfNondeterminism(enabledEdges, component.first);
-            if(!hasNondeterminism) {
-                // Simply pick the edge and apply it to the shared changes
-                if(strategy != nondeterminism_strategy_t::VERIFICATION) {
-                    auto &pickedEdge = PickEdge(enabledEdges, strategy);
-                    auto changes = GetChangesFromEdge(pickedEdge, updateInfluenceOverlapGlobal, overlappingComponents);
-                    if (changes.has_value()) sharedChanges.Merge(changes.value());
-                    ApplyComponentLocation(sharedChanges.currentLocations, component, pickedEdge);
+        if(enabledEdges.empty()) continue;
+        bool hasNondeterminism = WarnIfNondeterminism(enabledEdges, component.first);
+        for(auto& edge : enabledEdges) {
+            auto changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents);
+            if(changes.has_value()) {
+                if(hasNondeterminism) {
+                    sharedChanges.Merge(changes.value());
+                    ApplyComponentLocation(sharedChanges.currentLocations, component, edge);
                 } else {
-                    for(auto& edge : enabledEdges) {
-                        auto changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents);
-                        if(changes.has_value()) {
-                            sharedChanges.Merge(changes.value());
-                            ApplyComponentLocation(sharedChanges.currentLocations, component, edge);
-                        }
-                    }
-                }
-            } else {
-                for(auto& edge : enabledEdges) {
-                    auto changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents);
-                    if(changes.has_value()) {
-                        ApplyComponentLocation(changes->currentLocations, component, edge);
-                        choiceChanges.push_back(changes.value());
-                    }
+                    ApplyComponentLocation(changes->currentLocations, component, edge);
+                    choiceChanges.push_back(changes.value());
                 }
             }
         }
