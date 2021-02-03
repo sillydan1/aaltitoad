@@ -227,7 +227,7 @@ TTA::StateChange TTA::GetNextTickState(const nondeterminism_strategy_t& strategy
     return { sharedChanges.currentLocations, symbolsCopy };
 }
 
-std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strategy_t& strategy) const {
+std::vector<TTA::StateChange> TTA::GetNextTickStates() const {
     // Result type: [0] is shared, [>0] are choice changes
     StateMultiChoice sharedChanges{};
     std::vector<StateMultiChoice> choiceChanges{};
@@ -299,7 +299,7 @@ std::vector<TTA::Edge> TTA::Component::GetEnabledEdges(const SymbolMap& symbolMa
 void TTA::Tick(const nondeterminism_strategy_t& nondeterminismStrategy) {
     Timer<int> timer;
     timer.start();
-    SetCurrentState(GetNextTickStates(nondeterminismStrategy)[0]);
+    SetCurrentState(GetNextTickState());
     spdlog::info("Tick {0} time elapsed: {1} ms - (With printing and everything)", tickCount, timer.milliseconds_elapsed());
     tickCount++;
 }
