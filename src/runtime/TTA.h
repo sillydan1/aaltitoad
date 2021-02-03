@@ -31,10 +31,10 @@ enum class nondeterminism_strategy_t {
     PANIC = 0,
     PICK_FIRST = 1,
     PICK_LAST = 2,
-    PICK_RANDOM = 3,
-    VERIFICATION = 4 /// Used for the verification engine.
+    PICK_RANDOM = 3
 };
 struct StateMultiChoice;
+using ExpressionComponentMap = std::map<std::string, std::vector<std::pair<std::string,std::string>>>;
 /***
  * Tick Tock Automata datastructure
  */
@@ -101,6 +101,7 @@ public:
 
     std::vector<Edge> GetCurrentEdges() const;
     std::vector<StateChange> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
+    StateChange GetNextTickState(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
     static bool WarnIfNondeterminism(const std::vector<TTA::Edge>& edges, const std::string& componentName) ;
     bool AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<std::string, UpdateExpression>& symbolsToChange, std::map<std::string, std::vector<std::pair<std::string,std::string>>>& overlappingComponents) const;
     bool IsDeadlocked() const;

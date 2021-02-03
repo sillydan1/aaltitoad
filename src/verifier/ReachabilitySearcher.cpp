@@ -172,7 +172,6 @@ ReachabilitySearcher::StateList::iterator ReachabilitySearcher::PickStateFromWai
     switch (strategy) {
         case nondeterminism_strategy_t::PANIC:
             throw std::logic_error("Panicking on nondeterminism");
-        case nondeterminism_strategy_t::VERIFICATION:
         case nondeterminism_strategy_t::PICK_FIRST:
         case nondeterminism_strategy_t::PICK_LAST:
             return Waiting.begin(); // There's not a concept of "last" or "first" in a hashmap
