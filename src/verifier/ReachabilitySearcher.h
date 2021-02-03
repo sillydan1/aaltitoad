@@ -41,15 +41,16 @@ class ReachabilitySearcher {
     std::vector<QueryResultPair> query_results;
 public:
     ReachabilitySearcher(const std::vector<const Query*>& queries, const TTA& initialState);
-    inline bool Search() { return ForwardReachabilitySearch(); }
+    inline bool Search(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PICK_FIRST) { return ForwardReachabilitySearch(strategy); }
     void AddToWaitingList(const TTA& state, const std::vector<TTA::StateChange>& statechanges, bool justTocked);
 private:
     static bool IsSearchStateTockable(const SearchState& state);
     bool AreQueriesAnswered(const std::vector<QueryResultPair>& qres);
     bool IsQuerySatisfied(const Query& query, const TTA& state);
     void AreQueriesSatisfied(std::vector<QueryResultPair>& queries, const TTA& state);
-    bool ForwardReachabilitySearch();
+    bool ForwardReachabilitySearch(const nondeterminism_strategy_t& strategy);
     void PrintResults(const std::vector<QueryResultPair>& results);
+    StateList::iterator PickStateFromWaitingList(const nondeterminism_strategy_t& strategy);
 };
 
 #endif //MAVE_REACHABILITYSEARCHER_H
