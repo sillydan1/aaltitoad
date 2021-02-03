@@ -49,10 +49,6 @@ add_library(builtin_features OBJECT
 target_link_libraries(builtin_features PUBLIC shunting_yard)
 ####
 
-add_library(ttaparse
-        src/model_parsers/TTAParser.cpp
-        src/model_parsers/TTATypes.cpp)
-
 add_executable(${PROJECT_NAME}
         src/cli/main.cpp
         src/cli/CLIConfig.cpp
@@ -66,18 +62,19 @@ add_executable(${PROJECT_NAME}
         src/verifier/ReachabilitySearcher.cpp
         src/runtime/VariablePredicate.cpp
         src/verifier/TTASuccessorGenerator.cpp
-        src/extensions/tree_extensions.cpp)
+        src/extensions/tree_extensions.cpp
+        src/model_parsers/TTAParser.cpp
+        src/model_parsers/TTATypes.cpp
+        )
 
 target_link_libraries(${PROJECT_NAME}
         argvparse
         spdlog
-        ttaparse
         ctlparser
 
         shunting_yard
         builtin_features)
 
 target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
-target_precompile_headers(ttaparse PUBLIC src/aaltitoadpch.h)
 
 install(TARGETS ${PROJECT_NAME})
