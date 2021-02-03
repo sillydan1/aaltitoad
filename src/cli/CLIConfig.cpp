@@ -21,40 +21,40 @@
 CLIConfig::CLIConfig() {
     /// Add/Remove Command Line options here.
     cliOptions = {
-            { option_requirement::REQUIRE,
+            { option_requirement::Require,
               {"input",  'i', argument_requirement::REQUIRE_ARG ,
                 "[DIR] Input directory"} },
-            { option_requirement::OPTIONAL,
+            { option_requirement::Optional,
               {"output", 'o', argument_requirement::REQUIRE_ARG,
                 "[DIR]/[FILENAME] Output file. Will be created, if not already exists"} },
-            { option_requirement::OPTIONAL,
+            { option_requirement::Optional,
               {"query", 'q', argument_requirement::REQUIRE_ARG,
                  "[DIR]/[FILENAME] File with queries to be verified. This flag is required for verification"} },
-            { option_requirement::OPTIONAL,
+            { option_requirement::Optional,
               {"verbosity",'v', argument_requirement::REQUIRE_ARG,
                  "[0-6] The level of verbosity. (0: OFF | 1: CRITICAL | 2: ERROR | 3: WARN | 4: INFO | 5: DEBUG | 6: TRACE). Default is 2"} },
-            { option_requirement::OPTIONAL,
+            { option_requirement::Optional,
             {"version",'e', argument_requirement::NO_ARG,
                 "Displays the version number"} },
-            { option_requirement::OPTIONAL,
+            { option_requirement::Optional,
             {"nondeterminism-strategy", 'n', argument_requirement::REQUIRE_ARG,
                             "[0-3] Determines which edge to pick when encountering nondeterministic choice. Default is 0 (0: PANIC | 1: PICK_FIRST | 2: PICK_LAST | 3: PICK_RANDOM)"} },
-            { option_requirement::OPTIONAL,
+            { option_requirement::Optional,
               {"parser-disable-check", 'd', argument_requirement::NO_ARG,
               "Disables proper formation checks."} },
-            { option_requirement::OPTIONAL,
+            { option_requirement::Optional,
                     {"trace", 't', argument_requirement::REQUIRE_ARG,
                             "[1-N] Outputs a trace of the input automata of provided amount of steps. Use with '--trace-output' option"} },
-            { option_requirement::OPTIONAL,
+            { option_requirement::Optional,
                     {"trace-output", 'u', argument_requirement::REQUIRE_ARG,
                             "[DIR]/[FILENAME] Output file for traces. Use together with '--trace' option"} },
-            { option_requirement::OPTIONAL,
+            { option_requirement::Optional,
                     {"timing-info", 'f', argument_requirement::REQUIRE_ARG,
                             "[DIR]/[FILENAME] Input file for timing information/instructions. Use together with '--trace' option"} },
-            { option_requirement::OPTIONAL,
+            { option_requirement::Optional,
                     {"ignore-update-influence", 'z', argument_requirement::NO_ARG,
                             "Forces transitions to be taken, no matter if they have an overlapping update influence. NOTE: Does not disable the warning"} },
-            { option_requirement::OPTIONAL,
+            { option_requirement::Optional,
                     {"explosion-limit", 'l', argument_requirement::REQUIRE_ARG,
                             "[INTEGER] Sets a limit on what the maximum amount of interesting changes. -1 means no limit. Default is -1. NB! This will result in incorrect answers"} },
     };
@@ -78,7 +78,7 @@ std::vector<option_t> CLIConfig::GetCLIOptionsOnly() {
 }
 
 bool CLIConfig::isElementRequiredAndMissing(const std::pair<option_requirement, option_t>& el) {
-    return el.first == option_requirement::REQUIRE && !providedOptions[el.second.long_option];
+    return el.first == option_requirement::Require && !providedOptions[el.second.long_option];
 }
 
 void CLIConfig::EnsureRequiredOptionsAreProvided() {
