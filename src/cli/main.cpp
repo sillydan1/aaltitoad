@@ -54,8 +54,9 @@ int main(int argc, char** argv) {
     // Parse the queries
     if(config["query"]) {
         auto queryList = CTLQueryParser::ParseQueriesFile(config["query"].as_string(), t);
-        ReachabilitySearcher s{queryList, t}; s.Search(strategy);
-        return 0;
+        ReachabilitySearcher s{queryList, t};
+        bool allQueriesSatisfied = s.Search(strategy);
+        return allQueriesSatisfied ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 
     if(config["trace"]) {
