@@ -68,7 +68,7 @@ bool ReachabilitySearcher::IsQuerySatisfied(const Query& query, const TTA &state
     if(query.root.type == NodeType_t::Forall && query.children.begin()->root.type == NodeType_t::Globally) {
         auto invertedQ = Query(ASTNode{NodeType_t::Negation, "!"});
         invertedQ.insert(query);
-        return !IsQuerySatisfiedHelper(invertedQ, state);
+        return IsQuerySatisfiedHelper(invertedQ, state);
     }
     if(query.root.type != NodeType_t::Exists) {
         spdlog::critical("Only reachability queries are supported right now, sorry.");
