@@ -31,8 +31,8 @@ private:
     CLIConfig();
 
     enum class option_requirement {
-        REQUIRE = 0,
-        OPTIONAL = 1
+        Require = 0,
+        Optional = 1
     };
     typedef std::vector<std::pair<option_requirement, option_t>> optionCollection_t;
     typedef std::map<std::string, argument_t> providedOptions_t;

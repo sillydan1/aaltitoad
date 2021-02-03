@@ -55,11 +55,11 @@ VariablePredicate TTASuccessorGenerator::ConvertFromGuardExpression(const TTA::G
                 auto calcval = calculator::calculate(ConvertASTToString(n.children[1]).c_str(), ttaState.GetSymbols());
                 TTASymbol_t predRHS{};
                 switch (calcval.token()->type) {
-                    case STR:   predRHS = calcval.asString(); break;
-                    case REAL:  predRHS = static_cast<float>(calcval.asDouble()); break;
-                    case INT:   predRHS = static_cast<int>(calcval.asInt()); break;
-                    case BOOL:  predRHS = calcval.asBool(); break;
-                    case TIMER: predRHS = TTATimerSymbol{.current_value = static_cast<float>(calcval.asDouble()) }; break;
+                    case tokType_STR: predRHS = calcval.asString(); break;
+                    case tokType_REAL: predRHS = static_cast<float>(calcval.asDouble()); break;
+                    case tokType_INT: predRHS = static_cast<int>(calcval.asInt()); break;
+                    case tokType_BOOL: predRHS = calcval.asBool(); break;
+                    case tokType_TIMER: predRHS = TTATimerSymbol{.current_value = static_cast<float>(calcval.asDouble()) }; break;
                     default: spdlog::critical("Right hand side of expression is weird"); break;
                 }
                 predicate = VariablePredicate{.variable   = n.children[0].root.token,
@@ -99,7 +99,7 @@ void AssignVariable(TTA::SymbolMap& outputMap, const TTA::SymbolMap& currentValu
                 float delta = std::abs(current - v.current_value);
                 spdlog::trace("Delaying all timers {0}", delta);
                 for(auto& s : currentValues.map()) {
-                    if(s.second->type == TIMER)
+                    if(s.second->type == tokType_TIMER)
                         outputMap.map()[s.first] = s.second;
                 }
                 TTA::StateChange::DelayTimerSymbols(outputMap, delta);

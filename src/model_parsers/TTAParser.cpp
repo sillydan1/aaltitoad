@@ -274,7 +274,7 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
             if (!edge.guardExpression.empty()) {
                 calc.compile(edge.guardExpression.c_str(), symbolMap);
                 auto type = calc.eval()->type; // We can "safely" eval() guards, because they have no side-effects.
-                if(type != BOOL)
+                if(type != tokType_BOOL)
                     spdlog::critical("GuardExpression expression '{0}' is not a boolean expression. It is a '{1}' expression. Component: '{2}'",
                                      edge.guardExpression, static_cast<const tokType>(type), debugCompName.c_str());
             }
@@ -384,13 +384,13 @@ bool TTAParser::IsDocumentAProperExternalType(const rapidjson::Document::ValueTy
     return document.IsString() && (
            document.GetString() == std::string("EXTERNAL") ||
            document.GetString() == std::string("INTERNAL") ||
-           document.GetString() == std::string("TIMER")); // TODO: What does Timer mean in terms of external/internal?
+           document.GetString() == std::string("tokType_TIMER")); // TODO: What does Timer mean in terms of external/internal?
 }
 
 bool TTAParser::IsDocumentExternalType(const rapidjson::Document::ValueType &document) {
     return document.IsString() && (
             document.GetString() == std::string("EXTERNAL") ||
-            document.GetString() == std::string("TIMER"));
+            document.GetString() == std::string("tokType_TIMER"));
 }
 
 TTAParser::SymbolExternalPair TTAParser::ParsePart(const rapidjson::Document::ValueType &document) {
@@ -417,7 +417,7 @@ TTASymbol_t TTAParser::ParseGenericType(const rapidjson::Document::ValueType& do
 
 bool TTAParser::IsUpdateResettingATimerProperly(const UpdateExpression& expr, const TTA::SymbolMap& context) {
     auto it = context.map().find(expr.lhs);
-    if(it != context.map().end() && it->second->type == TIMER)
+    if(it != context.map().end() && it->second->type == tokType_TIMER)
         return expr.rhs == "0";
     return true;
 }
