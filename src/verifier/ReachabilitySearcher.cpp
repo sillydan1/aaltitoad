@@ -86,7 +86,17 @@ void ReachabilitySearcher::AreQueriesSatisfied(std::vector<QueryResultPair>& que
     }
 }
 
+void ReachabilitySearcher::OutputResults(const std::vector<QueryResultPair>& results) {
+    if(CLIConfig::getInstance()["output"]) {
+        std::ofstream outputFile{CLIConfig::getInstance()["output"].as_string(), std::ofstream::trunc};
+        for(auto& r : results) {
+            outputFile << ConvertASTToString(*r.query) << " : " << r.answer << "\n";
+        }
+    }
+}
+
 void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& results) {
+    OutputResults(results);
     spdlog::info("==== QUERY RESULTS ====");
     for(auto& r : results) {
         spdlog::info("===================="); // Delimiter to make it easier to read
@@ -108,7 +118,6 @@ void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
             spdlog::info("{0}", state);
     }
 }
-
 
 bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strategy_t& strategy) {
     auto stateit = Waiting.begin();
