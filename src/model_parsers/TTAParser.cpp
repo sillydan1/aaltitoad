@@ -274,7 +274,7 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
             if (!edge.guardExpression.empty()) {
                 calc.compile(edge.guardExpression.c_str(), symbolMap);
                 auto type = calc.eval()->type; // We can "safely" eval() guards, because they have no side-effects.
-                if(type != BOOL)
+                if(type != BOOLEAN)
                     spdlog::critical("GuardExpression expression '{0}' is not a boolean expression. It is a '{1}' expression. Component: '{2}'",
                                      edge.guardExpression, static_cast<const tokType>(type), debugCompName.c_str());
             }

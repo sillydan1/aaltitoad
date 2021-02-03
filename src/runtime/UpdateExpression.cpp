@@ -50,10 +50,10 @@ packToken UpdateExpression::Evaluate(const TokenMap& map) const {
     auto xx = map.find(lhs)->token()->type;
     // TODO: Figure this out... if(val->type != xx) spdlog::warn("This is annoying, but I am out of time");
     switch (xx) {
-        case INT: return val.asInt();
+        case INTEGRAL: return val.asInt();
         case REAL: return val.asDouble();
         case STR: return val.asString();
-        case BOOL: return val.asBool();
+        case BOOLEAN: return val.asBool();
         case VAR: {
             return val.asBool(); // TODO: This is not right, right?
         }

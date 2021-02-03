@@ -57,8 +57,8 @@ VariablePredicate TTASuccessorGenerator::ConvertFromGuardExpression(const TTA::G
                 switch (calcval.token()->type) {
                     case STR:   predRHS = calcval.asString(); break;
                     case REAL:  predRHS = static_cast<float>(calcval.asDouble()); break;
-                    case INT:   predRHS = static_cast<int>(calcval.asInt()); break;
-                    case BOOL:  predRHS = calcval.asBool(); break;
+                    case INTEGRAL: predRHS = static_cast<int>(calcval.asInt()); break;
+                    case BOOLEAN: predRHS = calcval.asBool(); break;
                     case TIMER: predRHS = TTATimerSymbol{.current_value = static_cast<float>(calcval.asDouble()) }; break;
                     default: spdlog::critical("Right hand side of expression is weird"); break;
                 }

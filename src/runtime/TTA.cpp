@@ -89,8 +89,8 @@ std::size_t TTA::GetCurrentStateHash() const {
         auto symbol_hash = std::hash<std::string>{}(symbol.first);   // hash of the symbol identifier
         // Combine with the symbol value
         switch(symbol.second->type) {
-            case INT:   hash_combine(symbol_hash, symbol.second.asInt());    break;
-            case BOOL:  hash_combine(symbol_hash, symbol.second.asBool());   break;
+            case INTEGRAL:   hash_combine(symbol_hash, symbol.second.asInt());    break;
+            case BOOLEAN:  hash_combine(symbol_hash, symbol.second.asBool());   break;
             case REAL:  hash_combine(symbol_hash, symbol.second.asDouble()); break;
             case STR:   hash_combine(symbol_hash, symbol.second.asString()); break;
             case TIMER: hash_combine(symbol_hash, symbol.second.asDouble()); break;
