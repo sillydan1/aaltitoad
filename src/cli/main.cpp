@@ -46,10 +46,15 @@ int main(int argc, char** argv) {
     TTAParser ttaParser{};
     TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
 
+    // What nondeterminism strategy should we use
+    auto strategy = nondeterminism_strategy_t::PICK_FIRST;
+    if(config["nondeterminism-strategy"])
+        strategy = (nondeterminism_strategy_t)config["nondeterminism-strategy"].as_integer();
+
     // Parse the queries
     if(config["query"]) {
         auto queryList = CTLQueryParser::ParseQueriesFile(config["query"].as_string(), t);
-        ReachabilitySearcher s{queryList, t}; s.Search();
+        ReachabilitySearcher s{queryList, t}; s.Search(strategy);
         return 0;
     }
 

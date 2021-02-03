@@ -109,7 +109,8 @@ void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
     }
 }
 
-bool ReachabilitySearcher::ForwardReachabilitySearch() {
+
+bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strategy_t& strategy) {
     auto stateit = Waiting.begin();
     while(stateit != Waiting.end()) {
         auto& state = stateit->second;
@@ -131,7 +132,7 @@ bool ReachabilitySearcher::ForwardReachabilitySearch() {
         AddToWaitingList(state.tta, allTickStateChanges, false);
         Passed[curstatehash] = Waiting[curstatehash];
         Waiting.erase(curstatehash);
-        stateit = Waiting.begin();
+        stateit = PickStateFromWaitingList(strategy);
     }
     PrintResults(query_results);
     spdlog::info("Found a negative result after searching: {0} states", Passed.size());
@@ -163,4 +164,23 @@ bool ReachabilitySearcher::AreQueriesAnswered(const std::vector<QueryResultPair>
 
 bool ReachabilitySearcher::IsSearchStateTockable(const SearchState& state) {
     return (!state.justTocked && !state.tta.IsCurrentStateImmediate());
+}
+
+ReachabilitySearcher::StateList::iterator ReachabilitySearcher::PickStateFromWaitingList(const nondeterminism_strategy_t& strategy) {
+    if(Waiting.empty()) return Waiting.end();
+    if(Waiting.size() == 1) return Waiting.begin();
+    switch (strategy) {
+        case nondeterminism_strategy_t::PANIC:
+            throw std::logic_error("Panicking on nondeterminism");
+        case nondeterminism_strategy_t::VERIFICATION:
+        case nondeterminism_strategy_t::PICK_FIRST:
+        case nondeterminism_strategy_t::PICK_LAST:
+            return Waiting.begin(); // There's not a concept of "last" or "first" in a hashmap
+        case nondeterminism_strategy_t::PICK_RANDOM:
+            auto randomPick = rand() % Waiting.size()-1;
+            auto picked = Waiting.begin();
+            for(int i = 0; i < randomPick; i++) picked++;
+            return picked;
+    }
+    return Waiting.end();
 }
