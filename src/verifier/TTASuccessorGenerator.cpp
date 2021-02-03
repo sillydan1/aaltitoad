@@ -22,7 +22,7 @@
 #include <cmath>
 
 std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTickStates(const TTA &tta) {
-    return tta.GetNextTickStates(nondeterminism_strategy_t::VERIFICATION);
+    return tta.GetNextTickStates();
 }
 
 std::vector<VariablePredicate> TTASuccessorGenerator::GetInterestingVariablePredicatesInState(const TTA &ttaState) {

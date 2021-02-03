@@ -100,7 +100,7 @@ public:
     bool SetComponentLocations(const ComponentLocationMap& locationChange);
 
     std::vector<Edge> GetCurrentEdges() const;
-    std::vector<StateChange> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
+    std::vector<StateChange> GetNextTickStates() const;
     StateChange GetNextTickState(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
     static bool WarnIfNondeterminism(const std::vector<TTA::Edge>& edges, const std::string& componentName) ;
     bool AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<std::string, UpdateExpression>& symbolsToChange, std::map<std::string, std::vector<std::pair<std::string,std::string>>>& overlappingComponents) const;
