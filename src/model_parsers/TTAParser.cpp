@@ -384,13 +384,13 @@ bool TTAParser::IsDocumentAProperExternalType(const rapidjson::Document::ValueTy
     return document.IsString() && (
            document.GetString() == std::string("EXTERNAL") ||
            document.GetString() == std::string("INTERNAL") ||
-           document.GetString() == std::string("tokType_TIMER")); // TODO: What does Timer mean in terms of external/internal?
+           document.GetString() == std::string("TIMER")); // TODO: What does Timer mean in terms of external/internal?
 }
 
 bool TTAParser::IsDocumentExternalType(const rapidjson::Document::ValueType &document) {
     return document.IsString() && (
             document.GetString() == std::string("EXTERNAL") ||
-            document.GetString() == std::string("tokType_TIMER"));
+            document.GetString() == std::string("TIMER"));
 }
 
 TTAParser::SymbolExternalPair TTAParser::ParsePart(const rapidjson::Document::ValueType &document) {
