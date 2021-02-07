@@ -52,6 +52,8 @@ jobs:
 
       - name: Setup CygWin
         uses: egor-tensin/setup-cygwin@v3
+        with:
+          packages: flex bison
 
       - name: Install MinGW
         uses: egor-tensin/setup-mingw@v2
