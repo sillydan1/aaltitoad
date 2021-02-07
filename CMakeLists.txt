@@ -34,8 +34,9 @@ set (CMAKE_CXX_STANDARD_LIBRARIES -lstdc++fs)
 add_compile_options(-lpthread)
 add_compile_options(-lstdc++fs)
 add_definitions(-DYYERROR_VERBOSE)
-
-message(STATUS ${CMAKE_CXX_COMPILER})
+if (WIN32)
+    add_definitions(-DYY_NO_UNISTD_H) # UNIX std does not exist on windows platforms
+endif()
 
 # Third party libraries, compiled with CMAKE
 add_subdirectory(dep/argvparse/)
