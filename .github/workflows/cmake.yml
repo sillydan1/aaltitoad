@@ -44,26 +44,19 @@ jobs:
 
   build-windows:
     name: Build For MS Windows Systems
-    runs-on: ubuntu-latest
-    env:
-      CC: "x86_64-w64-mingw32-gcc"
-      CXX: "x86_64-w64-mingw32-g++"
-      LD: "x86_64-w64-mingw32-ld"
-      AR: "x86_64-w64-mingw32-ar"
-      AS: "x86_64-w64-mingw32-as"
-      NM: "x86_64-w64-mingw32-nm"
-      STRIP: "x86_64-w64-mingw32-strip"
-      RANLIB: "x86_64-w64-mingw32-ranlib"
-      DLLTOOL: "x86_64-w64-mingw32-dlltool"
-      OBJDUMP: "x86_64-w64-mingw32-objdump"
-      RESCOMP: "x86_64-w64-mingw32-windres"
+    runs-on: windows-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
+      - name: Setup CygWin
+        uses: egor-tensin/setup-cygwin@v3
+
       - name: Install MinGW
         uses: egor-tensin/setup-mingw@v2
+        with:
+          cygwin: 1
 
       - name: Initialize Submodules
         uses: snickerbockers/submodules-init@v4
