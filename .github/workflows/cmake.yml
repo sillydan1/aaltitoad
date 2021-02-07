@@ -11,6 +11,8 @@ on:
 env:
   BUILD_TYPE: Release
   GIT_SUBMODULE_STRATEGY: recursive
+  CC: g++-8
+  CXX: gcc-8
 
 jobs:
   build-linux:
@@ -37,4 +39,4 @@ jobs:
       working-directory: ${{github.workspace}}/build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: cmake --build . --config $BUILD_TYPE
+      run: cmake --build . --config $BUILD_TYPE -j$(nproc)
