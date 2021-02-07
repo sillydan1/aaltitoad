@@ -13,9 +13,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
-
-# 3.16+ because of "target_precompile_headers"
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.13)
 project(aaltitoad)
 
 include_directories(
@@ -75,6 +73,16 @@ target_link_libraries(${PROJECT_NAME}
         shunting_yard
         builtin_features)
 
-target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
+# TODO: Remove this when you know the github actions provided version
+message(STATUS "CMAKE VERSION: ${CMAKE_VERSION}")
+
+# Github Actions does not provide a modern cmake version. (atleast at the time of writing)
+if(${CMAKE_VERSION} VERSION_LESS "3.16.0")
+    # TODO: Change this to be a recular include.
+    target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
+else()
+    target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
+endif()
+
 
 install(TARGETS ${PROJECT_NAME})
