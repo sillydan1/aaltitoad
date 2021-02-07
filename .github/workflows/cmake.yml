@@ -54,6 +54,11 @@ jobs:
         with:
           packages: flex bison mingw-w64-gcc
 
+      - name: Install MinGW
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          cygwin: 1
+
       - name: Checkout Repository
         uses: actions/checkout@v2
 
