@@ -52,7 +52,7 @@ jobs:
       - name: Setup CygWin
         uses: egor-tensin/setup-cygwin@v3
         with:
-          packages: flex bison
+          packages: flex bison mingw-w64-gcc
 
       - name: Checkout Repository
         uses: actions/checkout@v2
