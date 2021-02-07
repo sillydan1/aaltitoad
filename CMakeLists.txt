@@ -32,6 +32,8 @@ set (SPDLOG_BUILD_SHARED)
 set (CMAKE_CXX_STANDARD_LIBRARIES -lstdc++fs)
 add_definitions(-DYYERROR_VERBOSE)
 
+message(STATUS ${CMAKE_CXX_COMPILER})
+
 # Third party libraries, compiled with CMAKE
 add_subdirectory(dep/argvparse/)
 add_subdirectory(dep/spdlog)
