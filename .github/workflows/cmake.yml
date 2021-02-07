@@ -47,6 +47,18 @@ jobs:
   build-windows:
     name: Build For MS Windows Systems
     runs-on: windows-latest
+    env:
+      CC:      x86_64-w64-mingw32-gcc
+      CXX:     x86_64-w64-mingw32-g++
+      LD:      x86_64-w64-mingw32-ld
+      AR:      x86_64-w64-mingw32-ar
+      AS:      x86_64-w64-mingw32-as
+      NM:      x86_64-w64-mingw32-nm
+      STRIP:   x86_64-w64-mingw32-strip
+      RANLIB:  x86_64-w64-mingw32-ranlib
+      DLLTOOL: x86_64-w64-mingw32-dlltool
+      OBJDUMP: x86_64-w64-mingw32-objdump
+      RESCOMP: x86_64-w64-mingw32-windres
 
     steps:
       - name: Setup CygWin
