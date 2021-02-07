@@ -28,6 +28,7 @@ include_directories(
 )
 
 set (CMAKE_CXX_STANDARD 17)
+set (CXX_STANDARD_REQUIRED ON)
 set (SPDLOG_BUILD_SHARED)
 set (CMAKE_CXX_STANDARD_LIBRARIES -lstdc++fs)
 add_definitions(-DYYERROR_VERBOSE)
