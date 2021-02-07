@@ -16,7 +16,6 @@ env:
 
 jobs:
   build-linux:
-    if: ${{ false }}
     name: Build For Linux Systems
 
     runs-on: ubuntu-latest
