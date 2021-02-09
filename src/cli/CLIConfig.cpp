@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "./CLIConfig.h"
+#include <cli/CLIConfig.h>
 
 CLIConfig::CLIConfig() {
     /// Add/Remove Command Line options here.
