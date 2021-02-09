@@ -21,7 +21,7 @@
 #include <extensions/overload>
 #include <json_parsing/JSONParser.h>
 
-#include "TTAParser.h"
+#include <model_parsers/TTAParser.h>
 
 // Some json files are important to ignore, so Ignore-list:
 std::vector<std::string> componentIgnoreList = { // NOLINT(cert-err58-cpp)
