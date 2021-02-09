@@ -19,7 +19,8 @@ cmake_minimum_required(VERSION 3.16)
 project(aaltitoad)
 
 include_directories(
-        dep/argvparse/include
+        dep/argvparse/include 
+        dep/argvparse/src # For some reason windows cant find files that are just right the hell there...
         dep/rapidjson/include
         dep/spdlog/include
         dep/cparse
@@ -40,7 +41,6 @@ endif()
 
 # Third party libraries, compiled with CMAKE
 add_subdirectory(dep/argvparse/)
-add_subdirectory(dep/argvparse/src/) # For some reason windows cant find files that are just right the hell there...
 add_subdirectory(dep/spdlog)
 add_subdirectory(dep/ctlparser)
 
