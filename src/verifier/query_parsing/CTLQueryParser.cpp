@@ -17,8 +17,8 @@
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "CTLQueryParser.h"
-#include "json_parsing/JSONParser.h"
+#include <verifier/query_parsing/CTLQueryParser.h>
+#include <json_parsing/JSONParser.h>
 
 extern Tree<ASTNode>* ParseQuery(const std::string&);
 
