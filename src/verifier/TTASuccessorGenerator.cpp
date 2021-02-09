@@ -18,7 +18,7 @@
  */
 #include <extensions/tree_extensions.h>
 #include <extensions/stringextensions.h>
-#include "TTASuccessorGenerator.h"
+#include <verifier/TTASuccessorGenerator.h>
 #include <cmath>
 
 std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTickStates(const TTA &tta) {
