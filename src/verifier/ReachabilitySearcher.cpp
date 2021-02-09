@@ -16,8 +16,8 @@
     You should have received a copy of the GNU General Public License
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "ReachabilitySearcher.h"
-#include "TTASuccessorGenerator.h"
+#include <verifier/ReachabilitySearcher.h>
+#include <verifier/TTASuccessorGenerator.h>
 
 #include <tinytimer/Timer.hpp>
 #include <extensions/tree_extensions.h>
