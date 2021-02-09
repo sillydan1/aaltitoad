@@ -82,6 +82,8 @@ target_link_libraries(${PROJECT_NAME}
         shunting_yard
         builtin_features)
 
-target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
+if(NOT WIN32)
+        target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
+endif()
 
 install(TARGETS ${PROJECT_NAME})
