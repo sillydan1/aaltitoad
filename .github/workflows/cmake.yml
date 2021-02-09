@@ -14,7 +14,7 @@ env:
 
 jobs:
   build-linux:
-    if: ${{ false }}
+    if: ${{ github.event.pull_request.draft == false }}
     name: Build For Linux Systems
 
     env:
@@ -45,6 +45,7 @@ jobs:
       run: cmake --build . --config $BUILD_TYPE -j$(nproc)
 
   build-windows:
+    if: ${{ github.event.pull_request.draft == false }}
     name: Build For MS Windows Systems
     runs-on: windows-latest
     env:
