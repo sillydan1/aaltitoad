@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "TTAResugarizer.h"
+#include <verifier/trace_output/TTAResugarizer.h>
 
 // String to char, because of unicode characters
 const std::unordered_map<std::string, std::string> unsugar_map = {
