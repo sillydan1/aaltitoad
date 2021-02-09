@@ -17,7 +17,7 @@
     along with mave.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <aaltitoadpch.h>
-#include "JSONParser.h"
+#include <json_parsing/JSONParser.h>
 
 bool JSONParser::DoesMemberExistAndIsObject(const rapidjson::Document::ValueType &document, const std::string &membername) {
     auto memberIterator = document.FindMember(membername.c_str());
