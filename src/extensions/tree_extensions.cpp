@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "tree_extensions.h"
+#include <extensions/tree_extensions.h>
 
 void ConverterHelper(std::stringstream& ss, const Tree<ASTNode>& n) {
     switch (n.root.type) {

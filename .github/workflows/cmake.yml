@@ -1,0 +1,93 @@
+name: AALTITOAD CMake Pipeline
+
+on: 
+  pull_request:
+    branches: 
+      - master
+  push:
+    branches: 
+      - master
+
+env:
+  BUILD_TYPE: Release
+  GIT_SUBMODULE_STRATEGY: recursive
+
+jobs:
+  build-linux:
+    if: ${{ github.event.pull_request.draft == false }}
+    name: Build For Linux Systems
+
+    env:
+      CC: gcc-8
+      CXX: g++-8
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Initialize Submodules
+      uses: snickerbockers/submodules-init@v4
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{github.workspace}}/build
+
+    - name: Configure CMake
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      shell: bash
+      # Execute the build.  You can specify a specific target with "--target <NAME>"
+      run: cmake --build . --config $BUILD_TYPE -j$(nproc)
+
+  build-windows:
+    if: ${{ github.event.pull_request.draft == false }}
+    name: Build For MS Windows Systems
+    runs-on: windows-latest
+    env:
+      CC:      x86_64-w64-mingw32-gcc
+      CXX:     x86_64-w64-mingw32-g++
+      LD:      x86_64-w64-mingw32-ld
+      AR:      x86_64-w64-mingw32-ar
+      AS:      x86_64-w64-mingw32-as
+      NM:      x86_64-w64-mingw32-nm
+      STRIP:   x86_64-w64-mingw32-strip
+      RANLIB:  x86_64-w64-mingw32-ranlib
+      DLLTOOL: x86_64-w64-mingw32-dlltool
+      OBJDUMP: x86_64-w64-mingw32-objdump
+      RESCOMP: x86_64-w64-mingw32-windres
+
+    steps:
+      - name: Setup CygWin
+        uses: egor-tensin/setup-cygwin@v3
+        with:
+          packages: flex bison mingw-w64-gcc
+
+      - name: Install MinGW
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          cygwin: 1
+
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Initialize Submodules
+        uses: snickerbockers/submodules-init@v4
+
+      - name: Create Build Environment
+        run: cmake -E make_directory ${{github.workspace}}/build
+
+      - name: Configure CMake
+        shell: bash
+        working-directory: ${{github.workspace}}/build
+        run: cmake $GITHUB_WORKSPACE -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=$BUILD_TYPE  -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc
+
+      - name: Build
+        working-directory: ${{github.workspace}}/build
+        shell: bash
+        # Execute the build.  You can specify a specific target with "--target <NAME>"
+        run: cmake --build . --config $BUILD_TYPE -j$(nproc)

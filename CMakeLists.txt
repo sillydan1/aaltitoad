@@ -14,12 +14,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
 
-# 3.16+ because of "target_precompile_headers"
+# 3.16+ because of target_precompiled_header
 cmake_minimum_required(VERSION 3.16)
 project(aaltitoad)
 
 include_directories(
-        dep/argvparse/include
+        dep/argvparse/include 
+        dep/argvparse/src # For some reason windows cant find files that are just right the hell there...
         dep/rapidjson/include
         dep/spdlog/include
         dep/cparse
@@ -28,9 +29,15 @@ include_directories(
 )
 
 set (CMAKE_CXX_STANDARD 17)
+set (CXX_STANDARD_REQUIRED ON)
 set (SPDLOG_BUILD_SHARED)
 set (CMAKE_CXX_STANDARD_LIBRARIES -lstdc++fs)
+add_compile_options(-lpthread)
+add_compile_options(-lstdc++fs)
 add_definitions(-DYYERROR_VERBOSE)
+if (WIN32)
+    add_definitions(-DYY_NO_UNISTD_H) # UNIX std does not exist on windows platforms
+endif()
 
 # Third party libraries, compiled with CMAKE
 add_subdirectory(dep/argvparse/)
@@ -75,6 +82,8 @@ target_link_libraries(${PROJECT_NAME}
         shunting_yard
         builtin_features)
 
-target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
+if(NOT WIN32)
+        target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
+endif()
 
 install(TARGETS ${PROJECT_NAME})

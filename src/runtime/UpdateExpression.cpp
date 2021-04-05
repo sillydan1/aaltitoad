@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "UpdateExpression.h"
+#include <runtime/UpdateExpression.h>
 #include <extensions/stringextensions.h>
 
 const char* assignmentOperator = ":=";

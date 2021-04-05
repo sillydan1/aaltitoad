@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "VariablePredicate.h"
+#include <runtime/VariablePredicate.h>
 #include <extensions/not_implemented_yet_exception.h>
 
 std::string VariablePredicate::ConvertToString(const PredicateComparator& cc) {

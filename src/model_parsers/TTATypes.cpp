@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "TTATypes.h"
+#include <model_parsers/TTATypes.h>
 
 std::optional<std::vector<TTAIR_t::Component>::const_iterator> TTAIR_t::FindMainComponent() const {
     for(auto component_itr = components.begin(); component_itr != components.end(); component_itr++) {

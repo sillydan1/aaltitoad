@@ -19,7 +19,7 @@
 #include <aaltitoadpch.h>
 #include <runtime/TTA.h>
 #include <model_parsers/TTAParser.h>
-#include "CLIConfig.h"
+#include <cli/CLIConfig.h>
 #include <verifier/trace_output/TTATracer.h>
 #include <verifier/query_parsing/CTLQueryParser.h>
 #include <verifier/ReachabilitySearcher.h>

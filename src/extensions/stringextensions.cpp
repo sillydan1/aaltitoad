@@ -20,7 +20,7 @@
 #include <cctype>
 #include <locale>
 #include <regex>
-#include "stringextensions.h"
+#include <extensions/stringextensions.h>
 
 std::vector<std::string> split(const std::string& s, char delimiter)  {
     std::vector<std::string> tokens;

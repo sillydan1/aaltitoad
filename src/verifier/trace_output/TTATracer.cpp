@@ -17,8 +17,8 @@
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <json_parsing/JSONParser.h>
-#include "TTATracer.h"
-#include "TTAResugarizer.h"
+#include <verifier/trace_output/TTATracer.h>
+#include <verifier/trace_output/TTAResugarizer.h>
 
 void TTATracer::TraceSteps(const std::string &output_json_file, TTA &automata, unsigned int stepAmount) {
     auto file = OpenFile(output_json_file);
