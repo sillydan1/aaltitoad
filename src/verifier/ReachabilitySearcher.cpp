@@ -113,6 +113,10 @@ void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
             auto prevState = Passed.find(stateHash);
             if(prevState != Passed.end()) {
                 trace.push_back(prevState->second.tta.GetCurrentStateString());
+                if(stateHash == Passed[stateHash].prevStateHash) {
+                    spdlog::critical("Breaking out of infinite loop. Please make sure that the trace is correct");
+                    break;
+                }
                 stateHash = Passed[stateHash].prevStateHash;
             } else {
                 spdlog::critical("Unable to resolve witnessing trace");
