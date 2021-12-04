@@ -93,9 +93,18 @@ jobs:
           name: executable
       - name: Make executable executable
         run: sudo chmod +x aaltitoad
-      - name: fischer-2 Run
+      - name: fischer-2 
         working-directory: ${{ github.workspace }}/test/verification
-        run: ${{ github.workspace }}/aaltitoad -i ./fischer-2 -q ./fischer-2/Queries.json -o ./fischer-2/results.txt -v 4
-      - name: fischer-2 Check
-        working-directory: ${{ github.workspace }}/test/verification/fischer-2
-        run: diff results.txt expected_results.ignore.txt
+        run: |
+          ${{ github.workspace }}/aaltitoad -i ./fischer-2 -q ./fischer-2/Queries.json -o ./fischer-2/results.txt -v 4
+          diff fischer-2/results.txt fischer-2/expected_results.ignore.txt
+      - name: fischer-5
+        working-directory: ${{ github.workspace }}/test/verification
+        run: |
+          ${{ github.workspace }}/aaltitoad -i ./fischer-5 -q ./fischer-5/Queries.json -o ./fischer-5/results.txt -v 4
+          diff fischer-5/results.txt fischer-5/expected_results.ignore.txt
+      - name: fischer-10
+        working-directory: ${{ github.workspace }}/test/verification
+        run: |
+          ${{ github.workspace }}/aaltitoad -i ./fischer-10 -q ./fischer-10/Queries.json -o ./fischer-10/results.txt -v 4
+          diff fischer-10/results.txt fischer-10/expected_results.ignore.txt
