@@ -95,7 +95,7 @@ void ReachabilitySearcher::OutputResults(const std::vector<QueryResultPair>& res
     if(CLIConfig::getInstance()["output"]) {
         std::ofstream outputFile{CLIConfig::getInstance()["output"].as_string(), std::ofstream::trunc};
         for(auto& r : results) {
-            outputFile << ConvertASTToString(*r.query) << " : " << r.answer << "\n";
+            outputFile << ConvertASTToString(*r.query) << " : " << std::boolalpha << r.answer << "\n";
         }
     }
 }
