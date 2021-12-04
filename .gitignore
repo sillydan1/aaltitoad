@@ -34,6 +34,3 @@
 # Jetbrains IDE generated things
 .idea/
 cmake-build-*/
-
-# Test files
-test/
