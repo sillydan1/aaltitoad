@@ -109,7 +109,7 @@ void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
         auto stateHash = r.acceptingStateHash;
         std::vector<std::string> trace{};
         while(stateHash != 0) { // 0 indicates "no parent"
-            spdlog::trace("{0}", stateHash);
+            spdlog::trace("trace hash: {0}", stateHash);
             auto prevState = Passed.find(stateHash);
             if(prevState != Passed.end()) {
                 trace.push_back(prevState->second.tta.GetCurrentStateString());

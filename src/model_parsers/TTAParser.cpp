@@ -421,5 +421,3 @@ bool TTAParser::IsUpdateResettingATimerProperly(const UpdateExpression& expr, co
         return expr.rhs == "0";
     return true;
 }
-
-
