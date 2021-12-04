@@ -35,5 +35,6 @@
 .idea/
 cmake-build-*/
 
-# Test files
-test/
+build/
+
+**/.DS_Store
