@@ -103,6 +103,7 @@ void ReachabilitySearcher::OutputResults(const std::vector<QueryResultPair>& res
 void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& results) {
     OutputResults(results);
     spdlog::info("==== QUERY RESULTS ====");
+    return;
     for(auto& r : results) {
         spdlog::info("===================="); // Delimiter to make it easier to read
         spdlog::info("{0} : {1}", ConvertASTToString(*r.query), r.answer);
@@ -114,7 +115,7 @@ void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
                 trace.push_back(prevState->second.tta.GetCurrentStateString());
                 stateHash = Passed[stateHash].prevStateHash;
             } else {
-                spdlog::critical("Unable to resolve witnessing trace");
+                spdlog::error("Unable to resolve witnessing trace");
                 break;
             }
         }

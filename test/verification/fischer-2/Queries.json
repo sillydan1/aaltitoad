@@ -1,10 +1,5 @@
 [
   {
-    "query": "E F deadlock",
-    "comment": "Can you reach a deadlock?",
-    "is_periodic": false
-  },
-  {
     "query": "E F counter \u003e 1",
     "comment": "Can you reach mutex fail?",
     "is_periodic": false

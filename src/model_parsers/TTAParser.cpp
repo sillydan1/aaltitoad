@@ -30,7 +30,7 @@ std::vector<std::string> componentIgnoreList = { // NOLINT(cert-err58-cpp)
         ".parts",       // parts files are not components
 };
 
-bool ShouldSkipEntry(const std::filesystem::__cxx11::directory_entry& entry) {
+bool ShouldSkipEntry(const std::filesystem::directory_entry& entry) {
     auto entrystr = entry.path().string();
     return  !entry.is_regular_file() ||
             std::any_of(componentIgnoreList.begin(), componentIgnoreList.end(),

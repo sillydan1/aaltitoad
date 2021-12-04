@@ -34,3 +34,7 @@
 # Jetbrains IDE generated things
 .idea/
 cmake-build-*/
+
+build/
+
+**/.DS_Store

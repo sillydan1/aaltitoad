@@ -17,6 +17,8 @@
 # 3.16+ because of target_precompiled_header
 cmake_minimum_required(VERSION 3.16)
 project(aaltitoad)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
 
 include_directories(
         dep/argvparse/include 
@@ -31,9 +33,7 @@ include_directories(
 set (CMAKE_CXX_STANDARD 17)
 set (CXX_STANDARD_REQUIRED ON)
 set (SPDLOG_BUILD_SHARED)
-set (CMAKE_CXX_STANDARD_LIBRARIES -lstdc++fs)
-add_compile_options(-lpthread)
-add_compile_options(-lstdc++fs)
+
 add_definitions(-DYYERROR_VERBOSE)
 if (WIN32)
     add_definitions(-DYY_NO_UNISTD_H) # UNIX std does not exist on windows platforms
@@ -78,7 +78,7 @@ target_link_libraries(${PROJECT_NAME}
         argvparse
         spdlog
         ctlparser
-
+        Threads::Threads
         shunting_yard
         builtin_features)
 
