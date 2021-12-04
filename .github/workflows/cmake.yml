@@ -110,7 +110,7 @@ jobs:
         run: sudo chmod +x aaltitoad
       - name: fischer-2 Run
         working-directory: ${{ github.workspace }}/test/verification
-        run: ${{ github.workspace }}/aaltitoad -i ./fischer-2 -q ./fischer-2/Queries.json -o ./fischer-2/results.txt -v 4
+        run: ${{ github.workspace }}/aaltitoad -i ./fischer-2 -q ./fischer-2/Queries.json -o ./fischer-2/results.txt -v 6
       - name: fischer-2 Check
         working-directory: ${{ github.workspace }}/test/verification/fischer-2
         run: diff results.txt expected_results.ignore.txt
