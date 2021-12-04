@@ -156,7 +156,7 @@ bool TTA::TypeCheck(const std::pair<const std::string, packToken> &symbol,
     if(changingSymbol == symbols.map().end()) {
         spdlog::critical("Attempted to change the state of TTA failed. Symbol '{0}' does not exist.", symbol.first);
         return false;
-    } else if(!(tokType_NUM & x & y) && !(x == tokType_VAR && (tokType_NUM & y))) {
+    } else if(!(NUM & x & y) && !(x == VAR && (NUM & y))) {
         auto a = tokenTypeToString(changingSymbol->second->type);
         auto b = tokenTypeToString(symbol.second->type);
         spdlog::critical(
@@ -193,7 +193,7 @@ void TTA::WarnAboutComponentOverlap(std::map<std::string, std::vector<std::pair<
 TokenMap TTA::GetSymbolChangesAsMap(std::vector<UpdateExpression> &symbolChanges) const {
     SymbolMap symbolsCopy{};
     for(auto& symbolChange : symbolChanges) {
-        if(symbols.map()[symbolChange.lhs]->type == tokType_TIMER)
+        if(symbols.map()[symbolChange.lhs]->type == TIMER)
             symbolsCopy[symbolChange.lhs] = packToken(symbolChange.Evaluate(symbols).asDouble(), PACK_IS_TIMER);
         else
             symbolsCopy[symbolChange.lhs] = symbolChange.Evaluate(symbols);
@@ -345,21 +345,21 @@ TTA::Edge& TTA::PickEdge(std::vector<TTA::Edge>& edges, const nondeterminism_str
 
 void TTA::DelayAllTimers(double delayDelta) {
     for(auto& symbol : symbols.map()) {
-        if(symbol.second->type == tokType_TIMER)
+        if(symbol.second->type == TIMER)
             symbols[symbol.first] = packToken(static_cast<double>(symbol.second.asDouble() + delayDelta), PACK_IS_TIMER);
     }
 }
 
 [[maybe_unused]] void TTA::SetAllTimers(double exactTime) {
     for(auto& symbol : symbols.map()) {
-        if(symbol.second->type == tokType_TIMER)
+        if(symbol.second->type == TIMER)
             symbols[symbol.first] = packToken(exactTime, PACK_IS_TIMER);
     }
 }
 
 void TTA::StateChange::DelayTimerSymbols(SymbolMap& symbols, float delayDelta) {
     for(auto& symbol : symbols.map()) {
-        if(symbol.second->type == tokType_TIMER)
+        if(symbol.second->type == TIMER)
             symbols[symbol.first] = packToken(static_cast<double>(symbol.second.asDouble() + delayDelta), PACK_IS_TIMER);
     }
 }
