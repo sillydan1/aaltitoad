@@ -1,3 +1,2 @@
-E F counter > 1 : true
 E F counter == 1 : true
 E F Main€FischerA(1).L6 && Main€FischerB(2).L6 : true
