@@ -16,11 +16,13 @@
 
 # 3.16+ because of target_precompiled_header
 cmake_minimum_required(VERSION 3.16)
-project(aaltitoad)
+project(aaltitoad VERSION 0.9.1)
+configure_file(src/config.h.in config.h)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
 include_directories(
+        ${CMAKE_BINARY_DIR}
         dep/argvparse/include 
         dep/argvparse/src # For some reason windows cant find files that are just right the hell there...
         dep/rapidjson/include
