@@ -17,6 +17,7 @@
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <aaltitoadpch.h>
+#include "config.h"
 #include <runtime/TTA.h>
 #include <model_parsers/TTAParser.h>
 #include <cli/CLIConfig.h>
@@ -29,13 +30,11 @@ int main(int argc, char** argv) {
     // Initialize CLI configuration (based on CLI Args)
     CLIConfig::getInstance().ParseCLIOptionsAndCheckForRequirements(argc, argv);
     auto& config = CLIConfig::getInstance();
+    if(config["version"])
+        std::cout << PROJECT_NAME << " version " << PROJECT_VER << std::endl;
     if(config.GetStatusCode() != EXIT_SUCCESS || config["help"]) {
         config.PrintHelpMessage(argv);
         return config.GetStatusCode();
-    }
-    if(config["version"]) {
-        std::cout << GetFileNameOnly(argv[0]) << " version 0.9b" << std::endl;
-        return 0;
     }
     if(config["verbosity"])
         spdlog::set_level(static_cast<spdlog::level::level_enum>(6-config["verbosity"].as_integer()));
