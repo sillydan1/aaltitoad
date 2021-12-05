@@ -25,4 +25,13 @@ inline void hash_combine(std::size_t& seed, const T& v) {
     seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
 }
 
+template<typename... Ts>
+size_t hash_combine(const Ts&... args) {
+    size_t seed = 0;
+    (hash_combine(seed,args) , ... );
+    return seed;
+}
+
+#define COMBINE_MAGIC_NUM 2654435761
+
 #endif // HASH_COMBINE_H

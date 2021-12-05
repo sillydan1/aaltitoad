@@ -1,10 +1,5 @@
 [
   {
-    "query": "E F counter \u003e 1",
-    "comment": "Can you reach mutex fail?",
-    "is_periodic": false
-  },
-  {
     "query": "E F counter \u003d\u003d 1",
     "comment": "Can any processes get to CS?",
     "is_periodic": false

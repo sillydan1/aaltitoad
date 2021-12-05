@@ -16,85 +16,70 @@ jobs:
   build-linux:
     if: ${{ github.event.pull_request.draft == false }}
     name: Build For Linux Systems
-
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
-
     - name: Initialize Submodules
       uses: snickerbockers/submodules-init@v4
-
     - name: Install dependencies
       run: sudo apt-get install -y flex bison make
-
     - name: Create Build Environment
       run: cmake -E make_directory ${{github.workspace}}/build
-
     - name: Configure CMake
       shell: bash
       working-directory: ${{github.workspace}}/build
       run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-
     - name: Build
       working-directory: ${{github.workspace}}/build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --build . --config $BUILD_TYPE -j$(nproc)
-      
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
         name: executable
         path: ${{ github.workspace }}/build/aaltitoad
-#  build-windows:
-#    if: ${{ github.event.pull_request.draft == false }}
-#    name: Build For MS Windows Systems
-#    runs-on: windows-latest
-#    env:
-#      CC:      x86_64-w64-mingw32-gcc
-#      CXX:     x86_64-w64-mingw32-g++
-#      LD:      x86_64-w64-mingw32-ld
-#      AR:      x86_64-w64-mingw32-ar
-#      AS:      x86_64-w64-mingw32-as
-#      NM:      x86_64-w64-mingw32-nm
-#      STRIP:   x86_64-w64-mingw32-strip
-#      RANLIB:  x86_64-w64-mingw32-ranlib
-#      DLLTOOL: x86_64-w64-mingw32-dlltool
-#      OBJDUMP: x86_64-w64-mingw32-objdump
-#      RESCOMP: x86_64-w64-mingw32-windres
-#
-#    steps:
-#      - name: Setup CygWin
-#        uses: egor-tensin/setup-cygwin@v3
-#        with:
-#          packages: flex bison mingw-w64-gcc
-#
-#      - name: Install MinGW
-#        uses: egor-tensin/setup-mingw@v2
-#        with:
-#          cygwin: 1
-#
-#      - name: Checkout Repository
-#        uses: actions/checkout@v2
-#
-#      - name: Initialize Submodules
-#        uses: snickerbockers/submodules-init@v4
-#
-#      - name: Create Build Environment
-#        run: cmake -E make_directory ${{github.workspace}}/build
-#
-#      - name: Configure CMake
-#        shell: bash
-#        working-directory: ${{github.workspace}}/build
-#        run: cmake $GITHUB_WORKSPACE -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=$BUILD_TYPE  -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc
-#
-#      - name: Build
-#        working-directory: ${{github.workspace}}/build
-#        shell: bash
-#        # Execute the build.  You can specify a specific target with "--target <NAME>"
-#        run: cmake --build . --config $BUILD_TYPE -j$(nproc)
+  build-windows:
+    if: ${{ github.event.pull_request.draft == false }}
+    name: Build For MS Windows Systems
+    runs-on: windows-latest
+    env:
+      CC:      x86_64-w64-mingw32-gcc
+      CXX:     x86_64-w64-mingw32-g++
+      LD:      x86_64-w64-mingw32-ld
+      AR:      x86_64-w64-mingw32-ar
+      AS:      x86_64-w64-mingw32-as
+      NM:      x86_64-w64-mingw32-nm
+      STRIP:   x86_64-w64-mingw32-strip
+      RANLIB:  x86_64-w64-mingw32-ranlib
+      DLLTOOL: x86_64-w64-mingw32-dlltool
+      OBJDUMP: x86_64-w64-mingw32-objdump
+      RESCOMP: x86_64-w64-mingw32-windres
+    steps:
+      - name: Setup CygWin
+        uses: egor-tensin/setup-cygwin@v3
+        with:
+          packages: flex bison mingw-w64-gcc
+      - name: Install MinGW
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          cygwin: 1
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+      - name: Initialize Submodules
+        uses: snickerbockers/submodules-init@v4
+      - name: Create Build Environment
+        run: cmake -E make_directory ${{github.workspace}}/build
+      - name: Configure CMake
+        shell: bash
+        working-directory: ${{github.workspace}}/build
+        run: cmake $GITHUB_WORKSPACE -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=$BUILD_TYPE  -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc
+      - name: Build
+        working-directory: ${{github.workspace}}/build
+        shell: bash
+        # Execute the build.  You can specify a specific target with "--target <NAME>"
+        run: cmake --build . --config $BUILD_TYPE -j$(nproc)
   verification-tests:
     runs-on: ubuntu-latest
     needs: build-linux
@@ -108,9 +93,18 @@ jobs:
           name: executable
       - name: Make executable executable
         run: sudo chmod +x aaltitoad
-      - name: fischer-2 Run
+      - name: fischer-2 
         working-directory: ${{ github.workspace }}/test/verification
-        run: ${{ github.workspace }}/aaltitoad -i ./fischer-2 -q ./fischer-2/Queries.json -o ./fischer-2/results.txt -v 6
-      - name: fischer-2 Check
-        working-directory: ${{ github.workspace }}/test/verification/fischer-2
-        run: diff results.txt expected_results.ignore.txt
+        run: |
+          ${{ github.workspace }}/aaltitoad -i ./fischer-2 -q ./fischer-2/Queries.json -o ./fischer-2/results.txt -v 6
+          diff fischer-2/results.txt fischer-2/expected_results.ignore.txt
+      - name: fischer-5
+        working-directory: ${{ github.workspace }}/test/verification
+        run: |
+          ${{ github.workspace }}/aaltitoad -i ./fischer-5 -q ./fischer-5/Queries.json -o ./fischer-5/results.txt -v 6
+          diff fischer-5/results.txt fischer-5/expected_results.ignore.txt
+      - name: fischer-10
+        working-directory: ${{ github.workspace }}/test/verification
+        run: |
+          ${{ github.workspace }}/aaltitoad -i ./fischer-10 -q ./fischer-10/Queries.json -o ./fischer-10/results.txt -v 6
+          diff fischer-10/results.txt fischer-10/expected_results.ignore.txt
