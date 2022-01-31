@@ -8,11 +8,13 @@ TTA's (Tick Tock Automatas) are an Automata based theory. [This](https://github.
 
 The TTA parser assumes models modelled in the [H-UPPAAL](https://github.com/DEIS-Tools/H-Uppaal) tool.  
 
-## Compile
-First, make sure that you have initialized all git submodules.
+## Compile (Linux)
+First, make sure that you have cloned the repo with git submodules initialized.
 ```
-git submodule init
+git clone --recursive https://github.com/sillydan1/AALTITOAD
 ```
+If the repository was cloned non-recursively previously, use `git submodule update --init` to initialize the necessary submodules.
+
 Then you should be able to build the tool like so:
 ```
 mkdir build && cd build
@@ -25,7 +27,7 @@ make RELEASE=1
 ```
 
 ## Install
-This will install the `aaltitoad` commandline tool and the associated libraries to `/usr/local/bin/`. Mac OSX and Windows builds are not tested yet.
+To install the `aaltitoad` commandline tool and the associated libraries to `/usr/local/bin/` do the following:
 ```
 mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
@@ -53,4 +55,4 @@ OPTIONS:
 ```
 
 ## Contributing
-If you want to contribute to the project either raise an issue, or fork the repo and register a pull request on Github.
+If you want to contribute to the project either raise an issue, fork the repo and register a pull request or reach out to [me](https://github.com/sillydan1) directly.
