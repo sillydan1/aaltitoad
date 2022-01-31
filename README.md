@@ -4,7 +4,7 @@
 
 (**Aal**borg **Ti**ck T**o**ck **A**utomata Vali**d**ator) is a verification engine and simulator for Tick Tock Automata. 
 
-TTA's (Tick Tock Automatas) are an Automata based theory. [This](https://projekter.aau.dk/projekter/da/studentthesis/tick-tock-automata-a-modelling-formalism-for-real-world-industrial-systems(8cb83e04-9b9a-4261-b457-1d09d85e593e).html) paper describes the Tick Tock Automata theory, and [this](https://gtz.dk/resources/SW9___AALTITOAD.pdf) paper describes the tool and presents test case results.
+TTA's (Tick Tock Automatas) are an Automata based theory. [This](https://github.com/sillydan1/AALTITOAD/blob/master/SW10__Tick_Tock_Automata.pdf) paper describes the Tick Tock Automata theory, and [this](https://github.com/sillydan1/AALTITOAD/blob/master/SW9__AALTITOAD.pdf) paper describes the tool and presents test case results.
 
 The TTA parser assumes models modelled in the [H-UPPAAL](https://github.com/DEIS-Tools/H-Uppaal) tool.  
 
