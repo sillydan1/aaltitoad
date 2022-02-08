@@ -41,17 +41,20 @@ If you want to uninstall again, run `cat install_manifest.txt | xargs sudo rm`.
 USAGE: aaltitoad -i /path/to/project/dir/ [OPTIONS]
 
 OPTIONS:
- -i, --input	                | [DIR] Input directory
- -o, --output	                | [DIR]/[FILENAME] Output file. Will be created, if not already exists
- -q, --query	                | [DIR]/[FILENAME] File with queries to be verified. This flag is required for verification
- -v, --verbosity                | [0-6] The level of verbosity. Default is 2
- -n, --nondeterminism-strategy	| [0-3] Determines which edge to pick when encountering nondeterministic choice. Default is 0 (0: PANIC | 1: PICK_FIRST | 2: PICK_LAST | 3: PICK_RANDOM)
+ -i, --input                    | [DIR] Input directory       
+ -o, --output                   | [DIR]/[FILENAME] Output file. Will be created, if not already exists
+ -q, --query                    | [DIR]/[FILENAME] File with queries to be verified. This flag is required for verification
+ -v, --verbosity                | [0-6] The level of verbosity. (0: OFF | 1: CRITICAL | 2: ERROR | 3: WARN | 4: INFO | 5: DEBUG | 6: TRACE). Default is 2
+ -e, --version                  | Displays the version number 
+ -n, --nondeterminism-strategy  | [0-3] Determines which edge to pick when encountering nondeterministic choice. Default is 0 (0: PANIC | 1: PICK_FIRST | 2: PICK_LAST | 3: PICK_RANDOM)
  -d, --parser-disable-check     | Disables proper formation checks.
- -t, --trace	                | [1-N] Outputs a trace of the input automata of provided amount of steps. Use with '--trace-output' option
+ -t, --trace                    | Toggle tracing of the input automata. Use with '--trace-output' and '--trace-steps' option
+ -s, --trace-steps              | [1-N] Trace only the provided amount of steps
  -u, --trace-output             | [DIR]/[FILENAME] Output file for traces. Use together with '--trace' option
  -f, --timing-info              | [DIR]/[FILENAME] Input file for timing information/instructions. Use together with '--trace' option
- -z, --ignore-update-influence	| Forces transitions to be taken, no matter if they have an overlapping update influence. NOTE: Does not disable the warning
- -h, --help                     | Print this message
+ -z, --ignore-update-influence  | Forces transitions to be taken, no matter if they have an overlapping update influence. NOTE: Does not disable the warning
+ -l, --explosion-limit          | [INTEGER] Sets a limit on what the maximum amount of interesting changes. -1 means no limit. Default is -1. NB! This will result in incorrect answers
+ -h, --help                     | Print this message 
 ```
 
 ## Contributing

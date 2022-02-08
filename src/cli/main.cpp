@@ -42,8 +42,7 @@ int main(int argc, char** argv) {
         spdlog::set_level(spdlog::level::level_enum::warn);
 
     // Parse the TTA
-    TTAParser ttaParser{};
-    TTA t = ttaParser.ParseFromFilePath(config["input"].as_string());
+    auto tick_tock_automata = TTAParser{}.ParseFromFilePath(config["input"].as_string());
 
     // What nondeterminism strategy should we use
     auto strategy = nondeterminism_strategy_t::PICK_FIRST;
@@ -52,14 +51,14 @@ int main(int argc, char** argv) {
 
     // Parse the queries
     if(config["query"]) {
-        auto queryList = CTLQueryParser::ParseQueriesFile(config["query"].as_string(), t);
-        ReachabilitySearcher s{queryList, t};
+        auto queryList = CTLQueryParser::ParseQueriesFile(config["query"].as_string(), tick_tock_automata);
+        ReachabilitySearcher s{queryList, tick_tock_automata};
         bool allQueriesSatisfied = s.Search(strategy);
         return allQueriesSatisfied ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 
     if(config["trace"]) {
-        TTATracer::TraceSteps(config["trace-output"].as_string(), t, config["trace"].as_integer());
+        TTATracer::TraceSteps(config["trace-output"].as_string(), tick_tock_automata, config["trace-steps"].as_integer());
         return 0;
     }
 
