@@ -22,7 +22,7 @@
 #include <ctlparser/include/types.h>
 #include <ctlparser/include/Tree.hpp>
 #include <rapidjson/document.h>
-#include <runtime/TTA.h>
+#include "runtime/tta/tta.h"
 
 using Query = Tree<ASTNode>;
 

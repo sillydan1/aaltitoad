@@ -22,7 +22,7 @@
 #define AALTITOAD_TREE_EXTENSIONS_H
 #include <ctlparser/include/Tree.hpp>
 #include <aaltitoadpch.h>
-#include <runtime/TTA.h>
+#include "runtime/tta/tta.h"
 
 std::string ConvertASTToString(const Tree<ASTNode>& tree);
 

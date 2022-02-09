@@ -18,14 +18,14 @@
  */
 #ifndef MAVE_TTA_H
 #define MAVE_TTA_H
-#include <aaltitoadpch.h>
-#include <extensions/hash_combine>
-#include <shunting-yard.h>
-#include <ctlparser/include/Tree.hpp>
-#include <ctlparser/include/types.h>
-#include "UpdateExpression.h"
-#include "VariablePredicate.h"
-#include "TTASymbol.h"
+#include "aaltitoadpch.h"
+#include "extensions/hash_combine"
+#include "shunting-yard.h"
+#include "ctlparser/include/Tree.hpp"
+#include "ctlparser/include/types.h"
+#include "runtime/UpdateExpression.h"
+#include "runtime/VariablePredicate.h"
+#include "runtime/TTASymbol.h"
 
 enum class nondeterminism_strategy_t {
     PANIC = 0,
@@ -60,13 +60,10 @@ struct TTA {
         [[nodiscard]] bool ContainsExternalChecks() const { return ! externalGuardCollection.empty(); }
     };
     struct Component {
-        // TODO: I dont like storing full strings.
         Location initialLocation;
         Location endLocation;
         Location currentLocation;
-        bool isMain = false;
         std::unordered_multimap<std::string, Edge> edges = {};
-
         std::vector<Edge> GetEnabledEdges(const SymbolMap& symbolMap) const;
     };
     using ComponentMap = std::unordered_map<std::string, Component>;
@@ -74,7 +71,6 @@ struct TTA {
     struct StateChange {
         ComponentLocationMap componentLocations;
         SymbolMap symbols;
-
         static void DelayTimerSymbols(SymbolMap& symbols, float delayDelta);
     };
     ComponentMap components = {};

@@ -19,7 +19,7 @@
 #ifndef AALTITOAD_TTASUCCESSORGENERATOR_H
 #define AALTITOAD_TTASUCCESSORGENERATOR_H
 #include <aaltitoadpch.h>
-#include <runtime/TTA.h>
+#include "runtime/tta/tta.h"
 
 class TTASuccessorGenerator {
 public:

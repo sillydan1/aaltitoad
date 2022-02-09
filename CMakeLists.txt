@@ -62,7 +62,7 @@ add_executable(${PROJECT_NAME}
         src/cli/main.cpp
         src/cli/CLIConfig.cpp
         src/extensions/stringextensions.cpp
-        src/runtime/TTA.cpp
+        src/runtime/tta/tta.cpp
         src/runtime/UpdateExpression.cpp
         src/verifier/query_parsing/CTLQueryParser.cpp
         src/verifier/trace_output/TTATracer.cpp

@@ -16,11 +16,11 @@
     You should have received a copy of the GNU General Public License
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <runtime/TTA.h>
-#include <extensions/overload>
-#include <extensions/cparse_extensions.h>
-#include <tinytimer/Timer.hpp>
-#include <verifier/trace_output/TTAResugarizer.h>
+#include "tta.h"
+#include "extensions/overload"
+#include "extensions/cparse_extensions.h"
+#include "tinytimer/Timer.hpp"
+#include "verifier/trace_output/TTAResugarizer.h"
 
 TTA::StateChange operator+(TTA::StateChange a, TTA::StateChange b) {
     // Merge a and b

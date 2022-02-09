@@ -20,7 +20,7 @@
 #ifndef MAVE_TTATRACER_H
 #define MAVE_TTATRACER_H
 #include <aaltitoadpch.h>
-#include <runtime/TTA.h>
+#include "runtime/tta/tta.h"
 #include <rapidjson/document.h>
 
 /***
