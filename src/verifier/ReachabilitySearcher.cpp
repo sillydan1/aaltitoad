@@ -105,7 +105,7 @@ void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
     OutputResults(results);
     spdlog::info("==== QUERY RESULTS ====");
     for(const auto& r : results) {
-        spdlog::info("===================="); // Delimiter to make it easier to read
+        spdlog::info("======================="); // Delimiter to make it easier to read
         spdlog::info("{0} : {1}", ConvertASTToString(*r.query), r.answer);
         auto stateHash = r.acceptingStateHash;
         auto state = r.acceptingState;
@@ -211,7 +211,7 @@ bool ReachabilitySearcher::IsSearchStateTockable(const SearchState& state) {
     return (!state.justTocked && !state.tta.IsCurrentStateImmediate());
 }
 
-ReachabilitySearcher::StateList::iterator ReachabilitySearcher::PickStateFromWaitingList(const nondeterminism_strategy_t& strategy) {
+StateList::iterator ReachabilitySearcher::PickStateFromWaitingList(const nondeterminism_strategy_t& strategy) {
     if(Waiting.empty()) return Waiting.end();
     if(Waiting.size() == 1) return Waiting.begin();
     switch (strategy) {

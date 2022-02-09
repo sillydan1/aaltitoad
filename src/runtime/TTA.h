@@ -46,6 +46,10 @@ struct TTA {
     struct Location {
         bool isImmediate;
         std::string identifier;
+        bool operator==(const Location& other) const {
+            return isImmediate == other.isImmediate
+                && identifier == other.identifier;
+        }
     };
     struct Edge {
         Location sourceLocation;
@@ -116,6 +120,8 @@ public:
     TokenMap GetSymbolChangesAsMap(std::vector<UpdateExpression> &symbolChanges) const;
     void WarnAboutComponentOverlap(std::map<std::string, std::vector<std::pair<std::string,std::string>>> &overlappingComponents) const;
     bool TypeCheck(const std::pair<const std::string, packToken> &symbol, const std::map<std::string, packToken>::iterator &changingSymbol) const;
+
+    bool operator==(const TTA& other) const;
 };
 
 struct StateMultiChoice {

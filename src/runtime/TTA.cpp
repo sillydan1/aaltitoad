@@ -432,3 +432,22 @@ void TTA::InsertExternalSymbols(const TTA::ExternalSymbolMap &externalSymbolKeys
         externalSymbols[elem.first] = symbols.find(elem.first);
     }
 }
+
+bool TTA::operator==(const TTA& other) const {
+    for(auto& component : components) {
+        auto componentsAreInSameLocation = other.components.find(component.first)->second.currentLocation == component.second.currentLocation;
+        if(!componentsAreInSameLocation)
+            return false;
+    }
+    for(auto& symbol : symbols.map()) {
+        auto symbolsAreEqual = symbol.second.operator==(other.symbols.find(symbol.first));
+        if(!symbolsAreEqual)
+            return false;
+    }
+    for(auto& externalSymbol : externalSymbols) {
+        auto symbolsAreEqual = externalSymbol.second->operator==(other.externalSymbols.find(externalSymbol.first)->second);
+        if(!symbolsAreEqual)
+            return false;
+    }
+    return true;
+}
