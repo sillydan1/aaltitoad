@@ -16,8 +16,8 @@
     You should have received a copy of the GNU General Public License
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MAVE_TTA_H
-#define MAVE_TTA_H
+#ifndef AALTITOAD_TTA_H
+#define AALTITOAD_TTA_H
 #include "aaltitoadpch.h"
 #include "extensions/hash_combine"
 #include "shunting-yard.h"
@@ -35,10 +35,23 @@ enum class nondeterminism_strategy_t {
 };
 struct StateMultiChoice;
 using ExpressionComponentMap = std::map<std::string, std::vector<std::pair<std::string,std::string>>>;
-/***
- * Tick Tock Automata datastructure
- */
-struct TTA {
+/**
+ * Networked Tick Tock Automata data structure (N)TTA
+ * Consists of:
+ *  - A set of Components and
+ *  - A set of symbols
+ * There is an already filtered list of symbols for getting the
+ * external symbols (called externalSymbols). As long as you dont
+ * modify this filtered list, you can use it freely.
+ *
+ * A components consists of:
+ *  - A set of Locations (implicit)
+ *  - A set of edges from and to locations
+ *  - An initial location and
+ *  - A current location
+ * */
+class TTA {
+public:
     using SymbolMap = TokenMap;
     using ExternalSymbolMap = std::unordered_map<std::string, packToken*>;
     using GuardExpression = Tree<ASTNode>;
@@ -71,7 +84,6 @@ struct TTA {
     struct StateChange {
         ComponentLocationMap componentLocations;
         SymbolMap symbols;
-        static void DelayTimerSymbols(SymbolMap& symbols, float delayDelta);
     };
     ComponentMap components = {};
 
@@ -82,11 +94,9 @@ public:
     unsigned int tickCount = 0;
 
 public:
-    // TODO: Simplify this fucking class
     TTA();
     const SymbolMap& GetSymbols() const { return symbols; }
     const ExternalSymbolMap& GetExternalSymbols() const { return externalSymbols; }
-    bool IsSymbolExternal(const std::string& identifier) const;
     void InsertExternalSymbols(const TTA::SymbolMap& externalSymbolKeys);
     void InsertExternalSymbols(const ExternalSymbolMap& externalSymbols);
     void InsertInternalSymbols(const TTA::SymbolMap &internalSymbols) const;
@@ -137,4 +147,4 @@ struct StateMultiChoice {
 TTA::StateChange operator+(TTA::StateChange a, TTA::StateChange b);
 TTA operator<<(const TTA& a, const TTA::StateChange& b);
 
-#endif //MAVE_TTA_H
+#endif //AALTITOAD_TTA_H

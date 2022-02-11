@@ -19,7 +19,7 @@
 #ifndef MAVE_TTATYPES_H
 #define MAVE_TTATYPES_H
 #include <aaltitoadpch.h>
-#include "runtime/tta/tta.h"
+#include "runtime/tta.h"
 
 struct TTAIR_t {
 public:

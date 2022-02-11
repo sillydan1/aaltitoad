@@ -19,7 +19,7 @@
 #ifndef MAVE_SYMBOLCHANGE_H
 #define MAVE_SYMBOLCHANGE_H
 #include <aaltitoadpch.h>
-#include "runtime/tta/tta.h"
+#include "tta.h"
 
 struct SymbolChange {
     std::string identifier;

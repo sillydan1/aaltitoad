@@ -20,7 +20,7 @@
 #ifndef MAVE_REACHABILITYSEARCHER_H
 #define MAVE_REACHABILITYSEARCHER_H
 #include <verifier/query_parsing/CTLQueryParser.h>
-#include "runtime/tta/tta.h"
+#include "runtime/tta.h"
 #include "StateList.h"
 
 #include <utility>

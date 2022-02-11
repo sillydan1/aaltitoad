@@ -1,7 +1,7 @@
 #ifndef AALTITOAD_STATELIST_H
 #define AALTITOAD_STATELIST_H
 #include <aaltitoadpch.h>
-#include "runtime/tta/tta.h"
+#include "runtime/tta.h"
 
 struct SearchState {
     TTA tta;

@@ -412,10 +412,6 @@ bool TTA::IsDeadlocked() const {
     });
 }
 
-bool TTA::IsSymbolExternal(const std::string &identifier) const {
-    return externalSymbols.find(identifier) != externalSymbols.end();
-}
-
 std::vector<TTA::Edge> TTA::GetCurrentEdges() const {
     std::vector<Edge> edges{};
     for(auto& component : components) {

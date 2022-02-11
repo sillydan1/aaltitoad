@@ -18,7 +18,7 @@
  */
 #include <aaltitoadpch.h>
 #include "config.h"
-#include "runtime/tta/tta.h"
+#include "runtime/tta.h"
 #include <model_parsers/TTAParser.h>
 #include <cli/CLIConfig.h>
 #include <verifier/trace_output/TTATracer.h>
