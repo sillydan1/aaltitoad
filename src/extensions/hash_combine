@@ -32,6 +32,8 @@ size_t hash_combine(const Ts&... args) {
     return seed;
 }
 
+#ifndef COMBINE_MAGIC_NUM
 #define COMBINE_MAGIC_NUM 2654435761
+#endif
 
 #endif // HASH_COMBINE_H
