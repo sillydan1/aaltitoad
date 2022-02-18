@@ -35,7 +35,7 @@ struct SearchState {
 };
 
 class ReachabilitySearcher {
-    using StateList = std::unordered_map<size_t, SearchState>;
+    using StateList = std::unordered_multimap<size_t, SearchState>;
     StateList Passed;
     StateList Waiting;
     std::vector<QueryResultPair> query_results;

@@ -108,6 +108,7 @@ void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
         spdlog::info("{0} : {1}", ConvertASTToString(*r.query), r.answer);
         auto stateHash = r.acceptingStateHash;
         std::vector<std::string> trace{};
+        /* TODO: Now that we are using a multi_map, this backtrace algorithm does not work
         while(stateHash != 0) { // 0 indicates "no parent"
             spdlog::trace("trace hash: {0}", stateHash);
             auto prevState = Passed.find(stateHash);
@@ -123,6 +124,7 @@ void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
                 break;
             }
         }
+         */
         std::reverse(trace.begin(), trace.end());
         for(auto& state : trace)
             spdlog::info("{0}", state);
@@ -136,7 +138,7 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strate
         auto curstatehash = stateit->first;
         AreQueriesSatisfied(query_results, state.tta, curstatehash);
         if(AreQueriesAnswered(query_results)) {
-            Passed[curstatehash] = Waiting[curstatehash];
+            Passed.emplace(std::make_pair(curstatehash, state));
             PrintResults(query_results);
             spdlog::info("Found a positive result after searching: {0} states", Passed.size());
             return true; // All the queries has been reached
@@ -149,8 +151,18 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strate
         }
         auto allTickStateChanges = TTASuccessorGenerator::GetNextTickStates(state.tta);
         AddToWaitingList(state.tta, allTickStateChanges, false, curstatehash);
-        Passed[curstatehash] = Waiting[curstatehash];
-        Waiting.erase(curstatehash);
+        Passed.emplace(std::make_pair(curstatehash, state));
+
+        auto iterpair = Waiting.equal_range(curstatehash);
+        auto it = iterpair.first;
+        for (; it != iterpair.second; ++it) {
+            if (&it->second == &state) {
+                Waiting.erase(it);
+                break;
+            }
+        }
+
+        // Waiting.erase(curstatehash);
         stateit = PickStateFromWaitingList(strategy);
     }
     PrintResults(query_results);
@@ -163,7 +175,7 @@ ReachabilitySearcher::ReachabilitySearcher(const std::vector<const Query *> &que
 {
     query_results.reserve(queries.size());
     for(auto& q : queries) query_results.push_back({.answer = false, .query = q, .acceptingStateHash = 0});
-    Waiting[initialState.GetCurrentStateHash()] = SearchState{initialState, 0, false};
+    Waiting.emplace(std::make_pair(initialState.GetCurrentStateHash(), SearchState{initialState, 0, false}));
 }
 
 void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<TTA::StateChange> &statechanges, bool justTocked, size_t state_hash) {
@@ -172,7 +184,7 @@ void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<
         auto nstate = state << change;
         auto nstatehash = nstate.GetCurrentStateHash();
         if(Passed.find(nstatehash) == Passed.end())
-            Waiting[nstatehash] = SearchState{nstate, state_hash, justTocked};
+            Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
     }
 }
 
