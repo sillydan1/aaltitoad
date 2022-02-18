@@ -61,7 +61,8 @@ std::vector<TTAParser::SymbolExternalPair> TTAParser::ParsePartsFiles(const std:
     for (const auto & entry : std::filesystem::directory_iterator(path)) {
         // Filter over ONLY the .parts files.
         auto isEntryPartsFile = entry.is_regular_file() && entry.path().string().find(".parts") != std::string::npos;
-        if(!isEntryPartsFile) continue;
+        if(!isEntryPartsFile)
+            continue;
         auto parts = ParsePartsFile(entry.path().string());
         totalParts.insert(totalParts.end(), parts.begin(), parts.end());
     }
@@ -306,9 +307,10 @@ TTAParser::ConvertEdgeListToEdgeMap(const std::vector<TTAIR_t::Edge> &edgeList, 
 }
 extern void SetVerbosity(unsigned int level);
 TTA::GuardCollection TTAParser::ParseExternalVariablesUsedInGuardExpression(const std::string& guardExpression, const TTA::ExternalSymbolMap& externalSymbolMap) {
+    if(guardExpression.empty())
+        return {};
     SetVerbosity(0); // TODO: We should really do this properly
-    if(guardExpression.empty()) return {};
-    auto expressions = regex_split(guardExpression, "&&|\\|\\||and|or");
+    auto expressions = regex_split(guardExpression, "&&|\\|\\|");
     TTA::GuardCollection coll = {};
     bool doesExpressionContainExternalVariableBool = false;
     auto doesExpressionContainExternalVariable = [&externalSymbolMap, &doesExpressionContainExternalVariableBool](const ASTNode& n) {
@@ -321,7 +323,8 @@ TTA::GuardCollection TTAParser::ParseExternalVariablesUsedInGuardExpression(cons
     for(auto& expr : expressions) {
         // TODO: Parentheses fuck everything up. It should be fixed.
         auto ge = ParseGuardExpression(expr);
-        if(!ge) continue;
+        if(!ge)
+            continue;
         ge->tree_apply(doesExpressionContainExternalVariable);
         if(doesExpressionContainExternalVariableBool) {
             // Extract the expression only. TODO: Write a more flexible parser

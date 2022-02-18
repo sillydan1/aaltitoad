@@ -53,7 +53,7 @@ struct TTA {
         std::string guardExpression;
         GuardCollection externalGuardCollection;
         std::vector<UpdateExpression> updateExpressions;
-        bool ContainsExternalChecks() const { return ! externalGuardCollection.empty(); }
+        [[nodiscard]] bool ContainsExternalChecks() const { return ! externalGuardCollection.empty(); }
     };
     struct Component {
         // TODO: I dont like storing full strings.
