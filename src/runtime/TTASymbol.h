@@ -32,6 +32,7 @@ inline auto operator<(const TTATimerSymbol& a, const TTATimerSymbol& b) {
 
 using TTASymbol_t = std::variant<
         int,
+        long,
         float,
         bool,
         TTATimerSymbol,

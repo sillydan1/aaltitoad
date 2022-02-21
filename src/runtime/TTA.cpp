@@ -46,6 +46,7 @@ TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, co
 TTASymbol_t TTASymbolTypeFromString(const std::string& typestr) {
     TTASymbol_t value;
     if     (typestr == "int") value = (int)0;
+    else if(typestr == "long") value = (long)0;
     else if(typestr == "float") value = (float)0;
     else if(typestr == "bool") value = (bool)false;
     else if(typestr == "string") value = (std::string)"";
@@ -59,6 +60,7 @@ TTASymbol_t PopulateValueFromString(const TTASymbol_t& type, const std::string& 
     std::visit(overload(
             [&valuestr, &value](const float&      ){ value = std::stof(valuestr); },
             [&valuestr, &value](const int&        ){ value = std::stoi(valuestr); },
+            [&valuestr, &value](const long&       ){ value = std::stol(valuestr); },
             [&valuestr, &value](const bool&       ){
                 if(valuestr == "false") value = false;
                 else if(valuestr == "true") value = true;

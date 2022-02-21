@@ -127,16 +127,22 @@ std::optional<TTAIR_t::Component> TTAParser::ParseComponent(const std::string &f
 }
 
 bool TTAParser::IsDocumentAProperTTA(const rapidjson::Document &document) {
-    return  document.IsObject() &&
-            JSONParser::DoesMemberExistAndIsObject(document, "initial_location") &&
-            JSONParser::DoesMemberExistAndIsString(document["initial_location"], "id") &&
-            JSONParser::DoesMemberExistAndIsObject(document, "final_location") &&
-            JSONParser::DoesMemberExistAndIsString(document["final_location"], "id") &&
-            JSONParser::DoesMemberExistAndIsArray( document, "edges") &&
-            JSONParser::DoesMemberExistAndIsBool(  document, "main") &&
-            JSONParser::DoesMemberExistAndIsString(document, "declarations") &&
-            JSONParser::DoesMemberExistAndIsArray(document, "locations") &&
-            IsProperLocationList(document["locations"].GetArray());
+    auto r = document.IsObject() &&
+             JSONParser::DoesMemberExistAndIsObject(document, "initial_location") &&
+             JSONParser::DoesMemberExistAndIsString(document["initial_location"], "id") &&
+             JSONParser::DoesMemberExistAndIsObject(document, "final_location") &&
+             JSONParser::DoesMemberExistAndIsString(document["final_location"], "id") &&
+             JSONParser::DoesMemberExistAndIsArray( document, "edges") &&
+             JSONParser::DoesMemberExistAndIsBool(  document, "main") &&
+             JSONParser::DoesMemberExistAndIsString(document, "declarations") &&
+             JSONParser::DoesMemberExistAndIsArray(document, "locations") &&
+             IsProperLocationList(document["locations"].GetArray());
+    if(!r) {
+        spdlog::warn("Improper tta:");
+        for(auto it = document.MemberBegin(); it != document.MemberEnd(); ++it)
+            spdlog::warn("\t{0}: {1}", it->name.GetString(), it->value.GetString());
+    }
+    return r;
 }
 
 bool TTAParser::IsProperLocationList(const rapidjson::Document::ConstArray &locationList) {
@@ -252,6 +258,7 @@ TTA::SymbolMap TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t
     std::for_each(symbolList.begin(), symbolList.end(), [&map] (auto& symbol) {
         std::visit(overload(
                 [&](const int& value)            { map[symbol.identifier] = static_cast<int>(value); },
+                [&](const long& value)           { map[symbol.identifier] = static_cast<long>(value); },
                 [&](const float& value)          { map[symbol.identifier] = static_cast<float>(value); },
                 [&](const bool& value)           { map[symbol.identifier] = static_cast<bool>(value); },
                 [&](const TTATimerSymbol& value) { map[symbol.identifier] = packToken(value.current_value, PACK_IS_TIMER); },
@@ -353,18 +360,27 @@ bool TTAParser::IsDocumentAProperPartsFile(const rapidjson::Document &document) 
 }
 
 bool TTAParser::IsDocumentAProperPart(const rapidjson::Document::ValueType &document) {
-    return JSONParser::DoesMemberExistAndIsString(document, "PartName") &&
-           JSONParser::DoesMemberExistAndIsString(document, "VariableEnvironment") &&
-           IsDocumentAProperExternalType(document["VariableEnvironment"]) &&
-           JSONParser::DoesMemberExistAndIsObject(document, "Access") &&
-           IsDocumentAProperAccessType(document["Access"]) &&
-           JSONParser::DoesMemberExistAndIsObject(document, "GenericType") &&
-           IsDocumentAProperGenericType(document["GenericType"]);
+    auto r = JSONParser::DoesMemberExistAndIsString(document, "PartName") &&
+             JSONParser::DoesMemberExistAndIsString(document, "VariableEnvironment") &&
+             IsDocumentAProperExternalType(document["VariableEnvironment"]) &&
+             JSONParser::DoesMemberExistAndIsObject(document, "Access") &&
+             IsDocumentAProperAccessType(document["Access"]) &&
+             JSONParser::DoesMemberExistAndIsObject(document, "GenericType") &&
+             IsDocumentAProperGenericType(document["GenericType"]);
+    if(!r) {
+        spdlog::warn("Improper part:");
+        for(auto it = document.MemberBegin(); it != document.MemberEnd(); ++it)
+            spdlog::warn("\t{0}: {1}", it->name.GetString(), it->value.GetString());
+    }
+    return r;
 }
 
 bool TTAParser::IsDocumentAProperGenericType(const rapidjson::Document::ValueType& document) {
     return  (JSONParser::DoesMemberExistAndIsObject(document, "int") &&
             JSONParser::DoesMemberExistAndIsInt(document["int"], "Value"))
+            ||
+            (JSONParser::DoesMemberExistAndIsObject(document, "long") &&
+             JSONParser::DoesMemberExistAndIsInt(document["long"], "Value"))
             ||
             (JSONParser::DoesMemberExistAndIsObject(document, "float") &&
             JSONParser::DoesMemberExistAndIsFloat(document["float"], "Value"))
@@ -406,6 +422,8 @@ TTAParser::SymbolExternalPair TTAParser::ParsePart(const rapidjson::Document::Va
 TTASymbol_t TTAParser::ParseGenericType(const rapidjson::Document::ValueType& document) {
     auto intMember      = document.FindMember("int");
     if(intMember != document.MemberEnd()) return int{ intMember->value["Value"].GetInt() };
+    auto longMember      = document.FindMember("long");
+    if(longMember != document.MemberEnd()) return long{ longMember->value["Value"].GetInt64() };
     auto floatMember    = document.FindMember("float");
     if(floatMember != document.MemberEnd()) return float{ floatMember->value["Value"].GetFloat() };
     auto boolMember     = document.FindMember("bool");
