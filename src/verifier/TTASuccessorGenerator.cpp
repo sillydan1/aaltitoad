@@ -68,16 +68,30 @@ VariablePredicate TTASuccessorGenerator::ConvertFromGuardExpression(const TTA::G
                 searchFoundComparator = true;
                 break;
             }
+            case NodeType_t::Var: {
+                auto calcval = ttaState.GetSymbols().find(n.root.token);
+                TTASymbol_t predRHS{};
+                switch (calcval->token()->type) {
+                    case STR:   predRHS = calcval->asString(); break;
+                    case REAL:  predRHS = static_cast<float>(calcval->asDouble()); break;
+                    case INT:   predRHS = static_cast<int>(calcval->asInt()); break;
+                    case BOOL:  predRHS = calcval->asBool(); break;
+                    case TIMER: predRHS = TTATimerSymbol{.current_value = static_cast<float>(calcval->asDouble()) }; break;
+                    default: spdlog::critical("Right hand side of expression is weird"); break;
+                }
+                predicate = VariablePredicate{.variable   = n.root.token,
+                        .comparator = VariablePredicate::ConvertFromString("!="),
+                        .value      = predRHS};
+                searchFoundComparator = true;
+            }
             default: break;
         }
     };
     expressionTree.tree_apply(conversionAlgorithm);
     if(predicate.has_value())
         return predicate.value();
-    else {
-        spdlog::critical("Conversion of guard expression '{0}' didn't work!", ConvertASTToString(expressionTree));
-        return {};
-    }
+    spdlog::critical("Conversion of guard expression '{0}' didn't work!", ConvertASTToString(expressionTree));
+    return {};
 }
 
 bool TTASuccessorGenerator::IsStateInteresting(const TTA& ttaState) {
