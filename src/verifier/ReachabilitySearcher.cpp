@@ -119,6 +119,10 @@ void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
                 if(count > 1)
                     spdlog::warn("HASH COLLISIONS: {0}", count);
 
+                if(stateHash == range.first->second.prevStateHash) {
+                    spdlog::critical("Breaking out of infinite loop. Something is wrong.");
+                    break;
+                }
                 stateHash = range.first->second.prevStateHash;
                 trace.push_back(range.first->second.tta.GetCurrentStateString());
                 if(count > 1) {
