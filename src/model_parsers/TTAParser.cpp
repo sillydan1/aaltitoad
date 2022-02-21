@@ -252,6 +252,7 @@ TTA::SymbolMap TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t
     std::for_each(symbolList.begin(), symbolList.end(), [&map] (auto& symbol) {
         std::visit(overload(
                 [&](const int& value)            { map[symbol.identifier] = static_cast<int>(value); },
+                [&](const long& value)           { map[symbol.identifier] = static_cast<long>(value); },
                 [&](const float& value)          { map[symbol.identifier] = static_cast<float>(value); },
                 [&](const bool& value)           { map[symbol.identifier] = static_cast<bool>(value); },
                 [&](const TTATimerSymbol& value) { map[symbol.identifier] = packToken(value.current_value, PACK_IS_TIMER); },
@@ -366,6 +367,9 @@ bool TTAParser::IsDocumentAProperGenericType(const rapidjson::Document::ValueTyp
     return  (JSONParser::DoesMemberExistAndIsObject(document, "int") &&
             JSONParser::DoesMemberExistAndIsInt(document["int"], "Value"))
             ||
+            (JSONParser::DoesMemberExistAndIsObject(document, "long") &&
+             JSONParser::DoesMemberExistAndIsInt(document["long"], "Value"))
+            ||
             (JSONParser::DoesMemberExistAndIsObject(document, "float") &&
             JSONParser::DoesMemberExistAndIsFloat(document["float"], "Value"))
             ||
@@ -406,6 +410,8 @@ TTAParser::SymbolExternalPair TTAParser::ParsePart(const rapidjson::Document::Va
 TTASymbol_t TTAParser::ParseGenericType(const rapidjson::Document::ValueType& document) {
     auto intMember      = document.FindMember("int");
     if(intMember != document.MemberEnd()) return int{ intMember->value["Value"].GetInt() };
+    auto longMember      = document.FindMember("long");
+    if(longMember != document.MemberEnd()) return long{ longMember->value["Value"].GetInt64() };
     auto floatMember    = document.FindMember("float");
     if(floatMember != document.MemberEnd()) return float{ floatMember->value["Value"].GetFloat() };
     auto boolMember     = document.FindMember("bool");

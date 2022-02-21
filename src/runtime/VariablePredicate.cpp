@@ -47,6 +47,7 @@ std::string VariablePredicate::ToGuardString() const {
     ss << variable << " " << ConvertToString(comparator) << " ";
     std::visit(overload(
             [&ss](const int& v)            { ss << v; },
+            [&ss](const long& v)           { ss << v; },
             [&ss](const float& v)          { ss << v; },
             [&ss](const bool& v)           { ss << v; },
             [&ss](const TTATimerSymbol& v) { ss << v.current_value; },
@@ -67,6 +68,16 @@ TTASymbol_t VariablePredicate::GetValueOverTheEdge() const {
     TTASymbol_t value_over;
     std::visit(overload(
             [&](const int& v)            {
+                switch (comparator) {
+                    case PredicateComparator::LESS: value_over = v - 1; break;
+                    case PredicateComparator::NEQ:
+                    case PredicateComparator::GREATER: value_over = v + 1; break;
+                    case PredicateComparator::LESSEQ:
+                    case PredicateComparator::GREATEREQ:
+                    case PredicateComparator::EQ: value_over = v; break;
+                    default: spdlog::error("Calculating the 'over the edge' value for predicate '{0}' failed.", ToGuardString()); break;
+                } },
+            [&](const long& v)            {
                 switch (comparator) {
                     case PredicateComparator::LESS: value_over = v - 1; break;
                     case PredicateComparator::NEQ:
@@ -118,6 +129,16 @@ TTASymbol_t VariablePredicate::GetValueOnTheEdge() const {
     TTASymbol_t value_over;
     std::visit(overload(
             [&](const int& v)            {
+                switch (comparator) {
+                    case PredicateComparator::LESSEQ:
+                    case PredicateComparator::EQ:
+                    case PredicateComparator::LESS: value_over = v + 1; break;
+                    case PredicateComparator::NEQ: value_over = v; break;
+                    case PredicateComparator::GREATEREQ:
+                    case PredicateComparator::GREATER: value_over = v - 1; break;
+                    default: spdlog::error("Calculating the 'over the edge' value for predicate '{0}' failed.", ToGuardString()); break;
+                } },
+            [&](const long& v)            {
                 switch (comparator) {
                     case PredicateComparator::LESSEQ:
                     case PredicateComparator::EQ:
