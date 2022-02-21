@@ -83,6 +83,7 @@ void ReachabilitySearcher::AreQueriesSatisfied(std::vector<QueryResultPair>& que
             query.answer = IsQuerySatisfied(*query.query, state);
             if (query.answer) {
                 query.acceptingStateHash = state_hash;
+                query.acceptingState.tta = state; // TODO: This is terrible
                 auto ss = ConvertASTToString(*query.query);
                 spdlog::info("Query '{0}' is satisfied!", ss);
                 spdlog::debug("Query '{0}' was satisfied in state: \n{1}", ss, state.GetCurrentStateString());
@@ -107,25 +108,34 @@ void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
         spdlog::info("===================="); // Delimiter to make it easier to read
         spdlog::info("{0} : {1}", ConvertASTToString(*r.query), r.answer);
         auto stateHash = r.acceptingStateHash;
+        auto state = r.acceptingState;
         std::vector<std::string> trace{};
         while(stateHash != 0) { // 0 indicates "no parent"
             spdlog::trace("trace hash: {0}", stateHash);
-            auto prevState = Passed.find(stateHash);
-            if(prevState != Passed.end()) {
-                trace.push_back(prevState->second.tta.GetCurrentStateString());
-                if(stateHash == Passed[stateHash].prevStateHash) {
-                    spdlog::critical("Breaking out of infinite loop. Please make sure that the trace is correct");
-                    break;
+            auto exists = Passed.find(stateHash) != Passed.end();
+            if(exists) {
+                auto range = Passed.equal_range(stateHash);
+                auto count = Passed.count(stateHash);
+                if(count > 1)
+                    spdlog::warn("HASH COLLISIONS: {0}", count);
+
+                stateHash = range.first->second.prevStateHash;
+                trace.push_back(range.first->second.tta.GetCurrentStateString());
+                if(count > 1) {
+                    for (auto it = range.first; it != range.second; ++it)
+                        spdlog::warn(it->second.tta.GetCurrentStateString());
                 }
-                stateHash = Passed[stateHash].prevStateHash;
             } else {
-                spdlog::critical("Unable to resolve witnessing trace");
+                spdlog::critical("Unable to resolve witnessing trace. ");
                 break;
             }
         }
+        spdlog::info("Trace:");
         std::reverse(trace.begin(), trace.end());
-        for(auto& state : trace)
-            spdlog::info("{0}", state);
+        printf("[");
+        for(auto& stateStr : trace)
+            printf("%s,\n", stateStr.c_str());
+        printf("]\n");
     }
 }
 
@@ -136,8 +146,9 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strate
         auto curstatehash = stateit->first;
         AreQueriesSatisfied(query_results, state.tta, curstatehash);
         if(AreQueriesAnswered(query_results)) {
-            Passed[curstatehash] = Waiting[curstatehash];
-            PrintResults(query_results);
+            Passed.emplace(std::make_pair(curstatehash, state));
+            if(!CLIConfig::getInstance()["notrace"])
+                PrintResults(query_results);
             spdlog::info("Found a positive result after searching: {0} states", Passed.size());
             return true; // All the queries has been reached
         }
@@ -149,11 +160,21 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strate
         }
         auto allTickStateChanges = TTASuccessorGenerator::GetNextTickStates(state.tta);
         AddToWaitingList(state.tta, allTickStateChanges, false, curstatehash);
-        Passed[curstatehash] = Waiting[curstatehash];
-        Waiting.erase(curstatehash);
+        Passed.emplace(std::make_pair(curstatehash, state));
+
+        auto iterpair = Waiting.equal_range(curstatehash);
+        auto it = iterpair.first;
+        for (; it != iterpair.second; ++it) {
+            if (&it->second == &state) {
+                Waiting.erase(it);
+                break;
+            }
+        }
+
         stateit = PickStateFromWaitingList(strategy);
     }
-    PrintResults(query_results);
+    if(!CLIConfig::getInstance()["notrace"])
+        PrintResults(query_results);
     spdlog::info("Found a negative result after searching: {0} states", Passed.size());
     return false;
 }
@@ -162,8 +183,10 @@ ReachabilitySearcher::ReachabilitySearcher(const std::vector<const Query *> &que
  : Passed{}, Waiting{}, query_results{}
 {
     query_results.reserve(queries.size());
-    for(auto& q : queries) query_results.push_back({.answer = false, .query = q, .acceptingStateHash = 0});
-    Waiting[initialState.GetCurrentStateHash()] = SearchState{initialState, 0, false};
+    auto search_state = SearchState{initialState, 0, false};
+    for(auto& q : queries)
+        query_results.emplace_back(false, q, 0, search_state);
+    Waiting.emplace(std::make_pair(initialState.GetCurrentStateHash(), search_state));
 }
 
 void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<TTA::StateChange> &statechanges, bool justTocked, size_t state_hash) {
@@ -172,7 +195,7 @@ void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<
         auto nstate = state << change;
         auto nstatehash = nstate.GetCurrentStateHash();
         if(Passed.find(nstatehash) == Passed.end())
-            Waiting[nstatehash] = SearchState{nstate, state_hash, justTocked};
+            Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
     }
 }
 

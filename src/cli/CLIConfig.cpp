@@ -57,6 +57,9 @@ CLIConfig::CLIConfig() {
             { option_requirement::Optional,
                     {"explosion-limit", 'l', argument_requirement::REQUIRE_ARG,
                             "[INTEGER] Sets a limit on what the maximum amount of interesting changes. -1 means no limit. Default is -1. NB! This will result in incorrect answers"} },
+            { option_requirement::Optional,
+                    {"notrace", 'c', argument_requirement::NO_ARG,
+                            "Disable print of traces to stdout"} },
     };
     status_code = EXIT_SUCCESS;
 }

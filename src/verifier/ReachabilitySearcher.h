@@ -22,20 +22,26 @@
 #include <verifier/query_parsing/CTLQueryParser.h>
 #include <runtime/TTA.h>
 
-struct QueryResultPair {
-    bool answer;
-    const Query* query;
-    size_t acceptingStateHash;
-};
+#include <utility>
 
 struct SearchState {
     TTA tta;
     size_t prevStateHash;
     bool justTocked;
+    bool operator==(const SearchState& other);
+};
+
+struct QueryResultPair {
+    bool answer;
+    const Query* query;
+    size_t acceptingStateHash;
+    SearchState acceptingState;
+    QueryResultPair(bool _answer, const Query* _query, size_t _acceptingStateHash, SearchState _acceptingState)
+     : answer{_answer}, query{_query}, acceptingStateHash{_acceptingStateHash}, acceptingState{std::move(_acceptingState)} {}
 };
 
 class ReachabilitySearcher {
-    using StateList = std::unordered_map<size_t, SearchState>;
+    using StateList = std::unordered_multimap<size_t, SearchState>;
     StateList Passed;
     StateList Waiting;
     std::vector<QueryResultPair> query_results;
