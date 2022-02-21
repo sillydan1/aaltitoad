@@ -83,6 +83,7 @@ void ReachabilitySearcher::AreQueriesSatisfied(std::vector<QueryResultPair>& que
             query.answer = IsQuerySatisfied(*query.query, state);
             if (query.answer) {
                 query.acceptingStateHash = state_hash;
+                query.acceptingState.tta = state; // TODO: This is terrible
                 auto ss = ConvertASTToString(*query.query);
                 spdlog::info("Query '{0}' is satisfied!", ss);
                 spdlog::debug("Query '{0}' was satisfied in state: \n{1}", ss, state.GetCurrentStateString());
