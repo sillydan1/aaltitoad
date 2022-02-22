@@ -7,7 +7,7 @@
 /**
  * Networked Tick Tock Automata data structure (N)TTA
  * Consists of:
- *  - A set of TTAs (in the form of components) and
+ *  - A set of parallel TTAs (in the form of components) and
  *  - A set of symbols shared across TTAs
  * */
 struct ntta_t {
@@ -18,9 +18,9 @@ struct ntta_t {
     };
 
     void tick();
-    diff_t tick() const;
+    [[nodiscard]] diff_t tick() const;
     void tock();
-    symbol_map_t tock() const;
+    [[nodiscard]] symbol_map_t tock() const;
     void operator+=(const diff_t& diff);
     void operator+=(const symbol_map_t& diff);
 

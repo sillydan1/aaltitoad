@@ -58,6 +58,11 @@ add_library(builtin_features OBJECT
 target_link_libraries(builtin_features PUBLIC shunting_yard)
 ####
 
+add_library(${PROJECT_NAME}_ntta
+        src/runtime/tta/ntta.cpp
+        src/runtime/tta/symbol_map.cpp
+)
+
 add_executable(${PROJECT_NAME}
         src/cli/main.cpp
         src/cli/CLIConfig.cpp
