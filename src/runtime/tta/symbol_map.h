@@ -3,6 +3,8 @@
 #include <aaltitoadpch.h>
 #include "extensions/hash_combine"
 
+// TODO: Integrate expr: (https://github.com/sillydan1/expr)
+
 using symbol_value_t = std::variant<int, float>;
 struct symbol_map_t : public std::map<std::string, symbol_value_t> {
     /** Overwrite this map's elements with elements of other. */

@@ -61,6 +61,8 @@ target_link_libraries(builtin_features PUBLIC shunting_yard)
 add_library(${PROJECT_NAME}_ntta
         src/runtime/tta/ntta.cpp
         src/runtime/tta/symbol_map.cpp
+        src/runtime/tta/component.cpp
+        src/runtime/tta/edge.cpp
 )
 
 add_executable(${PROJECT_NAME}

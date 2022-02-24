@@ -1,6 +1,5 @@
 #ifndef AALTITOAD_COMPONENT_H
 #define AALTITOAD_COMPONENT_H
-#include "update_expression.h"
 #include "location.h"
 #include "edge.h"
 
@@ -10,11 +9,14 @@
  *  - A set of edges from and to locations
  * */
 struct component_t {
-    std::vector<location_t> locations;
+    using location_map_t = std::unordered_map<std::string, location_t>;
     std::vector<edge_t> edges;
-    std::vector<location_t>::const_iterator initial_location;
-    std::vector<location_t>::const_iterator current_location;
-    auto get_enabled_edges(const symbol_map_t&) const -> std::vector<edge_t>;
+    location_map_t locations;
+    location_map_t::const_iterator initial_location;
+    location_map_t::const_iterator current_location;
+
+    auto get_enabled_edges(const symbol_map_t&) const -> std::vector<const edge_t*>;
+    auto operator=(const std::string& new_location) -> component_t&;
 };
 
 #endif //AALTITOAD_COMPONENT_H

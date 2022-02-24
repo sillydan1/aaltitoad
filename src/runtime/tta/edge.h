@@ -2,15 +2,16 @@
 #define AALTITOAD_EDGE_H
 #include <aaltitoadpch.h>
 #include "symbol_map.h"
-#include "update_expression.h"
 #include "location.h"
 
 struct edge_t {
     location_t from;
     location_t to;
     std::string guardExpression;
-    std::vector<update_expression_t> updateExpressions;
-    symbol_map_t evaluate(const symbol_map_t& environment) const;
+    std::vector<std::string> updateExpressions;
+
+    auto evaluate_updates(const symbol_map_t& environment) const -> symbol_map_t;
+    auto is_satisfied(const symbol_map_t& environment) const -> bool;
 };
 
 #endif
