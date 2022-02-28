@@ -106,7 +106,7 @@ using VariableValueVector = std::vector<std::pair<std::string, TTASymbol_t>>;
 void AssignVariable(TTA::SymbolMap& outputMap, const TTA::SymbolMap& currentValues, const std::string &varname, const TTASymbol_t &newValue) {
     std::visit(overload(
             [&](const int& v)            { outputMap.map()[varname] = v; },
-            [&](const long& v)           { outputMap.map()[varname] = v; },
+            [&](const long& v)           { outputMap.map()[varname] = static_cast<int64_t>(v); },
             [&](const float& v)          { outputMap.map()[varname] = v; },
             [&](const bool& v)           { outputMap.map()[varname] = v; },
             [&](const TTATimerSymbol& v) {
