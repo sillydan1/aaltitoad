@@ -212,19 +212,27 @@ bool ReachabilitySearcher::IsSearchStateTockable(const SearchState& state) {
 }
 
 ReachabilitySearcher::StateList::iterator ReachabilitySearcher::PickStateFromWaitingList(const nondeterminism_strategy_t& strategy) {
-    if(Waiting.empty()) return Waiting.end();
-    if(Waiting.size() == 1) return Waiting.begin();
+    if(Waiting.empty())
+        return Waiting.end();
+    if(Waiting.size() == 1)
+        return Waiting.begin();
     switch (strategy) {
         case nondeterminism_strategy_t::PANIC:
             throw std::logic_error("Panicking on nondeterminism");
         case nondeterminism_strategy_t::VERIFICATION:
         case nondeterminism_strategy_t::PICK_FIRST:
-        case nondeterminism_strategy_t::PICK_LAST:
-            return Waiting.begin(); // There's not a concept of "last" or "first" in a hashmap
+            return Waiting.begin();
+        case nondeterminism_strategy_t::PICK_LAST: {
+            auto begin = Waiting.begin();
+            for (auto i = 0; i < Waiting.size(); i++)
+                begin++;
+            return begin;
+        }
         case nondeterminism_strategy_t::PICK_RANDOM:
-            auto randomPick = rand() % Waiting.size()-1;
+            auto randomPick = rand() % Waiting.size();
             auto picked = Waiting.begin();
-            for(int i = 0; i < randomPick; i++) picked++;
+            for(int i = 0; i < randomPick; i++)
+                picked++;
             return picked;
     }
     return Waiting.end();
