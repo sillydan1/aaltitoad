@@ -258,7 +258,7 @@ TTA::SymbolMap TTAParser::ConvertSymbolListToSymbolMap(const std::vector<TTAIR_t
     std::for_each(symbolList.begin(), symbolList.end(), [&map] (auto& symbol) {
         std::visit(overload(
                 [&](const int& value)            { map[symbol.identifier] = static_cast<int>(value); },
-                [&](const long& value)           { map[symbol.identifier] = static_cast<long>(value); },
+                [&](const long& value)           { map[symbol.identifier] = static_cast<int64_t>(value); },
                 [&](const float& value)          { map[symbol.identifier] = static_cast<float>(value); },
                 [&](const bool& value)           { map[symbol.identifier] = static_cast<bool>(value); },
                 [&](const TTATimerSymbol& value) { map[symbol.identifier] = packToken(value.current_value, PACK_IS_TIMER); },
