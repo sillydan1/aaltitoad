@@ -17,7 +17,6 @@
 # 3.16+ because of target_precompiled_header
 cmake_minimum_required(VERSION 3.16)
 project(aaltitoad VERSION 0.9.2)
-configure_file(src/config.h.in config.h)
 include(cmake/CPM.cmake)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_CXX_STANDARD 20)
@@ -31,8 +30,15 @@ CPMAddPackage("gh:sillydan1/argvparse@1.1.0")
 CPMAddPackage("gh:sillydan1/ctlparser@1.0.0")
 CPMAddPackage("gh:gabime/spdlog@1.8.2")
 CPMAddPackage("gh:Tencent/rapidjson@1.1.0")
+CPMAddPackage(
+        NAME rapidjson
+        GITHUB_REPOSITORY Tencent/rapidjson
+        VERSION 1.1.0
+        OPTIONS "RAPIDJSON_BUILD_DOC OFF" "RAPIDJSON_BUILD_EXAMPLES OFF" "RAPIDJSON_BUILD_TESTS OFF"
+)
 find_package(Threads REQUIRED)
 
+configure_file(src/config.h.in config.h)
 include_directories(
         ${CMAKE_BINARY_DIR}
         ${argvparse_SOURCE_DIR}/include
