@@ -8,7 +8,7 @@ struct edge_t {
     location_t from;
     location_t to;
     std::string guardExpression;
-    std::vector<std::string> updateExpressions;
+    std::string updateExpression;
 
     auto evaluate_updates(const symbol_table_t& environment) const -> symbol_table_t;
     auto is_satisfied(const symbol_table_t& environment) const -> bool;

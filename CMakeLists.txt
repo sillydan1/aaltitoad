@@ -23,7 +23,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CXX_STANDARD_REQUIRED ON)
 set(SPDLOG_BUILD_SHARED)
 
-CPMAddPackage("gh:sillydan1/expr@1.1.1")
+CPMAddPackage("gh:sillydan1/expr@1.1.2")
 CPMAddPackage("gh:sillydan1/tinytimer@1.0.0")
 CPMAddPackage("gh:sillydan1/overload#1.0.0")
 CPMAddPackage("gh:sillydan1/argvparse@1.1.0")
@@ -48,6 +48,7 @@ include_directories(
         ${spdlog_SOURCE_DIR}/include
         ${tinytimer_SOURCE_DIR}
         ${expr_SOURCE_DIR}/include
+        ${expr_BUILD_DIR}
         dep/cparse
         dep
         src
@@ -75,6 +76,7 @@ add_library(${PROJECT_NAME}_ntta
         src/runtime/tta/component.cpp
         src/runtime/tta/edge.cpp
 )
+add_dependencies(${PROJECT_NAME}_ntta expr)
 
 add_executable(${PROJECT_NAME}
         src/cli/main.cpp
