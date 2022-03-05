@@ -24,9 +24,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CXX_STANDARD_REQUIRED ON)
 set(SPDLOG_BUILD_SHARED)
 
-CPMAddPackage("gh:sillydan1/expr@1.1.0")
+CPMAddPackage("gh:sillydan1/expr@1.1.1")
 CPMAddPackage("gh:sillydan1/tinytimer@1.0.0")
-CPMAddPackage("gh:sillydan1/overload@1.0.0")
+CPMAddPackage("gh:sillydan1/overload#1.0.0")
 CPMAddPackage("gh:sillydan1/argvparse@1.1.0")
 CPMAddPackage("gh:sillydan1/ctlparser@1.0.0")
 CPMAddPackage("gh:gabime/spdlog@1.8.2")
@@ -35,14 +35,13 @@ find_package(Threads REQUIRED)
 
 include_directories(
         ${CMAKE_BINARY_DIR}
-        ${CMAKE_BINARY_DIR}/_deps/argvparse-src/include
-        ${CMAKE_BINARY_DIR}/_deps/argvparse-src/src # For some reason windows cant find files that are just right the hell there...
-        ${CMAKE_BINARY_DIR}/_deps/rapidjson-src/include
-        ${CMAKE_BINARY_DIR}/_deps/ctlparser-src/include
-        ${CMAKE_BINARY_DIR}/_deps/spdlog-src/include
-        ${CMAKE_BINARY_DIR}/_deps/tinytimer-src
-        ${CMAKE_BINARY_DIR}/_deps/expr-src/include
-        ${CMAKE_BINARY_DIR}/_deps
+        ${argvparse_SOURCE_DIR}/include
+        ${argvparse_SOURCE_DIR}/src # For some reason windows cant find files that are just right the hell there...
+        ${rapidjson_SOURCE_DIR}/include
+        ${ctlparser_SOURCE_DIR}/include
+        ${spdlog_SOURCE_DIR}/include
+        ${tinytimer_SOURCE_DIR}
+        ${expr_SOURCE_DIR}/include
         dep/cparse
         dep
         src
