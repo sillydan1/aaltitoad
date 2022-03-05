@@ -1,18 +1,19 @@
 #ifndef AALTITOAD_NTTA_H
 #define AALTITOAD_NTTA_H
 #include <aaltitoadpch.h>
-#include "symbol_map.h"
+#include <symbol_table.h>
 #include "component.h"
+#include "extensions/hash_combine"
 
 using location_diff_t = std::unordered_map<std::string, std::string>;
 struct state_diff_t {
     location_diff_t locations;
-    symbol_map_t symbols;
+    symbol_table_t symbols;
 };
 
 struct state_t {
     std::unordered_map<std::string, component_t> components;
-    symbol_map_t symbols;
+    symbol_table_t symbols;
 };
 
 /**
@@ -25,9 +26,9 @@ struct ntta_t {
     void tick();
     [[nodiscard]] state_diff_t tick() const;
     void tock();
-    [[nodiscard]] symbol_map_t tock() const;
+    [[nodiscard]] symbol_table_t tock() const;
     void operator+=(const state_diff_t& diff);
-    void operator+=(const symbol_map_t& diff);
+    void operator+=(const symbol_table_t& diff);
 
     state_t state;
 };
@@ -42,7 +43,8 @@ namespace std {
                 state_hash == 0 ?
                 [&state_hash, &component](){ state_hash = std::hash<std::string>{}(component.second.current_location->first);}() :
                 hash_combine(state_hash, component.second.current_location->first);
-            hash_combine(state_hash, std::hash<symbol_map_t>{}(automata.state.symbols));
+            // TODO: Implement std::hash<symbol_table_t>
+            // hash_combine(state_hash, std::hash<symbol_table_t>{}(automata.state.symbols));
             return state_hash;
         }
     };

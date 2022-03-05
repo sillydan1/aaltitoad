@@ -8,7 +8,7 @@ void ntta_t::tick() {
 }
 
 state_diff_t ntta_t::tick() const {
-    symbol_map_t symbol_changes{};
+    symbol_table_t symbol_changes{};
     location_diff_t location_changes{};
     for(auto&& component : state.components) {
         auto enabled_edges = component.second.get_enabled_edges(state.symbols);
@@ -27,7 +27,7 @@ void ntta_t::tock() {
     this->operator+=(c_this->tock());
 }
 
-symbol_map_t ntta_t::tock() const {
+symbol_table_t ntta_t::tock() const {
     // TODO: Plugin-able tockers (blocking, buffered)
     //       interesting_tocker (blocking)
     //       piped_tocker (blocking)
@@ -40,7 +40,7 @@ void ntta_t::operator+=(const state_diff_t& diff) {
         state.components[location_change.first] = location_change.second;
 }
 
-void ntta_t::operator+=(const symbol_map_t& diff) {
+void ntta_t::operator+=(const symbol_table_t& diff) {
     state.symbols += diff;
 }
 

@@ -1,7 +1,7 @@
 #ifndef AALTITOAD_EDGE_H
 #define AALTITOAD_EDGE_H
 #include <aaltitoadpch.h>
-#include "symbol_map.h"
+#include <symbol_table.h>
 #include "location.h"
 
 struct edge_t {
@@ -10,8 +10,8 @@ struct edge_t {
     std::string guardExpression;
     std::vector<std::string> updateExpressions;
 
-    auto evaluate_updates(const symbol_map_t& environment) const -> symbol_map_t;
-    auto is_satisfied(const symbol_map_t& environment) const -> bool;
+    auto evaluate_updates(const symbol_table_t& environment) const -> symbol_table_t;
+    auto is_satisfied(const symbol_table_t& environment) const -> bool;
 };
 
 #endif
