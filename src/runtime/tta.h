@@ -21,8 +21,8 @@
 #include "aaltitoadpch.h"
 #include "extensions/hash_combine"
 #include "shunting-yard.h"
-#include "ctlparser/include/Tree.hpp"
-#include "ctlparser/include/types.h"
+#include <Tree.hpp>
+#include <types.h>
 #include "runtime/UpdateExpression.h"
 #include "runtime/VariablePredicate.h"
 #include "runtime/TTASymbol.h"

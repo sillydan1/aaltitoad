@@ -19,8 +19,8 @@
 
 #ifndef MAVE_CTLQUERYPARSER_H
 #define MAVE_CTLQUERYPARSER_H
-#include <ctlparser/include/types.h>
-#include <ctlparser/include/Tree.hpp>
+#include <types.h>
+#include <Tree.hpp>
 #include <rapidjson/document.h>
 #include "runtime/tta.h"
 

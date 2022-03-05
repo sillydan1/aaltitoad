@@ -29,7 +29,7 @@ CPMAddPackage("gh:sillydan1/tinytimer@1.0.0")
 CPMAddPackage("gh:sillydan1/overload@1.0.0")
 CPMAddPackage("gh:sillydan1/argvparse@1.1.0")
 CPMAddPackage("gh:sillydan1/ctlparser@1.0.0")
-CPMAddPackage("gh:gabime/spdlog@1.9.2")
+CPMAddPackage("gh:gabime/spdlog@1.8.2")
 CPMAddPackage("gh:Tencent/rapidjson@1.1.0")
 find_package(Threads REQUIRED)
 
@@ -38,7 +38,9 @@ include_directories(
         ${CMAKE_BINARY_DIR}/_deps/argvparse-src/include
         ${CMAKE_BINARY_DIR}/_deps/argvparse-src/src # For some reason windows cant find files that are just right the hell there...
         ${CMAKE_BINARY_DIR}/_deps/rapidjson-src/include
+        ${CMAKE_BINARY_DIR}/_deps/ctlparser-src/include
         ${CMAKE_BINARY_DIR}/_deps/spdlog-src/include
+        ${CMAKE_BINARY_DIR}/_deps/tinytimer-src
         ${CMAKE_BINARY_DIR}/_deps
         dep/cparse
         dep
@@ -72,7 +74,7 @@ add_library(${PROJECT_NAME}_ntta
 add_executable(${PROJECT_NAME}
         src/cli/main.cpp
         src/cli/CLIConfig.cpp
-        src/extensions/stringextensions.cpp
+        src/extensions/string_extensions.cpp
         src/runtime/tta.cpp
         src/runtime/UpdateExpression.cpp
         src/verifier/query_parsing/CTLQueryParser.cpp

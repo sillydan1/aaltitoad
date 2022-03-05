@@ -17,7 +17,7 @@
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <runtime/UpdateExpression.h>
-#include <extensions/stringextensions.h>
+#include <extensions/string_extensions.h>
 
 const char* assignmentOperator = ":=";
 const char  expressionDelimiter = ';';

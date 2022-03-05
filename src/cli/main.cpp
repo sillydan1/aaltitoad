@@ -24,7 +24,7 @@
 #include <verifier/trace_output/TTATracer.h>
 #include <verifier/query_parsing/CTLQueryParser.h>
 #include <verifier/ReachabilitySearcher.h>
-#include <extensions/stringextensions.h>
+#include <extensions/string_extensions.h>
 
 int main(int argc, char** argv) {
     // Initialize CLI configuration (based on CLI Args)

@@ -17,7 +17,7 @@
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <extensions/tree_extensions.h>
-#include <extensions/stringextensions.h>
+#include <extensions/string_extensions.h>
 #include <verifier/TTASuccessorGenerator.h>
 #include <cmath>
 

@@ -20,7 +20,7 @@ struct SearchState {
 struct StateListBucket : std::vector<SearchState> {
     using cit = std::vector<SearchState>::const_iterator;
     bool operator==(const SearchState& s) const {
-        return std::any_of(begin(), end(), [&s](cit it){ return *it == s; });
+        return std::any_of(begin(), end(), [&s](const cit& it){ return *it == s; });
     }
     bool operator!=(const SearchState& s) const {
         return !this->operator==(s);
