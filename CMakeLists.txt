@@ -16,35 +16,39 @@
 
 # 3.16+ because of target_precompiled_header
 cmake_minimum_required(VERSION 3.16)
-project(aaltitoad VERSION 0.9.1)
+project(aaltitoad VERSION 0.9.2)
 configure_file(src/config.h.in config.h)
+include(cmake/CPM.cmake)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
+set(CMAKE_CXX_STANDARD 20)
+set(CXX_STANDARD_REQUIRED ON)
+set(SPDLOG_BUILD_SHARED)
+
+CPMAddPackage("gh:sillydan1/expr@1.0.0")
+CPMAddPackage("gh:sillydan1/tinytimer@1.0.0")
+CPMAddPackage("gh:sillydan1/overload@1.0.0")
+CPMAddPackage("gh:sillydan1/argvparse@1.1.0")
+CPMAddPackage("gh:sillydan1/ctlparser@1.0.0")
+CPMAddPackage("gh:gabime/spdlog@1.9.2")
+CPMAddPackage("gh:Tencent/rapidjson@1.1.0")
 find_package(Threads REQUIRED)
 
 include_directories(
         ${CMAKE_BINARY_DIR}
-        dep/argvparse/include 
-        dep/argvparse/src # For some reason windows cant find files that are just right the hell there...
-        dep/rapidjson/include
-        dep/spdlog/include
+        ${CMAKE_BINARY_DIR}/_deps/argvparse-src/include
+        ${CMAKE_BINARY_DIR}/_deps/argvparse-src/src # For some reason windows cant find files that are just right the hell there...
+        ${CMAKE_BINARY_DIR}/_deps/rapidjson-src/include
+        ${CMAKE_BINARY_DIR}/_deps/spdlog-src/include
+        ${CMAKE_BINARY_DIR}/_deps
         dep/cparse
         dep
         src
 )
 
-set (CMAKE_CXX_STANDARD 17)
-set (CXX_STANDARD_REQUIRED ON)
-set (SPDLOG_BUILD_SHARED)
-
 add_definitions(-DYYERROR_VERBOSE)
 if (WIN32)
     add_definitions(-DYY_NO_UNISTD_H) # UNIX std does not exist on windows platforms
 endif()
-
-# Third party libraries, compiled with CMAKE
-add_subdirectory(dep/argvparse/)
-add_subdirectory(dep/spdlog)
-add_subdirectory(dep/ctlparser)
 
 # Third party libraries, compiled with something else
 ####
