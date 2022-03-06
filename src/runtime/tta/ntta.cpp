@@ -10,14 +10,17 @@ void ntta_t::tick() {
 state_diff_t ntta_t::tick() const {
     symbol_table_t symbol_changes{};
     location_diff_t location_changes{};
-    for(auto&& component : state.components) {
+    for(auto& component : state.components) {
         auto enabled_edges = component.second.get_enabled_edges(state.symbols);
         if(enabled_edges.empty())
             continue;
         if(enabled_edges.size() > 1)
             spdlog::warn("Non deterministic choice ({0} choices)", enabled_edges.size());
-        symbol_changes += enabled_edges[0]->evaluate_updates(state.symbols);
-        location_changes[component.first] = enabled_edges[0]->to.identifier;
+
+        // TODO: Pick strategy
+        auto& picked_edge = enabled_edges[0];
+        symbol_changes += picked_edge->evaluate_updates(state.symbols);
+        location_changes[component.first] = picked_edge->to.identifier;
     }
     return {location_changes, symbol_changes};
 }
