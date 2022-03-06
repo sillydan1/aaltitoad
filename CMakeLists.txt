@@ -29,10 +29,9 @@ CPMAddPackage("gh:sillydan1/overload#1.0.0")
 CPMAddPackage("gh:sillydan1/argvparse@1.1.0")
 CPMAddPackage("gh:sillydan1/ctlparser@1.0.0")
 CPMAddPackage("gh:gabime/spdlog@1.8.2")
-CPMAddPackage("gh:Tencent/rapidjson@1.1.0")
 CPMAddPackage(
         NAME rapidjson
-        GITHUB_REPOSITORY Tencent/rapidjson
+        GITHUB_REPOSITORY Tencent/rapidjson # TODO: Switch to nlohman/json
         VERSION 1.1.0
         OPTIONS "RAPIDJSON_BUILD_DOC OFF" "RAPIDJSON_BUILD_EXAMPLES OFF" "RAPIDJSON_BUILD_TESTS OFF"
 )
