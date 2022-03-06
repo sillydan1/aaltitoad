@@ -77,6 +77,7 @@ add_library(${PROJECT_NAME}_ntta
         src/runtime/tta/edge.cpp
 )
 add_dependencies(${PROJECT_NAME}_ntta expr)
+add_subdirectory(test)
 
 add_executable(${PROJECT_NAME}
         src/cli/main.cpp
