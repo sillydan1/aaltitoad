@@ -55,9 +55,9 @@ if (WIN32)
 endif()
 
 add_library(${PROJECT_NAME}
-        src/runtime/tta/ntta.cpp
-        src/runtime/tta/component.cpp
-        src/runtime/tta/edge.cpp)
+        src/runtime/ntta.cpp
+        src/runtime/component.cpp
+        src/runtime/edge.cpp)
 
 add_dependencies(${PROJECT_NAME} expr)
 add_subdirectory(test)

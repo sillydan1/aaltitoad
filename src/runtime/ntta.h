@@ -3,7 +3,7 @@
 #include <aaltitoadpch.h>
 #include "state.h"
 #include "extensions/hash_combine"
-#include "util/ntta_state_json.h"
+#include "runtime/util/ntta_state_json.h"
 
 /**
  * Networked Tick Tock Automata data structure (N)TTA

@@ -1,4 +1,4 @@
-#include <runtime/tta/ntta.h>
+#include <runtime/ntta.h>
 #include <catch2/catch_test_macros.hpp>
 
 //// Test Tick Tock Automata - Contains only one component called "Main":

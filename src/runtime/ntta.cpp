@@ -1,6 +1,6 @@
 #include <overload.h>
 #include "ntta.h"
-#include "util/ntta_state_json.h"
+#include "runtime/util/ntta_state_json.h"
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "readability-convert-member-functions-to-static"
