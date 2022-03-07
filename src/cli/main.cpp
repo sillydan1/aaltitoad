@@ -17,51 +17,38 @@
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <aaltitoadpch.h>
+#include "cli_options.h"
 #include "config.h"
-#include "runtime/tta.h"
-#include <model_parsers/TTAParser.h>
-#include <cli/CLIConfig.h>
-#include <verifier/trace_output/TTATracer.h>
-#include <verifier/query_parsing/CTLQueryParser.h>
-#include <verifier/ReachabilitySearcher.h>
-#include <extensions/string_extensions.h>
 
 int main(int argc, char** argv) {
-    // Initialize CLI configuration (based on CLI Args)
-    CLIConfig::getInstance().ParseCLIOptionsAndCheckForRequirements(argc, argv);
-    auto& config = CLIConfig::getInstance();
-    if(config["version"])
-        std::cout << PROJECT_NAME << " version " << PROJECT_VER << std::endl;
-    if(config.GetStatusCode() != EXIT_SUCCESS || config["help"]) {
-        config.PrintHelpMessage(argv);
-        return config.GetStatusCode();
+    argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
+    option::Stats  stats(usage, argc, argv);
+    option::Option options[stats.options_max];
+    option::Option buffer[stats.buffer_max];
+    option::Parser parse(usage, argc, argv, options, buffer);
+    if (options[HELP] || argc == 0) {
+        option::printUsage(std::cout, usage);
+        return 0;
     }
-    if(config["verbosity"])
-        spdlog::set_level(static_cast<spdlog::level::level_enum>(SPDLOG_LEVEL_OFF-config["verbosity"].as_integer()));
-    else
-        spdlog::set_level(spdlog::level::level_enum::warn);
-
-    // Parse the TTA
-    auto tick_tock_automata = TTAParser{}.ParseFromFilePath(config["input"].as_string());
-
-    // What nondeterminism strategy should we use
-    auto strategy = nondeterminism_strategy_t::PICK_FIRST;
-    if(config["nondeterminism-strategy"])
-        strategy = (nondeterminism_strategy_t)config["nondeterminism-strategy"].as_integer();
-
-    // Parse the queries
-    if(config["query"]) {
-        auto queryList = CTLQueryParser::ParseQueriesFile(config["query"].as_string(), tick_tock_automata);
-        ReachabilitySearcher s{queryList, tick_tock_automata};
-        bool allQueriesSatisfied = s.Search(strategy);
-        return allQueriesSatisfied ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
-
-    if(config["trace"]) {
-        TTATracer::TraceSteps(config["trace-output"].as_string(), tick_tock_automata, config["trace-steps"].as_integer());
+    if(options[VERSION]) {
+        std::cout << PROJECT_NAME << " v" << PROJECT_VER << std::endl;
         return 0;
     }
 
-    // Return the exit code.
-    return config.GetStatusCode();
+    if(options[VERBOSITY]) {
+        auto x = std::stoi(options[VERBOSITY].arg);
+        std::cout << "Verbosity (--verbosity) " << x << std::endl;
+    }
+
+    if(options[VERBOSITY_SHORT]) {
+        std::cout << "Verbosity (-v) " << options[VERBOSITY_SHORT].count() << std::endl;
+    }
+
+    for(option::Option* opt = options[UNKNOWN]; opt; opt = opt->next())
+        std::cout << "Unknown option: " << opt->name << " ignoring...\n";
+
+    for(int i = 0; i < parse.nonOptionsCount(); ++i)
+        std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
+
+    return 0;
 }

@@ -44,13 +44,9 @@
 
 // Extra "big" libraries that are used everywhere
 #include <spdlog/spdlog.h>
-#include <cli/CLIConfig.h>
 
 // Debug files
 #ifndef NDEBUG
-#include <debug/aaltitoad_debug.h>
-
-#include <verifier/trace_output/TTAResugarizer.h>
 #endif // NDEBUG
 
 #endif //MAVE_MAVEPCH_H
