@@ -3,14 +3,10 @@
 #include <aaltitoadpch.h>
 
 struct location_t {
-    std::string identifier;
     bool is_immediate;
-    auto operator==(const location_t& o) const -> bool {
-        return identifier == o.identifier && is_immediate == o.is_immediate;
-    }
-    auto operator!=(const location_t& o) const -> bool {
-        return !this->operator==(o);
-    }
+    explicit location_t(bool is_immediate = false) : is_immediate{is_immediate} {}
 };
+
+using location_map_t = std::unordered_map<std::string, location_t>;
 
 #endif

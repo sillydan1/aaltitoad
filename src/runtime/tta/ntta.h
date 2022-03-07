@@ -1,20 +1,9 @@
 #ifndef AALTITOAD_NTTA_H
 #define AALTITOAD_NTTA_H
 #include <aaltitoadpch.h>
-#include <symbol_table.h>
-#include "component.h"
+#include "state.h"
 #include "extensions/hash_combine"
-
-using location_diff_t = std::unordered_map<std::string, std::string>;
-struct state_diff_t {
-    location_diff_t locations;
-    symbol_table_t symbols;
-};
-
-struct state_t {
-    std::unordered_map<std::string, component_t> components;
-    symbol_table_t symbols;
-};
+#include "util/ntta_state_json.h"
 
 /**
  * Networked Tick Tock Automata data structure (N)TTA
@@ -23,6 +12,8 @@ struct state_t {
  *  - A set of symbols shared across TTAs
  * */
 struct ntta_t {
+    explicit ntta_t(state_t&& initial_state) : state{initial_state} {}
+
     void tick();
     [[nodiscard]] state_diff_t tick() const;
     void tock();
@@ -33,6 +24,9 @@ struct ntta_t {
     state_t state;
 };
 
+std::ostream& operator<<(std::ostream& os, const ntta_t& tta);
+std::ostream& operator<<(json_ostream jos, const ntta_t& tta);
+
 namespace std {
     /** std::hash<ntta_t> implementation, so we can hash ntta states */
     template <>
@@ -41,8 +35,8 @@ namespace std {
             std::size_t state_hash = 0;
             for(auto& component : automata.state.components)
                 state_hash == 0 ?
-                [&state_hash, &component](){ state_hash = std::hash<std::string>{}(component.second.current_location->first);}() :
-                hash_combine(state_hash, component.second.current_location->first);
+                [&state_hash, &component](){ state_hash = std::hash<std::string>{}(component.second.current_location);}() :
+                hash_combine(state_hash, component.second.current_location);
             // TODO: Implement std::hash<symbol_table_t>
             // hash_combine(state_hash, std::hash<symbol_table_t>{}(automata.state.symbols));
             return state_hash;

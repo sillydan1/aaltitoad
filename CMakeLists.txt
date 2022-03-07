@@ -26,21 +26,16 @@ set(SPDLOG_BUILD_SHARED)
 CPMAddPackage("gh:sillydan1/expr#latest")
 CPMAddPackage("gh:sillydan1/tinytimer@1.0.0")
 CPMAddPackage("gh:sillydan1/overload#1.0.0")
-CPMAddPackage("gh:sillydan1/argvparse@1.1.0")
 CPMAddPackage("gh:sillydan1/ctlparser@1.0.0")
 CPMAddPackage("gh:gabime/spdlog@1.8.2")
-CPMAddPackage(
-        NAME rapidjson
-        GITHUB_REPOSITORY Tencent/rapidjson # TODO: Switch to nlohman/json
-        VERSION 1.1.0
-        OPTIONS "RAPIDJSON_BUILD_DOC OFF" "RAPIDJSON_BUILD_EXAMPLES OFF" "RAPIDJSON_BUILD_TESTS OFF"
-)
-find_package(Threads REQUIRED)
+CPMAddPackage("gh:nlohmann/json@3.10.5")
+CPMAddPackage("http://sourceforge.net/projects/optionparser/files/optionparser-1.7.tar.gz/download")
 
 configure_file(src/config.h.in config.h)
 include_directories(
         ${CMAKE_BINARY_DIR}
         ${argvparse_SOURCE_DIR}/include
+        ${overload_SOURCE_DIR}/include
         ${argvparse_SOURCE_DIR}/src # For some reason windows cant find files that are just right the hell there...
         ${rapidjson_SOURCE_DIR}/include
         ${ctlparser_SOURCE_DIR}/include
@@ -48,6 +43,7 @@ include_directories(
         ${tinytimer_SOURCE_DIR}
         ${expr_SOURCE_DIR}/include
         ${expr_BUILD_DIR}
+        ${optionparser_SOURCE_DIR}/src
         dep/cparse
         dep
         src
@@ -58,54 +54,19 @@ if (WIN32)
     add_definitions(-DYY_NO_UNISTD_H) # UNIX std does not exist on windows platforms
 endif()
 
-# Third party libraries, compiled with something else
-####
-add_library(shunting_yard OBJECT
-        dep/cparse/shunting-yard.cpp
-        dep/cparse/packToken.cpp
-        dep/cparse/functions.cpp
-        dep/cparse/containers.cpp)
-add_library(builtin_features OBJECT
-        dep/cparse/builtin-features.cpp)
-target_link_libraries(builtin_features PUBLIC shunting_yard)
-####
-
-add_library(${PROJECT_NAME}_ntta
+add_library(${PROJECT_NAME}
         src/runtime/tta/ntta.cpp
         src/runtime/tta/component.cpp
-        src/runtime/tta/edge.cpp
-)
-add_dependencies(${PROJECT_NAME}_ntta expr)
+        src/runtime/tta/edge.cpp)
+
+add_dependencies(${PROJECT_NAME} expr)
 add_subdirectory(test)
 
-add_executable(${PROJECT_NAME}
-        src/cli/main.cpp
-        src/cli/CLIConfig.cpp
-        src/extensions/string_extensions.cpp
-        src/runtime/tta.cpp
-        src/runtime/UpdateExpression.cpp
-        src/verifier/query_parsing/CTLQueryParser.cpp
-        src/verifier/trace_output/TTATracer.cpp
-        src/verifier/trace_output/TTAResugarizer.cpp
-        src/json_parsing/JSONParser.cpp
-        src/verifier/ReachabilitySearcher.cpp
-        src/runtime/VariablePredicate.cpp
-        src/verifier/TTASuccessorGenerator.cpp
-        src/extensions/tree_extensions.cpp
-        src/model_parsers/TTAParser.cpp
-        src/model_parsers/TTATypes.cpp
-        )
-
-target_link_libraries(${PROJECT_NAME}
-        argvparse
-        spdlog
-        ctlparser
-        Threads::Threads
-        shunting_yard
-        builtin_features)
+add_executable(${PROJECT_NAME}_main
+        src/cli/main.cpp)
 
 if(NOT WIN32)
         target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
 endif()
 
-install(TARGETS ${PROJECT_NAME})
+#install(TARGETS ${PROJECT_NAME})

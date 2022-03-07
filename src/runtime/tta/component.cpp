@@ -13,6 +13,6 @@ auto component_t::operator=(const std::string& new_location) -> component_t & {
     const auto& it = locations.find(new_location);
     if(it == locations.end())
         throw std::logic_error("Location '"+new_location+"' is not a location in this component");
-    current_location = it;
+    current_location = it->first;
     return *this;
 }
