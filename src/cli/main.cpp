@@ -27,6 +27,7 @@ int main(int argc, char** argv) {
     option::Option buffer[stats.buffer_max];
     option::Parser parse(usage, argc, argv, options, buffer);
     if (options[HELP] || argc == 0) {
+        std::cout << PROJECT_NAME << " v" << PROJECT_VER << std::endl;
         option::printUsage(std::cout, usage);
         return 0;
     }
@@ -42,6 +43,10 @@ int main(int argc, char** argv) {
 
     if(options[VERBOSITY_SHORT]) {
         std::cout << "Verbosity (-v) " << options[VERBOSITY_SHORT].count() << std::endl;
+    }
+
+    if(options[INPUT_FILEPATH] && options[INPUT_FILEPATH].arg) {
+        std::cout << "Input File " << options[INPUT_FILEPATH].arg << std::endl;
     }
 
     for(option::Option* opt = options[UNKNOWN]; opt; opt = opt->next())
