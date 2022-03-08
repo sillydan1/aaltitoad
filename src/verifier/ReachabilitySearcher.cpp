@@ -194,12 +194,31 @@ ReachabilitySearcher::ReachabilitySearcher(const std::vector<const Query *> &que
 }
 
 void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<TTA::StateChange> &statechanges, bool justTocked, size_t state_hash) {
-    for(auto& change : statechanges) {
-        /// This is a lot of copying large data objects... Figure something out with maybe std::move
-        auto nstate = state << change;
-        auto nstatehash = nstate.GetCurrentStateHash();
-        if(Passed.find(nstatehash) == Passed.end())
-            Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
+    if(statechanges.size() <= 1) {
+        for (auto& change : statechanges) {
+            /// This is a lot of copying large data objects... Figure something out with maybe std::move
+            auto nstate = state << change;
+            auto nstatehash = nstate.GetCurrentStateHash();
+            if (Passed.find(nstatehash) == Passed.end()) {
+                if (nstatehash == state_hash)
+                    spdlog::warn("Colliding state hashes!");
+                Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
+            }
+        }
+    }
+
+    if(statechanges.size() > 1) {
+        auto baseChanges = state << *statechanges.begin();
+        for (auto it = statechanges.begin() + 1; it != statechanges.end(); ++it) {
+            /// This is a lot of copying large data objects... Figure something out with maybe std::move
+            auto nstate = baseChanges << *it;
+            auto nstatehash = nstate.GetCurrentStateHash();
+            if (Passed.find(nstatehash) == Passed.end()) {
+                if (nstatehash == state_hash)
+                    spdlog::warn("Colliding state hashes!");
+                Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
+            }
+        }
     }
 }
 
