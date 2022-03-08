@@ -42,9 +42,9 @@ CLIConfig::CLIConfig() {
             { option_requirement::Optional,
               {"parser-disable-check", 'd', argument_requirement::NO_ARG,
               "Disables proper formation checks."} },
-            { option_requirement::Optional,
+            /*{ option_requirement::Optional,
                     {"trace", 't', argument_requirement::REQUIRE_ARG,
-                            "[1-N] Outputs a trace of the input automata of provided amount of steps. Use with '--trace-output' option"} },
+                            "[1-N] Outputs a trace of the input automata of provided amount of steps. Use with '--trace-output' option"} },*/
             { option_requirement::Optional,
                     {"trace-output", 'u', argument_requirement::REQUIRE_ARG,
                             "[DIR]/[FILENAME] Output file for traces. Use together with '--trace' option"} },
