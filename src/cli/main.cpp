@@ -26,34 +26,32 @@ int main(int argc, char** argv) {
     option::Option options[stats.options_max];
     option::Option buffer[stats.buffer_max];
     option::Parser parse(usage, argc, argv, options, buffer);
-    if (options[HELP] || argc == 0) {
+    if (options[option::HELP] || argc == 0) {
         std::cout << PROJECT_NAME << " v" << PROJECT_VER << std::endl;
         option::printUsage(std::cout, usage);
         return 0;
     }
-    if(options[VERSION]) {
+    if(options[option::VERSION]) {
         std::cout << PROJECT_NAME << " v" << PROJECT_VER << std::endl;
         return 0;
     }
 
-    if(options[VERBOSITY]) {
-        auto x = std::stoi(options[VERBOSITY].arg);
-        std::cout << "Verbosity (--verbosity) " << x << std::endl;
-    }
+    auto v = options[option::VERBOSITY_SHORT].count();
+    if(options[option::VERBOSITY])
+        v = std::max(v, std::stoi(options[option::VERBOSITY].arg));
+    spdlog::set_level(static_cast<spdlog::level::level_enum>(SPDLOG_LEVEL_OFF - v));
+    spdlog::trace("trace");
+    spdlog::debug("debug");
+    spdlog::info("info");
+    spdlog::warn("warn");
+    spdlog::error("error");
+    spdlog::critical("critical");
 
-    if(options[VERBOSITY_SHORT]) {
-        std::cout << "Verbosity (-v) " << options[VERBOSITY_SHORT].count() << std::endl;
-    }
+    if(options[option::INPUT_FILEPATH] && options[option::INPUT_FILEPATH].arg)
+        std::cout << "Input File " << options[option::INPUT_FILEPATH].arg << std::endl;
 
-    if(options[INPUT_FILEPATH] && options[INPUT_FILEPATH].arg) {
-        std::cout << "Input File " << options[INPUT_FILEPATH].arg << std::endl;
-    }
-
-    for(option::Option* opt = options[UNKNOWN]; opt; opt = opt->next())
+    for(option::Option* opt = options[option::UNKNOWN]; opt; opt = opt->next())
         std::cout << "Unknown option: " << opt->name << " ignoring...\n";
-
-    for(int i = 0; i < parse.nonOptionsCount(); ++i)
-        std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
 
     return 0;
 }
