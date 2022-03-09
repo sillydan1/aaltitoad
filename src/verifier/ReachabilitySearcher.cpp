@@ -150,12 +150,27 @@ auto debug_int_as_hex_str(size_t v) {
     return std::string(buffer);
 }
 
+std::string debug_get_current_state_string_human(const TTA& tta) {
+    std::stringstream ss{};
+    for(auto& c : tta.components)
+        ss << c.second.currentLocation.identifier << ", ";
+    return ss.str();
+}
+
 void debug_print_passed_list(const ReachabilitySearcher& r) {
     spdlog::trace("==== PASSED LIST ====");
     for(auto& e : r.Passed) {
-        spdlog::trace("Hash:{0} Prev:{1}",
+        if(e.first == e.second.prevStateHash) {
+            spdlog::warn("Hash:{0} Prev:{1} \tState:{2}",
+                          debug_int_as_hex_str(e.first),
+                          debug_int_as_hex_str(e.second.prevStateHash),
+                         debug_get_current_state_string_human(e.second.tta));
+            continue;
+        }
+        spdlog::trace("Hash:{0} Prev:{1} \tState:{2}",
                       debug_int_as_hex_str(e.first),
-                      debug_int_as_hex_str(e.second.prevStateHash));
+                      debug_int_as_hex_str(e.second.prevStateHash),
+                      debug_get_current_state_string_human(e.second.tta));
     }
     spdlog::trace("====/PASSED LIST ====");
 }
@@ -175,6 +190,13 @@ void debug_cleanup_waiting_list(ReachabilitySearcher& s, size_t curstatehash, co
     } while(found);
 }
 
+std::string debug_get_symbol_map_string_representation(const TTA::SymbolMap& map) {
+    std::ostringstream ss{};
+    for(auto& symbol : map.map())
+        ss << symbol.first << " :-> " << symbol.second << ", ";
+    return ss.str();
+}
+
 bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strategy_t& strategy) {
     auto stateit = Waiting.begin();
     while(stateit != Waiting.end()) {
@@ -186,6 +208,8 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strate
             if(!CLIConfig::getInstance()["notrace"])
                 PrintResults(query_results);
             spdlog::info("Found a positive result after searching: {0} states", Passed.size());
+            if(CLIConfig::getInstance()["verbosity"] && CLIConfig::getInstance()["verbosity"].as_integer() >= 6)
+                debug_print_passed_list(*this);
             return true; // All the queries has been reached
         }
         // If the state is interesting, apply tock changes
@@ -198,6 +222,8 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strate
         AddToWaitingList(state.tta, allTickStateChanges, false, curstatehash);
 
         Passed.emplace(std::make_pair(curstatehash, state));
+        auto vs = debug_get_symbol_map_string_representation(state.tta.symbols);
+        // spdlog::warn("New amount of states: {0}", allTickStateChanges.size());
         debug_cleanup_waiting_list(*this, curstatehash, state);
         stateit = PickStateFromWaitingList(strategy);
     }
@@ -238,6 +264,8 @@ void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<
     if(statechanges.size() > 1) {
         auto baseChanges = state << *statechanges.begin();
         for (auto it = statechanges.begin() + 1; it != statechanges.end(); ++it) {
+            if(it->IsEmpty())
+                continue;
             /// This is a lot of copying large data objects... Figure something out with maybe std::move
             auto nstate = baseChanges << *it;
             auto nstatehash = nstate.GetCurrentStateHash();
