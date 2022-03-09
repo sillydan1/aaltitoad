@@ -123,6 +123,7 @@ void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
                     spdlog::critical("Breaking out of infinite loop. Something is wrong.");
                     break;
                 }
+
                 stateHash = range.first->second.prevStateHash;
                 trace.push_back(range.first->second.tta.GetCurrentStateString());
                 if(count > 1) {
@@ -141,6 +142,37 @@ void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
             printf("%s,\n", stateStr.c_str());
         printf("]\n");
     }
+}
+
+auto debug_int_as_hex_str(size_t v) {
+    char buffer[64];
+    sprintf(buffer, "%lx", v);
+    return std::string(buffer);
+}
+
+void debug_print_passed_list(const ReachabilitySearcher& r) {
+    spdlog::trace("==== PASSED LIST ====");
+    for(auto& e : r.Passed) {
+        spdlog::trace("Hash:{0} Prev:{1}",
+                      debug_int_as_hex_str(e.first),
+                      debug_int_as_hex_str(e.second.prevStateHash));
+    }
+    spdlog::trace("====/PASSED LIST ====");
+}
+
+void debug_cleanup_waiting_list(ReachabilitySearcher& s, size_t curstatehash, const SearchState& state) {
+    bool found;
+    do {
+        found = false;
+        auto iterpair = s.Waiting.equal_range(curstatehash);
+        for (auto it = iterpair.first; it != iterpair.second; ++it) {
+            if (&it->second == &state) {
+                s.Waiting.erase(it);
+                found = true;
+                break;
+            }
+        }
+    } while(found);
 }
 
 bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strategy_t& strategy) {
@@ -164,22 +196,16 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strate
         }
         auto allTickStateChanges = TTASuccessorGenerator::GetNextTickStates(state.tta);
         AddToWaitingList(state.tta, allTickStateChanges, false, curstatehash);
+
         Passed.emplace(std::make_pair(curstatehash, state));
-
-        auto iterpair = Waiting.equal_range(curstatehash);
-        auto it = iterpair.first;
-        for (; it != iterpair.second; ++it) {
-            if (&it->second == &state) {
-                Waiting.erase(it);
-                break;
-            }
-        }
-
+        debug_cleanup_waiting_list(*this, curstatehash, state);
         stateit = PickStateFromWaitingList(strategy);
     }
     if(!CLIConfig::getInstance()["notrace"])
         PrintResults(query_results);
     spdlog::info("Found a negative result after searching: {0} states", Passed.size());
+    if(CLIConfig::getInstance()["verbosity"].as_integer() >= 6)
+        debug_print_passed_list(*this);
     return false;
 }
 
@@ -196,6 +222,8 @@ ReachabilitySearcher::ReachabilitySearcher(const std::vector<const Query *> &que
 void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<TTA::StateChange> &statechanges, bool justTocked, size_t state_hash) {
     if(statechanges.size() <= 1) {
         for (auto& change : statechanges) {
+            if(change.IsEmpty())
+                continue;
             /// This is a lot of copying large data objects... Figure something out with maybe std::move
             auto nstate = state << change;
             auto nstatehash = nstate.GetCurrentStateHash();

@@ -35,6 +35,13 @@ enum class nondeterminism_strategy_t {
     VERIFICATION = 4 /// Used for the verification engine.
 };
 struct StateMultiChoice;
+
+struct component_overlap {
+    std::string componentName;
+    std::vector<std::pair<std::string,std::string>> updates;
+};
+using component_overlap_t = std::unordered_multimap<std::string, component_overlap>;
+
 /***
  * Tick Tock Automata datastructure
  */
@@ -70,7 +77,7 @@ struct TTA {
     struct StateChange {
         ComponentLocationMap componentLocations;
         SymbolMap symbols;
-
+        bool IsEmpty() const;
         static void DelayTimerSymbols(SymbolMap& symbols, float delayDelta);
     };
     ComponentMap components = {};
@@ -102,7 +109,7 @@ public:
     std::vector<Edge> GetCurrentEdges() const;
     std::vector<StateChange> GetNextTickStates(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PANIC) const;
     static bool WarnIfNondeterminism(const std::vector<TTA::Edge>& edges, const std::string& componentName) ;
-    bool AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<std::string, UpdateExpression>& symbolsToChange, std::map<std::string, std::vector<std::pair<std::string,std::string>>>& overlappingComponents) const;
+    bool AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<std::string, UpdateExpression>& symbolsToChange, component_overlap_t & overlappingComponents, const std::string& currentComponent) const;
     bool IsDeadlocked() const;
     void DelayAllTimers(double delayDelta);
     void SetAllTimers(double exactTime);
@@ -110,14 +117,15 @@ public:
     TTA::Edge& PickEdge(std::vector<TTA::Edge>& edges, const nondeterminism_strategy_t& strategy) const;
     void Tick(const nondeterminism_strategy_t& nondeterminismStrategy = nondeterminism_strategy_t::PANIC);
     inline unsigned int GetTickCount() const { return tickCount; }
-    std::optional<StateMultiChoice> GetChangesFromEdge(const TTA::Edge& choice, bool& outInfluenceOverlap, std::map<std::string, std::vector<std::pair<std::string,std::string>>>& overlappingComponents) const;
+    std::optional<StateMultiChoice> GetChangesFromEdge(const TTA::Edge& choice, bool& outInfluenceOverlap, component_overlap_t& overlappingComponents, const std::string& currentComponent) const;
     static void ApplyComponentLocation(ComponentLocationMap &currentLocations, const std::pair<const std::string, TTA::Component> &component, Edge &pickedEdge);
     TokenMap GetSymbolChangesAsMap(std::vector<UpdateExpression> &symbolChanges) const;
-    void WarnAboutComponentOverlap(std::map<std::string, std::vector<std::pair<std::string,std::string>>> &overlappingComponents) const;
+    void WarnAboutComponentOverlap(component_overlap_t& overlappingComponents) const;
     bool TypeCheck(const std::pair<const std::string, packToken> &symbol, const std::map<std::string, packToken>::iterator &changingSymbol) const;
 };
 
 struct StateMultiChoice {
+    std::string component;
     std::vector<UpdateExpression> symbolChanges{};
     std::multimap<std::string, UpdateExpression> symbolsToChange{};
     TTA::ComponentLocationMap currentLocations{};

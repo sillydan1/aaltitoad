@@ -40,7 +40,7 @@ struct QueryResultPair {
      : answer{_answer}, query{_query}, acceptingStateHash{_acceptingStateHash}, acceptingState{std::move(_acceptingState)} {}
 };
 
-class ReachabilitySearcher {
+struct ReachabilitySearcher {
     using StateList = std::unordered_multimap<size_t, SearchState>;
     StateList Passed;
     StateList Waiting;
