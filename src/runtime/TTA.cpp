@@ -178,6 +178,8 @@ std::optional<StateMultiChoice> TTA::GetChangesFromEdge(const TTA::Edge& choice,
     changes.component = currentComponent;
     bool DoesUpdateInfluenceOverlap = AccumulateUpdateInfluences(choice, changes.symbolsToChange, overlappingComponents, currentComponent);
     outInfluenceOverlap |= DoesUpdateInfluenceOverlap;
+    if(DoesUpdateInfluenceOverlap)
+        return {};
 
     for(auto& symbolChange : changes.symbolsToChange)
         changes.symbolChanges.push_back(symbolChange.second);
@@ -200,9 +202,9 @@ void TTA::WarnAboutComponentOverlap(component_overlap_t& overlappingComponents) 
     if(overlapping_errors.empty())
         return;
 
-    spdlog::warn("Overlapping Updates:");
+    spdlog::info("Overlapping Updates:");
     for(auto& err : overlapping_errors)
-        spdlog::warn(err);
+        spdlog::info(err);
 }
 
 TokenMap TTA::GetSymbolChangesAsMap(std::vector<UpdateExpression> &symbolChanges) const {
@@ -384,7 +386,7 @@ bool TTA::AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<
             for(auto iter = range.first; iter != range.second; iter++) {
                 if(iter->second.componentName == currentComponent)
                     continue;
-                // TODO: Check for Indempotence!
+                // TODO: Check for Idempotence!
                 spdlog::debug("Overlapping update influence on evaluation of update on edge {0} --> {1}. "
                               "Variable '{2}' is already being written to in this tick! - For more info, run with higher verbosity",
                               TTAResugarizer::Resugar(pickedEdge.sourceLocation.identifier),

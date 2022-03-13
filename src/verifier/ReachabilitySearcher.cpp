@@ -137,7 +137,7 @@ void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
         }
         spdlog::info("Trace:");
         std::reverse(trace.begin(), trace.end());
-        printf("[");
+        printf("[\n");
         for(auto& stateStr : trace)
             printf("%s,\n", stateStr.c_str());
         printf("]\n");
@@ -254,8 +254,10 @@ void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<
             auto nstate = state << change;
             auto nstatehash = nstate.GetCurrentStateHash();
             if (Passed.find(nstatehash) == Passed.end()) {
-                if (nstatehash == state_hash)
-                    spdlog::warn("Colliding state hashes!");
+                if (nstatehash == state_hash) {
+                    spdlog::warn("Recursive state hashes!");
+                    continue;
+                }
                 Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
             }
         }
@@ -270,8 +272,10 @@ void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<
             auto nstate = baseChanges << *it;
             auto nstatehash = nstate.GetCurrentStateHash();
             if (Passed.find(nstatehash) == Passed.end()) {
-                if (nstatehash == state_hash)
-                    spdlog::warn("Colliding state hashes!");
+                if (nstatehash == state_hash) {
+                    spdlog::warn("Recursive state hashes!");
+                    continue;
+                }
                 Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
             }
         }
