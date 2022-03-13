@@ -230,9 +230,9 @@ void TTA::WarnAboutComponentOverlap(component_overlap_t& overlappingComponents) 
     if(overlapping_errors.empty())
         return;
 
-    spdlog::info("Overlapping Updates:");
+    spdlog::trace("Overlapping Updates:");
     for(auto& err : overlapping_errors)
-        spdlog::info(err);
+        spdlog::trace(err);
 }
 
 TokenMap TTA::GetSymbolChangesAsMap(std::vector<UpdateExpression> &symbolChanges) const {
