@@ -1,7 +1,27 @@
 [
   {
     "query": "E F counter > 1",
-    "comment": "Can any processes get to CS?",
+    "comment": "",
+    "is_periodic": false
+  },
+  {
+    "query": "E F counter < 0",
+    "comment": "",
+    "is_periodic": false
+  },
+  {
+    "query": "E F counter == 1",
+    "comment": "",
+    "is_periodic": false
+  },
+  {
+    "query": "E F deadlock",
+    "comment": "",
+    "is_periodic": false
+  },
+  {
+    "query": "E F Main€FischerA(1).L6 && Main€FischerB(2).L6",
+    "comment": "",
     "is_periodic": false
   }
 ]
