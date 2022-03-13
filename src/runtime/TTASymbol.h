@@ -21,6 +21,7 @@
 #ifndef AALTITOAD_TTASYMBOL_H
 #define AALTITOAD_TTASYMBOL_H
 #include <aaltitoadpch.h>
+#include "extensions/overload"
 
 struct TTATimerSymbol {
     float current_value;
@@ -38,6 +39,9 @@ using TTASymbol_t = std::variant<
         TTATimerSymbol,
         std::string
 >;
+
+bool operator==(const TTASymbol_t&, const TTASymbol_t&);
+bool operator!=(const TTASymbol_t&, const TTASymbol_t&);
 
 TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr);
 TTASymbol_t TTASymbolTypeFromString(const std::string& typestr);

@@ -55,7 +55,7 @@ private:
     bool IsQuerySatisfied(const Query& query, const TTA& state);
     void AreQueriesSatisfied(std::vector<QueryResultPair>& queries, const TTA& state, size_t state_hash);
     bool ForwardReachabilitySearch(const nondeterminism_strategy_t& strategy);
-    void PrintResults(const std::vector<QueryResultPair>& results);
+    auto PrintResults(const std::vector<QueryResultPair>& results) -> int;
     void OutputResults(const std::vector<QueryResultPair>& results);
     StateList::iterator PickStateFromWaitingList(const nondeterminism_strategy_t& strategy);
 };

@@ -157,18 +157,23 @@ std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA
     VariableValueCollection positives{};
     VariableValueCollection negatives{};
     for (auto &predicate : interestingVarPredicates) {
-        positives.insert(std::make_pair(predicate.variable, predicate.GetValueOverTheEdge()));
-        negatives.insert(std::make_pair(predicate.variable, predicate.GetValueOnTheEdge()));
+        auto pos = std::make_pair(predicate.variable, predicate.GetValueOverTheEdge());
+        if(negatives.find(pos) == negatives.end())
+            positives.insert(pos);
+
+        auto neg = std::make_pair(predicate.variable, predicate.GetValueOnTheEdge());
+        if(positives.find(neg) == positives.end())
+            negatives.insert(neg);
     }
     int limit = -1;
-    if(CLIConfig::getInstance()["explosion-limit"]) limit = CLIConfig::getInstance()["explosion-limit"].as_integer();
+    if(CLIConfig::getInstance()["explosion-limit"])
+        limit = CLIConfig::getInstance()["explosion-limit"].as_integer();
     spdlog::trace("Size of the set of interesting changes is {0}, this means you will get {1} new states",
                  positives.size(), static_cast<int>(pow(2, positives.size())));
-    if(limit == -1 || positives.size() < limit) {
+    if(positives.size() < limit || limit == -1) {
         VariableValueVector ps{positives.begin(), positives.end()};
         VariableValueVector ns{negatives.begin(), negatives.end()};
-        std::vector<TTA::StateChange> allPermutations = BFSCrossProduct(ps, ns, ttaState.GetSymbols());
-        return allPermutations;
+        return BFSCrossProduct(ps, ns, ttaState.GetSymbols());
     }
     spdlog::warn("The Tock explosion was too large, trying a weaker strategy - This will likely result in wrong answers.");
     // TODO: This is technically incorrect. These state changes may have an effect on the reachable state space if they are applied together

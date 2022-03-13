@@ -1,12 +1,27 @@
 [
   {
-    "query": "E F counter \u003d\u003d 1",
-    "comment": "Can any processes get to CS?",
+    "query": "A G ! (counter > 1)",
+    "comment": "",
     "is_periodic": false
   },
   {
-    "query": "E F Main€FischerA(1).L6 && Main€FischerB(2).L6",
-    "comment": "Can both processes get to the critical section at the same time?",
+    "query": "A G ! (counter < 0)",
+    "comment": "",
+    "is_periodic": false
+  },
+  {
+    "query": "E F counter == 1",
+    "comment": "",
+    "is_periodic": false
+  },
+  {
+    "query": "A G ! deadlock",
+    "comment": "",
+    "is_periodic": false
+  },
+  {
+    "query": "A G !(Main€FischerA(1).L6 && Main€FischerB(2).L6)",
+    "comment": "",
     "is_periodic": false
   }
 ]

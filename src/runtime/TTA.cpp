@@ -39,6 +39,34 @@ TTA operator<<(const TTA& aa, const TTA::StateChange& b) {
     return a;
 }
 
+#define FUNC_IMPL(a, func, b, res) std::visit(overload{[&b,&res](auto&& x){std::visit(overload{[&x,&res](auto&& y){res = func(x,y);}}, static_cast<TTASymbol_t>(b));}}, static_cast<TTASymbol_t>(a))
+template<typename T1, typename T2>
+auto t_ee(const T1&, const T2&) {
+    return false;
+}
+auto t_ee(const bool& a, const bool& b) {return a == b;}
+auto t_ee(const int& a, const int& b) {return a == b;}
+auto t_ee(const long& a, const long& b) {return a == b;}
+auto t_ee(const int& a, const long& b) {return a == b;}
+auto t_ee(const long& a, const int& b) {return a == b;}
+auto t_ee(const int& a, const float& b) {return a == b;}
+auto t_ee(const long& a, const float& b) {return a == b;}
+auto t_ee(const float& a, const int& b) {return a == b;}
+auto t_ee(const float& a, const long& b) {return a == b;}
+auto t_ee(const float& a, const float& b) {return a == b;}
+auto t_ee(const TTATimerSymbol& a, const TTATimerSymbol& b) {return a.current_value == b.current_value;}
+auto t_ee(const std::string& a, const std::string& b) {return a == b;}
+bool operator==(const TTASymbol_t& a, const TTASymbol_t& b) {
+    bool retVal = a.index() == b.index();
+    if(!retVal)
+        return false;
+    FUNC_IMPL(a, t_ee, b, retVal);
+    return retVal;
+}
+bool operator!=(const TTASymbol_t& a, const TTASymbol_t& b) {
+    return !(a == b);
+}
+
 TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr) {
     return PopulateValueFromString(TTASymbolTypeFromString(typestr), valuestr);
 }
@@ -178,6 +206,8 @@ std::optional<StateMultiChoice> TTA::GetChangesFromEdge(const TTA::Edge& choice,
     changes.component = currentComponent;
     bool DoesUpdateInfluenceOverlap = AccumulateUpdateInfluences(choice, changes.symbolsToChange, overlappingComponents, currentComponent);
     outInfluenceOverlap |= DoesUpdateInfluenceOverlap;
+    if(DoesUpdateInfluenceOverlap)
+        return {};
 
     for(auto& symbolChange : changes.symbolsToChange)
         changes.symbolChanges.push_back(symbolChange.second);
@@ -186,13 +216,23 @@ std::optional<StateMultiChoice> TTA::GetChangesFromEdge(const TTA::Edge& choice,
 }
 
 void TTA::WarnAboutComponentOverlap(component_overlap_t& overlappingComponents) const {
-    spdlog::debug("Overlapping Components: (Tick#: {0})", tickCount);
-    for (auto& componentCollection : overlappingComponents) {
-        if (componentCollection.second.updates.size() > 1) {
-            for (auto& compname : componentCollection.second.updates)
-                spdlog::debug("{0}", compname.first);
-        }
+    std::vector<std::string> overlapping_errors{};
+    for(auto it = overlappingComponents.begin(), end = overlappingComponents.end(); it != end; it = overlappingComponents.equal_range(it->first).second) {
+       auto iter = overlappingComponents.equal_range(it->first);
+       const std::string& compName = iter.first->second.componentName;
+       for(auto& x = iter.first; x != iter.second; x++) {
+           if(x->second.componentName != compName) {
+               overlapping_errors.emplace_back(x->second.componentName + " and " + compName + " disagree on: " + it->first);
+               break;
+           }
+       }
     }
+    if(overlapping_errors.empty())
+        return;
+
+    spdlog::trace("Overlapping Updates:");
+    for(auto& err : overlapping_errors)
+        spdlog::trace(err);
 }
 
 TokenMap TTA::GetSymbolChangesAsMap(std::vector<UpdateExpression> &symbolChanges) const {
@@ -226,29 +266,11 @@ std::vector<TTA::StateChange> TTA::GetNextTickStates(const nondeterminism_strate
         auto enabledEdges = component.second.GetEnabledEdges(symbols); // TODO: Take Interesting variables into account
         if(!enabledEdges.empty()) {
             bool hasNondeterminism = WarnIfNondeterminism(enabledEdges, component.first);
-            if(!hasNondeterminism) {
-                // Simply pick the edge and apply it to the shared changes
-                if(strategy != nondeterminism_strategy_t::VERIFICATION) {
-                    auto &pickedEdge = PickEdge(enabledEdges, strategy);
-                    auto changes = GetChangesFromEdge(pickedEdge, updateInfluenceOverlapGlobal, overlappingComponents, component.first);
-                    if (changes.has_value()) sharedChanges.Merge(changes.value());
-                    ApplyComponentLocation(sharedChanges.currentLocations, component, pickedEdge);
-                } else {
-                    for(auto& edge : enabledEdges) {
-                        auto changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents, component.first);
-                        if(changes.has_value()) {
-                            sharedChanges.Merge(changes.value());
-                            ApplyComponentLocation(sharedChanges.currentLocations, component, edge);
-                        }
-                    }
-                }
-            } else {
-                for(auto& edge : enabledEdges) {
-                    auto changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents, component.first);
-                    if(changes.has_value()) {
-                        ApplyComponentLocation(changes->currentLocations, component, edge);
-                        choiceChanges.push_back(changes.value());
-                    }
+            for(auto& edge : enabledEdges) {
+                auto changes = GetChangesFromEdge(edge, updateInfluenceOverlapGlobal, overlappingComponents, component.first);
+                if(changes.has_value()) {
+                    ApplyComponentLocation(changes->currentLocations, component, edge);
+                    choiceChanges.push_back(changes.value());
                 }
             }
         }
@@ -281,8 +303,10 @@ bool TTA::WarnIfNondeterminism(const std::vector<Edge>& edges, const std::string
 
 std::string TTA::GetCurrentStateString() const {
     std::stringstream ss{}; ss << "{";
-    for(auto& component : components) ss<<"\""<<component.first<<"\""<<": "<<"\""<<component.second.currentLocation.identifier<<"\",";
-    for(auto& symbol : symbols.map()) ss<<"\""<<symbol.first<<"\""<<": "<<"\""<<symbol.second.str()<<"\",";
+    for(auto& component : components)
+        ss<<"\""<<component.first<<"\""<<": "<<"\""<<component.second.currentLocation.identifier<<"\",";
+    for(auto& symbol : symbols.map())
+        ss<<"\""<<symbol.first<<"\""<<": "<<"\""<<symbol.second.str()<<"\",";
     ss << R"("OBJECT_END":"true"})"; // This is just a bad way of ending a json object. 
     return ss.str();
 }
@@ -385,21 +409,21 @@ bool AreRightHandSidesIndempotent(const std::map<std::string, std::vector<std::p
 bool TTA::AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<std::string, UpdateExpression>& symbolsToChange, component_overlap_t& overlappingComponents, const std::string& currentComponent) const {
     bool updateInfluenceOverlap = false;
     for(auto& expr : pickedEdge.updateExpressions) {
+        bool overlap_in_this_expr = false;
         auto it = overlappingComponents.find(expr.lhs);
         if(it != overlappingComponents.end()) {
             auto range = overlappingComponents.equal_range(expr.lhs);
             for(auto iter = range.first; iter != range.second; iter++) {
-                if(iter->second.componentName == currentComponent) {
-                    symbolsToChange.insert({ expr.lhs, expr });
+                if(iter->second.componentName == currentComponent)
                     continue;
-                }
-                // TODO: Check for Indempotence!
+                // TODO: Check for Idempotence!
                 spdlog::debug("Overlapping update influence on evaluation of update on edge {0} --> {1}. "
                               "Variable '{2}' is already being written to in this tick! - For more info, run with higher verbosity",
                               TTAResugarizer::Resugar(pickedEdge.sourceLocation.identifier),
                               TTAResugarizer::Resugar(pickedEdge.targetLocation.identifier),
                               TTAResugarizer::Resugar(expr.lhs)); // TODO: Idempotent variable assignment
                 updateInfluenceOverlap = true;
+                overlap_in_this_expr = true;
             }
         }
         component_overlap c{
@@ -410,6 +434,8 @@ bool TTA::AccumulateUpdateInfluences(const TTA::Edge& pickedEdge, std::multimap<
                         pickedEdge.targetLocation.identifier), expr.rhs)}
         };
         overlappingComponents.emplace(expr.lhs, std::move(c));
+        if(overlap_in_this_expr)
+            continue;
         symbolsToChange.insert({ expr.lhs, expr });
     }
     return updateInfluenceOverlap;

@@ -39,13 +39,11 @@ bool IsQuerySatisfiedHelper(const Query& query, const TTA& state) {
         case NodeType_t::CompEq:
         case NodeType_t::CompGreater:
         case NodeType_t::CompGreaterEq: {
-            std::string exprstring{}; // This string can technically be precompiled.
-            query.children[0].tree_apply([&exprstring]( const ASTNode& node ){ exprstring += node.token; });
-            exprstring += query.root.token;
-            query.children[1].tree_apply([&exprstring]( const ASTNode& node ){ exprstring += node.token; });
-            spdlog::debug("Assembled expression '{0}'", exprstring);
-            calculator c(exprstring.c_str());
-            return c.eval(state.GetSymbols()).asBool();
+            std::stringstream exprstring{}; // This string can technically be precompiled.
+            query.children[0].tree_apply([&exprstring]( const ASTNode& node ){ exprstring << node.token; });
+            exprstring << query.root.token;
+            query.children[1].tree_apply([&exprstring]( const ASTNode& node ){ exprstring << node.token; });
+            return calculator(exprstring.str().c_str()).eval(state.GetSymbols()).asBool();
         }
         case NodeType_t::SubExpr:
         case NodeType_t::Finally:
@@ -66,9 +64,7 @@ bool IsQuerySatisfiedHelper(const Query& query, const TTA& state) {
 
 bool ReachabilitySearcher::IsQuerySatisfied(const Query& query, const TTA &state) {
     if(query.root.type == NodeType_t::Forall && query.children.begin()->root.type == NodeType_t::Globally) {
-        auto invertedQ = Query(ASTNode{NodeType_t::Negation, "!"});
-        invertedQ.insert(query);
-        return IsQuerySatisfiedHelper(invertedQ, state);
+        return !IsQuerySatisfiedHelper(query, state);
     }
     if(query.root.type != NodeType_t::Exists) {
         spdlog::critical("Only reachability queries are supported right now, sorry.");
@@ -96,17 +92,22 @@ void ReachabilitySearcher::OutputResults(const std::vector<QueryResultPair>& res
     if(CLIConfig::getInstance()["output"]) {
         std::ofstream outputFile{CLIConfig::getInstance()["output"].as_string(), std::ofstream::trunc};
         for(auto& r : results) {
-            outputFile << ConvertASTToString(*r.query) << " : " << std::boolalpha << r.answer << "\n";
+            auto answer = r.query->root.type == NodeType_t::Forall && r.query->children[0].root.type == NodeType_t::Globally ? !r.answer : r.answer;
+            outputFile << ConvertASTToString(*r.query) << " : " << std::boolalpha << answer << "\n";
         }
     }
 }
 
-void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& results) {
+auto ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& results) -> int {
     OutputResults(results);
+    auto acceptedResults = 0;
     spdlog::info("==== QUERY RESULTS ====");
     for(const auto& r : results) {
         spdlog::info("===================="); // Delimiter to make it easier to read
-        spdlog::info("{0} : {1}", ConvertASTToString(*r.query), r.answer);
+        auto answer = r.query->root.type == NodeType_t::Forall && r.query->children[0].root.type == NodeType_t::Globally ? !r.answer : r.answer;
+        if(answer)
+            acceptedResults++;
+        spdlog::info("{0} : {1}", ConvertASTToString(*r.query), answer);
         auto stateHash = r.acceptingStateHash;
         auto state = r.acceptingState;
         std::vector<std::string> trace{};
@@ -135,13 +136,18 @@ void ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
                 break;
             }
         }
+        if(trace.empty()) {
+            spdlog::info("No trace available");
+            continue;
+        }
         spdlog::info("Trace:");
         std::reverse(trace.begin(), trace.end());
-        printf("[");
+        printf("[\n");
         for(auto& stateStr : trace)
             printf("%s,\n", stateStr.c_str());
         printf("]\n");
     }
+    return acceptedResults;
 }
 
 auto debug_int_as_hex_str(size_t v) {
@@ -150,17 +156,32 @@ auto debug_int_as_hex_str(size_t v) {
     return std::string(buffer);
 }
 
+std::string debug_get_current_state_string_human(const TTA& tta) {
+    std::stringstream ss{};
+    for(auto& c : tta.components)
+        ss << c.second.currentLocation.identifier << ", ";
+    return ss.str();
+}
+
 void debug_print_passed_list(const ReachabilitySearcher& r) {
     spdlog::trace("==== PASSED LIST ====");
     for(auto& e : r.Passed) {
-        spdlog::trace("Hash:{0} Prev:{1}",
+        if(e.first == e.second.prevStateHash) {
+            spdlog::warn("Hash:{0} Prev:{1} \tState:{2}",
+                          debug_int_as_hex_str(e.first),
+                          debug_int_as_hex_str(e.second.prevStateHash),
+                         debug_get_current_state_string_human(e.second.tta));
+            continue;
+        }
+        spdlog::trace("Hash:{0} Prev:{1} \tState:{2}",
                       debug_int_as_hex_str(e.first),
-                      debug_int_as_hex_str(e.second.prevStateHash));
+                      debug_int_as_hex_str(e.second.prevStateHash),
+                      debug_get_current_state_string_human(e.second.tta));
     }
     spdlog::trace("====/PASSED LIST ====");
 }
 
-void debug_cleanup_waiting_list(ReachabilitySearcher& s, size_t curstatehash, const SearchState& state) {
+void cleanup_waiting_list(ReachabilitySearcher& s, size_t curstatehash, const SearchState& state) {
     bool found;
     do {
         found = false;
@@ -175,6 +196,13 @@ void debug_cleanup_waiting_list(ReachabilitySearcher& s, size_t curstatehash, co
     } while(found);
 }
 
+std::string debug_get_symbol_map_string_representation(const TTA::SymbolMap& map) {
+    std::ostringstream ss{};
+    for(auto& symbol : map.map())
+        ss << symbol.first << " :-> " << symbol.second << ", ";
+    return ss.str();
+}
+
 bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strategy_t& strategy) {
     auto stateit = Waiting.begin();
     while(stateit != Waiting.end()) {
@@ -183,9 +211,11 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strate
         AreQueriesSatisfied(query_results, state.tta, curstatehash);
         if(AreQueriesAnswered(query_results)) {
             Passed.emplace(std::make_pair(curstatehash, state));
-            if(!CLIConfig::getInstance()["notrace"])
-                PrintResults(query_results);
+            if(CLIConfig::getInstance()["verbosity"] && CLIConfig::getInstance()["verbosity"].as_integer() >= 6)
+                debug_print_passed_list(*this);
             spdlog::info("Found a positive result after searching: {0} states", Passed.size());
+            if(!CLIConfig::getInstance()["notrace"])
+                return query_results.size() - PrintResults(query_results) == 0;
             return true; // All the queries has been reached
         }
         // If the state is interesting, apply tock changes
@@ -198,14 +228,15 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strate
         AddToWaitingList(state.tta, allTickStateChanges, false, curstatehash);
 
         Passed.emplace(std::make_pair(curstatehash, state));
-        debug_cleanup_waiting_list(*this, curstatehash, state);
+
+        cleanup_waiting_list(*this, curstatehash, state);
         stateit = PickStateFromWaitingList(strategy);
     }
-    if(!CLIConfig::getInstance()["notrace"])
-        PrintResults(query_results);
     spdlog::info("Found a negative result after searching: {0} states", Passed.size());
     if(CLIConfig::getInstance()["verbosity"].as_integer() >= 6)
         debug_print_passed_list(*this);
+    if(!CLIConfig::getInstance()["notrace"])
+        return query_results.size() - PrintResults(query_results) == 0;
     return false;
 }
 
@@ -228,8 +259,10 @@ void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<
             auto nstate = state << change;
             auto nstatehash = nstate.GetCurrentStateHash();
             if (Passed.find(nstatehash) == Passed.end()) {
-                if (nstatehash == state_hash)
-                    spdlog::warn("Colliding state hashes!");
+                if (nstatehash == state_hash) {
+                    spdlog::warn("Recursive state hashes!");
+                    continue;
+                }
                 Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
             }
         }
@@ -238,12 +271,16 @@ void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<
     if(statechanges.size() > 1) {
         auto baseChanges = state << *statechanges.begin();
         for (auto it = statechanges.begin() + 1; it != statechanges.end(); ++it) {
+            if(it->IsEmpty())
+                continue;
             /// This is a lot of copying large data objects... Figure something out with maybe std::move
             auto nstate = baseChanges << *it;
             auto nstatehash = nstate.GetCurrentStateHash();
             if (Passed.find(nstatehash) == Passed.end()) {
-                if (nstatehash == state_hash)
-                    spdlog::warn("Colliding state hashes!");
+                if (nstatehash == state_hash) {
+                    spdlog::warn("Recursive state hashes!");
+                    continue;
+                }
                 Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
             }
         }
