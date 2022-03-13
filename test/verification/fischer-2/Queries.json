@@ -1,11 +1,11 @@
 [
   {
-    "query": "E F counter > 1",
+    "query": "A G ! (counter > 1)",
     "comment": "",
     "is_periodic": false
   },
   {
-    "query": "E F counter < 0",
+    "query": "A G ! (counter < 0)",
     "comment": "",
     "is_periodic": false
   },
@@ -15,12 +15,12 @@
     "is_periodic": false
   },
   {
-    "query": "E F deadlock",
+    "query": "A G ! deadlock",
     "comment": "",
     "is_periodic": false
   },
   {
-    "query": "E F Main€FischerA(1).L6 && Main€FischerB(2).L6",
+    "query": "A G !(Main€FischerA(1).L6 && Main€FischerB(2).L6)",
     "comment": "",
     "is_periodic": false
   }
