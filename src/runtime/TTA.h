@@ -72,7 +72,12 @@ struct TTA {
 
         std::vector<Edge> GetEnabledEdges(const SymbolMap& symbolMap) const;
     };
+
+#ifndef NDEBUG
+    using ComponentMap = std::map<std::string, Component>;
+#else
     using ComponentMap = std::unordered_map<std::string, Component>;
+#endif
     using ComponentLocationMap = std::unordered_map<std::string, Location>;
     struct StateChange {
         ComponentLocationMap componentLocations;

@@ -39,6 +39,34 @@ TTA operator<<(const TTA& aa, const TTA::StateChange& b) {
     return a;
 }
 
+#define FUNC_IMPL(a, func, b, res) std::visit(overload{[&b,&res](auto&& x){std::visit(overload{[&x,&res](auto&& y){res = func(x,y);}}, static_cast<TTASymbol_t>(b));}}, static_cast<TTASymbol_t>(a))
+template<typename T1, typename T2>
+auto t_ee(const T1&, const T2&) {
+    return false;
+}
+auto t_ee(const bool& a, const bool& b) {return a == b;}
+auto t_ee(const int& a, const int& b) {return a == b;}
+auto t_ee(const long& a, const long& b) {return a == b;}
+auto t_ee(const int& a, const long& b) {return a == b;}
+auto t_ee(const long& a, const int& b) {return a == b;}
+auto t_ee(const int& a, const float& b) {return a == b;}
+auto t_ee(const long& a, const float& b) {return a == b;}
+auto t_ee(const float& a, const int& b) {return a == b;}
+auto t_ee(const float& a, const long& b) {return a == b;}
+auto t_ee(const float& a, const float& b) {return a == b;}
+auto t_ee(const TTATimerSymbol& a, const TTATimerSymbol& b) {return a.current_value == b.current_value;}
+auto t_ee(const std::string& a, const std::string& b) {return a == b;}
+bool operator==(const TTASymbol_t& a, const TTASymbol_t& b) {
+    bool retVal = a.index() == b.index();
+    if(!retVal)
+        return false;
+    FUNC_IMPL(a, t_ee, b, retVal);
+    return retVal;
+}
+bool operator!=(const TTASymbol_t& a, const TTASymbol_t& b) {
+    return !(a == b);
+}
+
 TTASymbol_t TTASymbolValueFromTypeAndValueStrings(const std::string& typestr, const std::string& valuestr) {
     return PopulateValueFromString(TTASymbolTypeFromString(typestr), valuestr);
 }
@@ -275,8 +303,10 @@ bool TTA::WarnIfNondeterminism(const std::vector<Edge>& edges, const std::string
 
 std::string TTA::GetCurrentStateString() const {
     std::stringstream ss{}; ss << "{";
-    for(auto& component : components) ss<<"\""<<component.first<<"\""<<": "<<"\""<<component.second.currentLocation.identifier<<"\",";
-    for(auto& symbol : symbols.map()) ss<<"\""<<symbol.first<<"\""<<": "<<"\""<<symbol.second.str()<<"\",";
+    for(auto& component : components)
+        ss<<"\""<<component.first<<"\""<<": "<<"\""<<component.second.currentLocation.identifier<<"\",";
+    for(auto& symbol : symbols.map())
+        ss<<"\""<<symbol.first<<"\""<<": "<<"\""<<symbol.second.str()<<"\",";
     ss << R"("OBJECT_END":"true"})"; // This is just a bad way of ending a json object. 
     return ss.str();
 }
