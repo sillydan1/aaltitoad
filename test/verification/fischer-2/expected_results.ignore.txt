@@ -1,5 +1,5 @@
-E F counter > 1 : false
-E F counter < 0 : false
+A G ! (counter > 1) : true
+A G ! (counter < 0) : true
 E F counter == 1 : true
-E F deadlock : false
-E F Main€FischerA(1).L6 && Main€FischerB(2).L6 : false
+A G ! deadlock : true
+A G ! (Main€FischerA(1).L6 && Main€FischerB(2).L6) : true
