@@ -1,3 +1,0 @@
-[submodule "dep/cparse"]
-	path = dep/cparse
-	url = https://github.com/sillydan1/cparse
