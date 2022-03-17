@@ -48,7 +48,6 @@ include_directories(
         dep
         src
 )
-
 add_definitions(-DYYERROR_VERBOSE)
 if (WIN32)
     add_definitions(-DYY_NO_UNISTD_H) # UNIX std does not exist on windows platforms
@@ -58,15 +57,17 @@ add_library(${PROJECT_NAME}
         src/runtime/ntta.cpp
         src/runtime/component.cpp
         src/runtime/edge.cpp)
-
 add_dependencies(${PROJECT_NAME} expr)
-add_subdirectory(test)
+add_executable(${PROJECT_NAME}_main src/cli/main.cpp)
 
-add_executable(${PROJECT_NAME}_main
-        src/cli/main.cpp)
+set(COVERAGE_ENABLE ON)
+target_compile_options(${PROJECT_NAME} PRIVATE --coverage)
+target_link_options(${PROJECT_NAME} PRIVATE --coverage)
+
+add_subdirectory(test)
 
 if(NOT WIN32)
         target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
 endif()
 
-#install(TARGETS ${PROJECT_NAME})
+# install(TARGETS ${PROJECT_NAME})
