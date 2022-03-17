@@ -32,10 +32,10 @@ TEST_CASE("givenValidData_whenEvaluating_thenNoError", "[ntta]") {
     REQUIRE(tta.state.components.begin()->second.current_location == "L1");
     REQUIRE(std::get<int>(tta.state.symbols["a"]) == 0);
     REQUIRE(std::get<bool>(tta.state.symbols["b"]) == false);
-    std::cout << state_json << tta << std::endl;
+    std::cout << stream_mods::json << tta << std::endl;
     tta.tick();
     REQUIRE(tta.state.components.begin()->second.current_location == "L2");
     REQUIRE(std::get<int>(tta.state.symbols["a"]) == 0);
     REQUIRE(std::get<bool>(tta.state.symbols["b"]) == true);
-    std::cout << state_json << tta << std::endl;
+    std::cout << stream_mods::json << tta << std::endl;
 }

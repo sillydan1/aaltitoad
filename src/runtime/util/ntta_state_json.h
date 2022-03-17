@@ -1,14 +1,16 @@
 #ifndef AALTITOAD_NTTA_STATE_JSON_H
 #define AALTITOAD_NTTA_STATE_JSON_H
 
-class ntta_state_json {};
-constexpr ntta_state_json state_json;
+namespace stream_mods {
+    class ntta_state_json {};
+    constexpr ntta_state_json json;
+}
 
 struct json_ostream {
     std::ostream& os;
 };
 
-inline json_ostream operator<<(std::ostream& os, ntta_state_json) {
+inline json_ostream operator<<(std::ostream& os, stream_mods::ntta_state_json) {
     return { os };
 }
 

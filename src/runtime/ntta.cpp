@@ -82,7 +82,7 @@ std::ostream& operator<<(json_ostream jos, const ntta_t& tta) {
     for(auto iter = tta.state.symbols.begin(); iter != tta.state.symbols.end(); ++iter) {
         if(iter != tta.state.symbols.begin())
             jos.os << ",";
-        jos.os << "\"" << iter->first << "\":\"" << state_json << iter->second << "\"";
+        jos.os << "\"" << iter->first << "\":\"" << stream_mods::json << iter->second << "\"";
     }
     jos.os << "}";
     return jos.os << "}";
