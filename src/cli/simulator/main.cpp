@@ -3,6 +3,12 @@
 #include <parser/h-uppaal-parser.h>
 #include "cli_options.h"
 
+void do_thing(const ntta_t& automata) {
+    std::stringstream ss{};
+    ss << stream_mods::json << automata;
+    spdlog::info(ss.str());
+}
+
 int main(int argc, char** argv) {
     auto options = get_options();
     auto cli_arguments = get_arguments(options, argc, argv);
@@ -24,8 +30,16 @@ int main(int argc, char** argv) {
     if(cli_arguments["ignore"])
         ignore_list = cli_arguments["ignore"].as_list();
     auto automata = h_uppaal_parser_t::parse_files(cli_arguments["input"].as_string(), ignore_list);
-    std::stringstream ss{};
-    ss << stream_mods::json << automata;
-    spdlog::info(ss.str());
+    do_thing(automata);
+    automata.tick();
+    do_thing(automata);
+    automata.tick();
+    do_thing(automata);
+    automata.tick();
+    do_thing(automata);
+    automata.tick();
+    do_thing(automata);
+    automata.tick();
+    do_thing(automata);
     return 0;
 }
