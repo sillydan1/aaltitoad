@@ -39,6 +39,7 @@ include_directories(
         ${argvparse_SOURCE_DIR}/src # For some reason windows cant find files that are just right the hell there...
         ${rapidjson_SOURCE_DIR}/include
         ${ctlparser_SOURCE_DIR}/include
+        ${json_SOURCE_DIR}/include
         ${spdlog_SOURCE_DIR}/include
         ${tinytimer_SOURCE_DIR}
         ${expr_SOURCE_DIR}/include
@@ -57,10 +58,12 @@ add_library(${PROJECT_NAME}
         src/runtime/ntta.cpp
         src/runtime/component.cpp
         src/runtime/edge.cpp)
+add_library(parser
+        src/parser/h-uppaal-parser.cpp)
 add_dependencies(${PROJECT_NAME} expr)
 
 add_executable(${PROJECT_NAME}_simulator src/cli/simulator/main.cpp)
-target_link_libraries(${PROJECT_NAME}_simulator ${PROJECT_NAME} argvparse)
+target_link_libraries(${PROJECT_NAME}_simulator ${PROJECT_NAME} argvparse parser expr)
 
 add_subdirectory(test)
 

@@ -1,4 +1,5 @@
 #include <overload.h>
+#include <nlohmann/json.hpp>
 #include "ntta.h"
 #include "runtime/util/ntta_state_json.h"
 
@@ -71,21 +72,23 @@ std::ostream& operator<<(json_ostream os, const symbol_value_t& v) {
 }
 
 std::ostream& operator<<(json_ostream jos, const ntta_t& tta) {
-    jos.os << "{\"locations\":{";
+    std::stringstream ss{};
+    ss << "{\"locations\":{";
     for(auto iter = tta.state.components.begin(); iter != tta.state.components.end(); ++iter) {
         if (iter != tta.state.components.begin())
-            jos.os << ",";
-        jos.os << "\"" << iter->first << "\":\"" << iter->first << "." << iter->second.current_location << "\"";
+            ss << ",";
+        ss << "\"" << iter->first << "\":\"" << iter->second.current_location << "\"";
     }
-    jos.os << "},";
-    jos.os << "\"symbols\":{";
+    ss << "},";
+    ss << "\"symbols\":{";
     for(auto iter = tta.state.symbols.begin(); iter != tta.state.symbols.end(); ++iter) {
         if(iter != tta.state.symbols.begin())
-            jos.os << ",";
-        jos.os << "\"" << iter->first << "\":\"" << stream_mods::json << iter->second << "\"";
+            ss << ",";
+        ss << "\"" << iter->first << "\":\"" << stream_mods::json << iter->second << "\"";
     }
-    jos.os << "}";
-    return jos.os << "}";
+    ss << "}}";
+    auto j = nlohmann::json::parse(ss.str());
+    return jos << std::setw(2) << j;
 }
 
 #pragma clang diagnostic pop
