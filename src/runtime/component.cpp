@@ -3,6 +3,8 @@
 auto component_t::get_enabled_edges(const symbol_table_t& environment) const -> std::vector<const edge_t*> {
     std::vector<const edge_t*> enabled_edges{};
     for(auto&& edge : edges) {
+        if(edge.from != current_location)
+            continue;
         if(edge.is_satisfied(environment))
             enabled_edges.push_back(&edge);
     }

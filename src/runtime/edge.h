@@ -5,7 +5,7 @@
 #include "location.h"
 
 struct edge_t {
-    using location_it = location_map_t::const_iterator;
+    using location_it = std::string;
     location_it from;
     location_it to;
     std::string guardExpression;

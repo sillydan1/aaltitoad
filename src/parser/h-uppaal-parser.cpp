@@ -26,6 +26,7 @@ ntta_t h_uppaal_parser_t::parse_files(const std::string& filepath, const std::ve
             if(is_component(jf)) {
                 spdlog::debug("Parsing component {0}", entry.path().c_str());
                 components.insert({jf[name], parse_component(jf)});
+                symbol_table += parse_component_declarations(jf);
             } else if(is_symbols(jf)) {
                 spdlog::debug("Parsing symbols {0}", entry.path().c_str());
                 symbol_table += parse_symbols(jf);
@@ -38,7 +39,7 @@ ntta_t h_uppaal_parser_t::parse_files(const std::string& filepath, const std::ve
     return ntta_t(state_t{components, symbol_table});
 }
 
-bool h_uppaal_parser_t::is_component(const nlohmann::json &json) {
+bool h_uppaal_parser_t::is_component(const nlohmann::json& json) {
     return json.contains(locations) &&
            json.contains(edges) &&
            json.contains(name) &&
@@ -46,7 +47,7 @@ bool h_uppaal_parser_t::is_component(const nlohmann::json &json) {
            json.contains(final_location);
 }
 
-bool h_uppaal_parser_t::is_symbols(const nlohmann::json &json) {
+bool h_uppaal_parser_t::is_symbols(const nlohmann::json& json) {
     return json.contains(symbols);
 }
 
@@ -59,19 +60,24 @@ component_t h_uppaal_parser_t::parse_component(const nlohmann::json& json) {
 
     edge_list_t edge_list{};
     for(auto& edge : json[edges])
-        edge_list.emplace_back(location_list.find(edge[source_location]), location_list.find(edge[target_location]), edge[guard], edge[update]);
-    edge_list.emplace_back(location_list.find(json[final_location]["id"]), location_list.find(json[initial_location]["id"]), "true", "");
+        edge_list.emplace_back(edge[source_location], edge[target_location], edge[guard], edge[update]);
+    edge_list.emplace_back(json[final_location]["id"], json[initial_location]["id"], "true", "");
     return component_t{std::move(location_list), std::move(edge_list), json[initial_location]["id"]};
 }
 
-symbol_table_t h_uppaal_parser_t::parse_symbols(const nlohmann::json &json) {
+symbol_table_t h_uppaal_parser_t::parse_component_declarations(const nlohmann::json& json) {
+    std::cout << std::setw(2) << json << std::endl;
+    return {};
+}
+
+symbol_table_t h_uppaal_parser_t::parse_symbols(const nlohmann::json& json) {
     symbol_table_t symbol_table{};
     for(auto& symbol : json[symbols])
         symbol_table[symbol["PartName"]] = parse_symbol((*symbol["GenericType"].begin())["Value"]);
     return symbol_table;
 }
 
-symbol_value_t h_uppaal_parser_t::parse_symbol(const nlohmann::json &json) {
+symbol_value_t h_uppaal_parser_t::parse_symbol(const nlohmann::json& json) {
     if(json.is_number_float())
         return (float)json;
     if(json.is_number())

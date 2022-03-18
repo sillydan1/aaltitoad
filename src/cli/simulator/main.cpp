@@ -2,6 +2,7 @@
 #include <config.h>
 #include <parser/h-uppaal-parser.h>
 #include "cli_options.h"
+#include <Timer.hpp>
 
 void do_thing(const ntta_t& automata) {
     std::stringstream ss{};
@@ -29,17 +30,13 @@ int main(int argc, char** argv) {
     std::vector<std::string> ignore_list{};
     if(cli_arguments["ignore"])
         ignore_list = cli_arguments["ignore"].as_list();
+
     auto automata = h_uppaal_parser_t::parse_files(cli_arguments["input"].as_string(), ignore_list);
-    do_thing(automata);
-    automata.tick();
-    do_thing(automata);
-    automata.tick();
-    do_thing(automata);
-    automata.tick();
-    do_thing(automata);
-    automata.tick();
-    do_thing(automata);
-    automata.tick();
-    do_thing(automata);
+    Timer<unsigned int> t{};
+    t.start();
+    auto x = 100000;
+    for(int i = 0; i < x; i++)
+        automata.tick();
+    spdlog::info("{1} ticks took {0}ms", t.milliseconds_elapsed(), x);
     return 0;
 }

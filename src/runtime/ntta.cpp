@@ -24,7 +24,7 @@ state_diff_t ntta_t::tick() const {
         // TODO: Pick strategy
         auto& picked_edge = enabled_edges[0];
         symbol_changes += picked_edge->evaluate_updates(state.symbols);
-        location_changes[component.first] = picked_edge->to->first;
+        location_changes[component.first] = picked_edge->to;
     }
     return {location_changes, symbol_changes};
 }
