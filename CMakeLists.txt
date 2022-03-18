@@ -27,9 +27,9 @@ CPMAddPackage("gh:sillydan1/expr#latest")
 CPMAddPackage("gh:sillydan1/tinytimer@1.0.0")
 CPMAddPackage("gh:sillydan1/overload#1.0.0")
 CPMAddPackage("gh:sillydan1/ctlparser@1.0.0")
+CPMAddPackage("gh:sillydan1/argvparse@1.2.0")
 CPMAddPackage("gh:gabime/spdlog@1.8.2")
 CPMAddPackage("gh:nlohmann/json@3.10.5")
-CPMAddPackage("http://sourceforge.net/projects/optionparser/files/optionparser-1.7.tar.gz/download")
 
 configure_file(src/config.h.in config.h)
 include_directories(
@@ -58,11 +58,9 @@ add_library(${PROJECT_NAME}
         src/runtime/component.cpp
         src/runtime/edge.cpp)
 add_dependencies(${PROJECT_NAME} expr)
-add_executable(${PROJECT_NAME}_main src/cli/main.cpp)
 
-set(COVERAGE_ENABLE ON)
-target_compile_options(${PROJECT_NAME} PRIVATE --coverage)
-target_link_options(${PROJECT_NAME} PRIVATE --coverage)
+add_executable(${PROJECT_NAME}_simulator src/cli/simulator/main.cpp)
+target_link_libraries(${PROJECT_NAME}_simulator ${PROJECT_NAME} argvparse)
 
 add_subdirectory(test)
 

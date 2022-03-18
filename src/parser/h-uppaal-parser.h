@@ -1,0 +1,8 @@
+#ifndef AALTITOAD_H_UPPAAL_PARSER_H
+#define AALTITOAD_H_UPPAAL_PARSER_H
+
+class HUppaalParser {
+
+};
+
+#endif //AALTITOAD_H_UPPAAL_PARSER_H
