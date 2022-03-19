@@ -88,7 +88,7 @@ std::ostream& operator<<(json_ostream jos, const ntta_t& tta) {
     }
     ss << "}}";
     auto j = nlohmann::json::parse(ss.str());
-    return jos << std::setw(2) << j;
+    return jos << j;
 }
 
 #pragma clang diagnostic pop

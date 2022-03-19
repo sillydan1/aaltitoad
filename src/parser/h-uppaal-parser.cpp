@@ -1,9 +1,14 @@
 #include "h-uppaal-parser.h"
+#include "parser/driver.h"
 #include <nlohmann/json.hpp>
 
+/// Keys to check for in the model file(s)
 constexpr const char* initial_location = "initial_location";
 constexpr const char* final_location = "final_location";
 constexpr const char* locations = "locations";
+constexpr const char* declarations = "declarations";
+constexpr const char* immediacy = "urgency";
+constexpr const char* immediate = "URGENT";
 constexpr const char* edges = "edges";
 constexpr const char* name = "name";
 constexpr const char* source_location = "source_location";
@@ -12,7 +17,7 @@ constexpr const char* guard = "guard";
 constexpr const char* update = "update";
 constexpr const char* symbols = "parts";
 
-ntta_t h_uppaal_parser_t::parse_files(const std::string& filepath, const std::vector<std::string>& ignore_list) {
+ntta_t h_uppaal_parser_t::parse_folder(const std::string& filepath, const std::vector<std::string>& ignore_list) {
     symbol_table_t symbol_table{};
     component_map_t components{};
     for (const auto & entry : std::filesystem::directory_iterator(filepath)) {
@@ -33,6 +38,7 @@ ntta_t h_uppaal_parser_t::parse_files(const std::string& filepath, const std::ve
             }
         } catch(std::exception& e) {
             spdlog::error("Unable to parse json file {0}: {1}", entry.path().c_str(), e.what());
+            throw e;
         }
     }
 
@@ -54,7 +60,7 @@ bool h_uppaal_parser_t::is_symbols(const nlohmann::json& json) {
 component_t h_uppaal_parser_t::parse_component(const nlohmann::json& json) {
     location_map_t location_list{};
     for(auto& location : json[locations])
-        location_list.insert({location["id"], location_t{}}); // TODO: immediacy
+        location_list.insert({location["id"], location_t{location[immediacy] == immediate}});
     location_list.insert({json[initial_location]["id"], location_t{}});
     location_list.insert({json[final_location]["id"], location_t{}});
 
@@ -66,8 +72,13 @@ component_t h_uppaal_parser_t::parse_component(const nlohmann::json& json) {
 }
 
 symbol_table_t h_uppaal_parser_t::parse_component_declarations(const nlohmann::json& json) {
-    std::cout << std::setw(2) << json << std::endl;
-    return {};
+    if(!json.contains(declarations))
+        return {};
+    driver drv{{}};
+    auto res = drv.parse(json[declarations]);
+    if (res)
+        throw std::logic_error(&"Unable to evaluate declaration expression "[json[declarations]]);
+    return drv.result;
 }
 
 symbol_table_t h_uppaal_parser_t::parse_symbols(const nlohmann::json& json) {

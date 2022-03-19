@@ -4,7 +4,7 @@
 #include "cli_options.h"
 #include <Timer.hpp>
 
-void do_thing(const ntta_t& automata) {
+void print_state(const ntta_t& automata) {
     std::stringstream ss{};
     ss << stream_mods::json << automata;
     spdlog::info(ss.str());
@@ -31,12 +31,13 @@ int main(int argc, char** argv) {
     if(cli_arguments["ignore"])
         ignore_list = cli_arguments["ignore"].as_list();
 
-    auto automata = h_uppaal_parser_t::parse_files(cli_arguments["input"].as_string(), ignore_list);
+    auto automata = h_uppaal_parser_t::parse_folder(cli_arguments["input"].as_string(), ignore_list);
     Timer<unsigned int> t{};
     t.start();
-    auto x = 100000;
-    for(int i = 0; i < x; i++)
+    auto x = 1000;
+    for(int i = 0; i < x; i++) {
         automata.tick();
+    }
     spdlog::info("{1} ticks took {0}ms", t.milliseconds_elapsed(), x);
     return 0;
 }
