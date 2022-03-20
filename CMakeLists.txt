@@ -23,6 +23,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CXX_STANDARD_REQUIRED ON)
 set(SPDLOG_BUILD_SHARED)
 
+add_compile_definitions(DEFAULT_EXPRESSION_VALUE=true)
 CPMAddPackage("gh:sillydan1/expr#feature/declarations")
 CPMAddPackage("gh:sillydan1/tinytimer@1.0.0")
 CPMAddPackage("gh:sillydan1/overload#1.0.0")
