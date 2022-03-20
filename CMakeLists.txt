@@ -59,6 +59,8 @@ add_library(${PROJECT_NAME}
         src/runtime/ntta.cpp
         src/runtime/component.cpp
         src/runtime/edge.cpp)
+add_library(${PROJECT_NAME}_tockers
+        src/tockers/tockers.cpp)
 add_library(parser
         src/parser/h-uppaal-parser.cpp)
 add_dependencies(${PROJECT_NAME} expr)
