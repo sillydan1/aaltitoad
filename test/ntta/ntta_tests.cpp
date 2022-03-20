@@ -21,7 +21,7 @@ ntta_t generate_test_main_tta() {
     edge_list_t edges{};
     auto g1 = "a >= 0";
     auto u1 = "b := true";
-    edges.emplace_back(locations.find("L1"), locations.find("L2"), g1, u1);
+    edges.emplace_back("L1", "L2", g1, u1);
     component_map_t components{};
     components.insert({"Main", component_t{std::move(locations), std::move(edges), "L1"}});
     return ntta_t{state_t{components, symbols}};
