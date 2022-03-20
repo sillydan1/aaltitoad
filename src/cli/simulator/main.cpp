@@ -11,6 +11,7 @@ void print_state(const ntta_t& automata) {
 }
 
 int main(int argc, char** argv) {
+    Timer<unsigned int> t{};
     auto options = get_options();
     auto cli_arguments = get_arguments(options, argc, argv);
     if(cli_arguments["help"] || !is_required_provided(cli_arguments, options)) {
@@ -31,12 +32,16 @@ int main(int argc, char** argv) {
     if(cli_arguments["ignore"])
         ignore_list = cli_arguments["ignore"].as_list();
 
-    auto automata = h_uppaal_parser_t::parse_folder(cli_arguments["input"].as_string(), ignore_list);
-    Timer<unsigned int> t{};
+    spdlog::info("cli parsing took {0}ms", t.milliseconds_elapsed());
     t.start();
-    auto x = 1000;
+    auto automata = h_uppaal_parser_t::parse_folder(cli_arguments["input"].as_string(), ignore_list);
+
+    spdlog::info("model parsing took {0}ms", t.milliseconds_elapsed());
+    t.start();
+    auto x = 10;
     for(int i = 0; i < x; i++) {
         automata.tick();
+        print_state(automata);
     }
     spdlog::info("{1} ticks took {0}ms", t.milliseconds_elapsed(), x);
     return 0;
