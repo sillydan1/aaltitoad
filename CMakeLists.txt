@@ -28,7 +28,7 @@ CPMAddPackage("gh:sillydan1/expr#feature/declarations")
 CPMAddPackage("gh:sillydan1/tinytimer@1.0.0")
 CPMAddPackage("gh:sillydan1/overload#1.0.0")
 CPMAddPackage("gh:sillydan1/ctlparser@1.0.0")
-CPMAddPackage("gh:sillydan1/argvparse@1.2.0")
+CPMAddPackage("gh:sillydan1/argvparse@1.2.1")
 CPMAddPackage("gh:gabime/spdlog@1.8.2")
 CPMAddPackage("gh:nlohmann/json@3.10.5")
 

@@ -77,7 +77,7 @@ symbol_table_t h_uppaal_parser_t::parse_component_declarations(const nlohmann::j
     driver drv{{}};
     auto res = drv.parse(json[declarations]);
     if (res)
-        throw std::logic_error(&"Unable to evaluate declaration expression "[json[declarations]]);
+        throw std::logic_error(std::string("Unable to evaluate declaration expression ") + std::string(json[declarations]));
     return drv.result;
 }
 
