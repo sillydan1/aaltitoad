@@ -1,7 +1,6 @@
 #ifndef AALTITOAD_ITOCKER_H
 #define AALTITOAD_ITOCKER_H
 #include <aaltitoadpch.h>
-#include <symbol_table.h>
 #include <future>
 
 struct tocker_t {

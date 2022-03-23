@@ -30,15 +30,17 @@ state_diff_t ntta_t::tick() const {
 }
 
 void ntta_t::tock() {
-    const auto* c_this = this;
-    this->operator+=(c_this->tock());
+    this->operator+=(tock_values());
 }
 
-symbol_table_t ntta_t::tock() const {
+symbol_table_t ntta_t::tock_values() {
     // TODO: Plugin-able tockers (blocking, buffered)
     //       interesting_tocker (blocking)
     //       piped_tocker (blocking)
-    return {};
+    symbol_table_t tock_changes{};
+    for(auto& tocker : tockers)
+        tock_changes += tocker.tock(state.symbols);
+    return tock_changes;
 }
 
 void ntta_t::operator+=(const state_diff_t& diff) {

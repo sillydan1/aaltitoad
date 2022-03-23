@@ -4,6 +4,7 @@
 #include "state.h"
 #include "extensions/hash_combine"
 #include "runtime/util/ntta_state_json.h"
+#include "tockers/tockers.h"
 
 /**
  * Networked Tick Tock Automata data structure (N)TTA
@@ -17,11 +18,12 @@ struct ntta_t {
     void tick();
     [[nodiscard]] state_diff_t tick() const;
     void tock();
-    [[nodiscard]] symbol_table_t tock() const;
+    [[nodiscard]] symbol_table_t tock_values();
     void operator+=(const state_diff_t& diff);
     void operator+=(const symbol_table_t& diff);
 
     state_t state;
+    std::vector<tocker_t> tockers;
 };
 
 std::ostream& operator<<(std::ostream& os, const ntta_t& tta);

@@ -45,6 +45,9 @@
 // Extra "big" libraries that are used everywhere
 #include <spdlog/spdlog.h>
 
+// Other
+#include <symbol_table.h>
+
 // Debug files
 #ifndef NDEBUG
 #endif // NDEBUG
