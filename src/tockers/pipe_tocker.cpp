@@ -1,13 +1,22 @@
 #include "pipe_tocker.h"
 
-pipe_tocker_t::pipe_tocker_t(FILE* pipe) : input_pipe{pipe}, output_pipe{pipe} {
+pipe_tocker_t::pipe_tocker_t(FILE* pipe, const ntta_t& ntta)
+ : associated_tta{ntta}, input_pipe{pipe}, output_pipe{pipe} {
 
 }
 
-pipe_tocker_t::pipe_tocker_t(FILE* input_pipe, FILE* output_pipe) : input_pipe{input_pipe}, output_pipe{output_pipe} {
+pipe_tocker_t::pipe_tocker_t(FILE* input_pipe, FILE* output_pipe, const ntta_t& ntta)
+ : associated_tta{ntta}, input_pipe{input_pipe}, output_pipe{output_pipe} {
 
 }
 
-symbol_table_t pipe_tocker_t::tock(const symbol_value_t &environment) {
+void Pprint_state(const ntta_t& automata) {
+    std::stringstream ss{};
+    ss << stream_mods::json << automata;
+    spdlog::info(ss.str());
+}
+
+symbol_table_t pipe_tocker_t::tock(const symbol_table_t &environment) const {
+    Pprint_state(associated_tta);
     return {};
 }

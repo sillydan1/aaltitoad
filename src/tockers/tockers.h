@@ -4,14 +4,19 @@
 #include <future>
 
 struct tocker_t {
-    virtual symbol_table_t tock(const symbol_value_t& environment) = 0;
+    [[nodiscard]] virtual symbol_table_t tock(const symbol_table_t& environment) const = 0;
+    virtual ~tocker_t() = default;
 };
 
-struct async_tocker_t : public tocker_t {
-    std::future<symbol_table_t> job{};
-    virtual symbol_table_t get_tock_values(const symbol_value_t& invocation_environment) = 0;
-    virtual void tock_async(const symbol_value_t& environment);
-    symbol_table_t tock(const symbol_value_t& environment) override;
+class async_tocker_t : public tocker_t {
+protected:
+    mutable std::future<symbol_table_t> job{};
+    virtual symbol_table_t get_tock_values(const symbol_table_t& invocation_environment) const = 0;
+    virtual void tock_async(const symbol_table_t& environment) const;
+    ~async_tocker_t() override = default;
+
+public:
+    symbol_table_t tock(const symbol_table_t& environment) const override;
 };
 
 #endif //AALTITOAD_ITOCKER_H

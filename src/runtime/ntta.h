@@ -13,7 +13,7 @@
  *  - A set of symbols shared across TTAs
  * */
 struct ntta_t {
-    explicit ntta_t(state_t&& initial_state) : state{initial_state} {}
+    explicit ntta_t(state_t&& initial_state) : state{initial_state}, tockers{} {}
 
     void tick();
     [[nodiscard]] state_diff_t tick() const;
@@ -23,7 +23,7 @@ struct ntta_t {
     void operator+=(const symbol_table_t& diff);
 
     state_t state;
-    std::vector<tocker_t> tockers;
+    std::vector<std::unique_ptr<tocker_t>> tockers;
 };
 
 std::ostream& operator<<(std::ostream& os, const ntta_t& tta);

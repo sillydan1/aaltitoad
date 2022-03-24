@@ -58,8 +58,7 @@ endif()
 add_library(${PROJECT_NAME}
         src/runtime/ntta.cpp
         src/runtime/component.cpp
-        src/runtime/edge.cpp)
-add_library(tockers
+        src/runtime/edge.cpp
         src/tockers/pipe_tocker.cpp
         src/tockers/tockers.cpp)
 add_library(parser
@@ -67,7 +66,7 @@ add_library(parser
 add_dependencies(${PROJECT_NAME} expr)
 
 add_executable(${PROJECT_NAME}_simulator src/cli/simulator/main.cpp)
-target_link_libraries(${PROJECT_NAME}_simulator ${PROJECT_NAME} tockers argvparse parser expr)
+target_link_libraries(${PROJECT_NAME}_simulator ${PROJECT_NAME} argvparse parser expr)
 
 add_subdirectory(test)
 

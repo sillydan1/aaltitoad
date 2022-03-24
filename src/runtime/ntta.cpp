@@ -39,7 +39,7 @@ symbol_table_t ntta_t::tock_values() {
     //       piped_tocker (blocking)
     symbol_table_t tock_changes{};
     for(auto& tocker : tockers)
-        tock_changes += tocker.tock(state.symbols);
+        tock_changes += tocker->tock(state.symbols);
     return tock_changes;
 }
 
