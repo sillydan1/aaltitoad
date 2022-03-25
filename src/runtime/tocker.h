@@ -19,4 +19,7 @@ public:
     symbol_table_t tock(const symbol_table_t& environment) const override;
 };
 
+using tocker_creator = std::function<tocker_t*(const std::string&)>;
+using tocker_deleter = std::function<void(tocker_t*)>;
+
 #endif //AALTITOAD_ITOCKER_H

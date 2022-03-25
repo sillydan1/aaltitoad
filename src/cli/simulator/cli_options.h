@@ -4,11 +4,14 @@
 
 std::vector<option_t> get_options() {
     return {
-            {"version",    'V', argument_requirement::NO_ARG,       "Print version and exit"},
-            {"verbosity",  'v', argument_requirement::REQUIRE_ARG,  "Set verbosity level (6 for max verbosity)"},
-            {"input",      'f', argument_requirement::REQUIRE_ARG,  "(Required) input folder containing diagram files to parse and simulate"},
-            {"ignore",     'i', argument_requirement::REQUIRE_ARG,  "Specify a file to ignore (-i file1 -i file2 for multiple files)"},
-            {"tocker",     't', argument_requirement::REQUIRE_ARG,  "Specify a tocker by name to instantiate"},
+            {"version",     'V', argument_requirement::NO_ARG,       "Print version and exit"},
+            {"verbosity",   'v', argument_requirement::REQUIRE_ARG,  "Set verbosity level (6 for max verbosity)"},
+            {"input",       'f', argument_requirement::REQUIRE_ARG,  "(Required) input folder containing diagram files to parse and simulate"},
+            {"ignore",      'i', argument_requirement::REQUIRE_ARG,  "Specify a file to ignore (-i file1 -i file2 for multiple files)"},
+
+            {"tocker",      't', argument_requirement::REQUIRE_ARG,  "Specify a plugin_system by name to instantiate"},
+            {"tocker-dir",  'T', argument_requirement::REQUIRE_ARG,  "Specify additional directories to search for plugin plugin_system"},
+            {"list-tockers",'L', argument_requirement::NO_ARG,       "List available plugin_system and exit"},
     };
 }
 

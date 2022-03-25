@@ -1,7 +1,7 @@
 #ifndef AALTITOAD_PIPE_TOCKER_H
 #define AALTITOAD_PIPE_TOCKER_H
-#include "tockers.h"
-#include <runtime/ntta.h>
+#include "runtime/tocker.h"
+#include "runtime/ntta.h"
 
 class pipe_tocker_t : public tocker_t {
     FILE* input_pipe;

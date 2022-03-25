@@ -56,22 +56,24 @@ if (WIN32)
 endif()
 
 add_library(${PROJECT_NAME}
-        src/runtime/ntta.cpp
-        src/runtime/component.cpp
-        src/runtime/edge.cpp
-        src/tockers/pipe_tocker.cpp
-        src/tockers/tockers.cpp)
-add_library(parser
-        src/parser/h-uppaal-parser.cpp)
+    src/runtime/ntta.cpp
+    src/runtime/component.cpp
+    src/runtime/edge.cpp
+    src/tocker-plugins/pipe_tocker.cpp
+    src/runtime/tocker.cpp
+
+    src/parser/h-uppaal-parser.cpp
+
+    src/plugin_system/tocker_plugin_system.cpp
+    )
 add_dependencies(${PROJECT_NAME} expr)
+target_link_libraries(${PROJECT_NAME} expr)
 
-add_executable(${PROJECT_NAME}_simulator src/cli/simulator/main.cpp)
-target_link_libraries(${PROJECT_NAME}_simulator ${PROJECT_NAME} argvparse parser expr)
-
+add_subdirectory(src/cli/simulator)
 add_subdirectory(test)
 
 if(NOT WIN32)
-        target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
+    target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
 endif()
 
 # install(TARGETS ${PROJECT_NAME})

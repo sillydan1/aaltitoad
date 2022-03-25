@@ -3,16 +3,17 @@
 #include <parser/h-uppaal-parser.h>
 #include "cli_options.h"
 #include <Timer.hpp>
-#include <tockers/pipe_tocker.h>
-#include <extensions/string_extensions.h>
+#include <plugin_system/tocker_plugin_system.h>
 
 void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_arguments);
+tocker_plugin_system load_tockers(std::map<std::string, argument_t>& cli_arguments);
 
 int main(int argc, char** argv) {
     auto options = get_options();
     auto cli_arguments = get_arguments(options, argc, argv);
     if(cli_arguments["help"] || !is_required_provided(cli_arguments, options)) {
         std::cout << get_license() << std::endl;
+        std::cout << PROJECT_NAME << " v" << PROJECT_VER << std::endl;
         std::cout << "USAGE: " << argv[0] << " -i /path/to/tta/dir [OPTIONS] \n" << std::endl;
         std::cout << "OPTIONS: " << std::endl;
         print_argument_help(options);
@@ -22,9 +23,17 @@ int main(int argc, char** argv) {
         std::cout << PROJECT_NAME << " v" << PROJECT_VER << std::endl;
         return 0;
     }
+    auto available_tockers = load_tockers(cli_arguments);
+    if(cli_arguments["list-tockers"]) {
+        std::cout << "Available Tockers: " << std::endl;
+        for(auto& t : available_tockers.loaded_tockers)
+            std::cout << "  - " << t.first << std::endl;
+        return 0;
+    }
+
+    // Everything beyond this point should use spdlog for all logging
     if(cli_arguments["verbosity"])
         spdlog::set_level(static_cast<spdlog::level::level_enum>(SPDLOG_LEVEL_OFF - cli_arguments["verbosity"].as_integer()));
-
     parse_and_execute_simulator(cli_arguments);
     return 0;
 }
@@ -41,15 +50,10 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     auto automata = h_uppaal_parser_t::parse_folder(cli_arguments["input"].as_string(), ignore_list);
     spdlog::info("model parsing took {0}ms", t.milliseconds_elapsed());
 
-    /// Inject tockers
+    /// Inject plugin_system
     if(cli_arguments["tocker"]) {
         for(auto& arg : cli_arguments["tocker"].as_list()) {
-            if(contains(arg, "pipe")) {
-                /// Format: "pipe(/path/to/fileA;/path/to/fileB)"
-                spdlog::debug("Instantiating pipe_tocker_t ");
-                automata.tockers.emplace_back(std::__1::make_unique<pipe_tocker_t>(nullptr, automata));
-                continue;
-            }
+            // Format: "name(argument)"
             spdlog::warn("tocker type '{0}' not recognized", arg);
         }
     }
@@ -62,4 +66,15 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
         automata.tock();
     }
     spdlog::info("{1} ticks took {0}ms", t.milliseconds_elapsed(), x);
+}
+
+tocker_plugin_system load_tockers(std::map<std::string, argument_t>& cli_arguments) {
+    std::vector<std::string> look_dirs = {"./plugin_system/"};
+    if(cli_arguments["plugin_system-dir"]) {
+        auto elements = cli_arguments["plugin_system-dir"].as_list();
+        look_dirs.insert(look_dirs.end(), elements.begin(), elements.end());
+    }
+    tocker_plugin_system t{};
+    t.load(look_dirs);
+    return t;
 }
