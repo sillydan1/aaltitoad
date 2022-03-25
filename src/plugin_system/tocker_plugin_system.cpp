@@ -2,7 +2,8 @@
 #include <dlfcn.h>
 #include "tocker_plugin_system.h"
 
-void tocker_plugin_system::load(const std::vector<std::string> &search_directories) {
+tocker_map_t tocker_plugin_system::load(const std::vector<std::string> &search_directories) {
+    tocker_map_t loaded_tockers{};
     for(auto& directory : search_directories) {
         if(!std::filesystem::exists(directory)) {
             spdlog::warn("{0} does not exist", directory);
@@ -20,8 +21,8 @@ void tocker_plugin_system::load(const std::vector<std::string> &search_directori
                         auto stem = entry.path().stem().string();
                         if(stem.substr(0, 3) == "lib")
                             stem = stem.substr(3);
-                        auto create_symbol_name  = "create" + stem;
-                        auto destroy_symbol_name = "destroy" + stem;
+                        auto create_symbol_name  = "create_" + stem;
+                        auto destroy_symbol_name = "destroy_" + stem;
                         auto ctor = (tocker_creator)dlsym(handle, create_symbol_name.c_str());
                         auto dtor = (tocker_deleter)dlsym(handle, destroy_symbol_name.c_str());
                         if(!ctor || !dtor)
@@ -35,4 +36,5 @@ void tocker_plugin_system::load(const std::vector<std::string> &search_directori
             }
         }
     }
+    return loaded_tockers;
 }

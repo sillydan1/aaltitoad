@@ -4,13 +4,16 @@
 #include "cli_options.h"
 #include <Timer.hpp>
 #include <plugin_system/tocker_plugin_system.h>
+#include <extensions/string_extensions.h>
 
 void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_arguments);
-tocker_plugin_system load_tockers(std::map<std::string, argument_t>& cli_arguments);
+tocker_map_t load_tockers(std::map<std::string, argument_t>& cli_arguments);
 
 int main(int argc, char** argv) {
     auto options = get_options();
     auto cli_arguments = get_arguments(options, argc, argv);
+    if(cli_arguments["verbosity"])
+        spdlog::set_level(static_cast<spdlog::level::level_enum>(SPDLOG_LEVEL_OFF - cli_arguments["verbosity"].as_integer()));
     if(cli_arguments["help"] || !is_required_provided(cli_arguments, options)) {
         std::cout << get_license() << std::endl;
         std::cout << PROJECT_NAME << " v" << PROJECT_VER << std::endl;
@@ -23,23 +26,21 @@ int main(int argc, char** argv) {
         std::cout << PROJECT_NAME << " v" << PROJECT_VER << std::endl;
         return 0;
     }
-    if(cli_arguments["verbosity"])
-        spdlog::set_level(static_cast<spdlog::level::level_enum>(SPDLOG_LEVEL_OFF - cli_arguments["verbosity"].as_integer()));
 
-    auto available_tockers = load_tockers(cli_arguments);
-    if(cli_arguments["list-tockers"]) {
-        std::cout << "Available Tockers: " << std::endl;
-        for(auto& t : available_tockers.loaded_tockers)
-            std::cout << "  - " << t.first << std::endl;
-        return 0;
-    }
-
-    // Everything beyond this point should use spdlog for all logging
     parse_and_execute_simulator(cli_arguments);
     return 0;
 }
 
 void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_arguments) {
+    /// Load tockers
+    auto available_tockers = load_tockers(cli_arguments);
+    if(cli_arguments["list-tockers"]) {
+        std::cout << "Available Tockers: " << std::endl;
+        for(auto& t : available_tockers)
+            std::cout << "  - " << t.first << std::endl;
+        return;
+    }
+
     /// Parser related arguments
     Timer<unsigned int> t{};
     std::__1::vector<std::string> ignore_list{};
@@ -51,11 +52,19 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     auto automata = h_uppaal_parser_t::parse_folder(cli_arguments["input"].as_string(), ignore_list);
     spdlog::info("model parsing took {0}ms", t.milliseconds_elapsed());
 
-    /// Inject plugin_system
+    /// Inject tockers - CLI Format: "name(argument)"
     if(cli_arguments["tocker"]) {
         for(auto& arg : cli_arguments["tocker"].as_list()) {
-            // Format: "name(argument)"
-            spdlog::warn("tocker type '{0}' not recognized", arg);
+            auto s = split(arg, "(");
+            if(s.size() < 2) {
+                spdlog::error("Invalid tocker instantiation format. It should be 'tocker(<argument>)'");
+                continue;
+            }
+            if(available_tockers.find(s[0]) == available_tockers.end()) {
+                spdlog::warn("tocker type '{0}' not recognized", arg);
+                continue;
+            }
+            automata.tockers.emplace_back(available_tockers[s[0]].first(s[1].substr(0,s[1].size()-1), automata));
         }
     }
 
@@ -69,7 +78,7 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     spdlog::info("{1} ticks took {0}ms", t.milliseconds_elapsed(), x);
 }
 
-tocker_plugin_system load_tockers(std::map<std::string, argument_t>& cli_arguments) {
+tocker_map_t load_tockers(std::map<std::string, argument_t>& cli_arguments) {
     // TODO: Figure out what are the most common env vars for library paths (No, not $PATH - that is for executables)
     auto rpath = std::getenv("RPATH");
     std::vector<std::string> look_dirs = { "." };
@@ -79,7 +88,5 @@ tocker_plugin_system load_tockers(std::map<std::string, argument_t>& cli_argumen
         auto elements = cli_arguments["tocker-dir"].as_list();
         look_dirs.insert(look_dirs.end(), elements.begin(), elements.end());
     }
-    tocker_plugin_system t{};
-    t.load(look_dirs);
-    return t;
+    return tocker_plugin_system::load(look_dirs);
 }

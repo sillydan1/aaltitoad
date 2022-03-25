@@ -28,7 +28,4 @@ public:
     }
 };
 
-using tocker_creator = tocker_t*(*)(const std::string&);
-using tocker_deleter = void(*)(tocker_t*);
-
 #endif //AALTITOAD_ITOCKER_H

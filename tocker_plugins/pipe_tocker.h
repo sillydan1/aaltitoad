@@ -16,4 +16,9 @@ public:
     [[nodiscard]] symbol_table_t tock(const symbol_table_t& environment) const override;
 };
 
+extern "C" {
+    pipe_tocker_t* create_pipe_tocker(const std::string& argument, const ntta_t& ntta);
+    void destroy_pipe_tocker(pipe_tocker_t* tocker);
+};
+
 #endif //AALTITOAD_PIPE_TOCKER_H
