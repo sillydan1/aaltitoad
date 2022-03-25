@@ -12,14 +12,23 @@ class async_tocker_t : public tocker_t {
 protected:
     mutable std::future<symbol_table_t> job{};
     virtual symbol_table_t get_tock_values(const symbol_table_t& invocation_environment) const = 0;
-    virtual void tock_async(const symbol_table_t& environment) const;
+    virtual void tock_async(const symbol_table_t& environment) const {
+        job = std::async([this, &environment](){ return get_tock_values(environment); });
+    }
     ~async_tocker_t() override = default;
 
 public:
-    symbol_table_t tock(const symbol_table_t& environment) const override;
+    symbol_table_t tock(const symbol_table_t& environment) const override {
+        if(job.valid()) {
+            auto c = job.get();
+            tock_async(environment);
+            return c;
+        }
+        return {};
+    }
 };
 
-using tocker_creator = std::function<tocker_t*(const std::string&)>;
-using tocker_deleter = std::function<void(tocker_t*)>;
+using tocker_creator = tocker_t*(*)(const std::string&);
+using tocker_deleter = void(*)(tocker_t*);
 
 #endif //AALTITOAD_ITOCKER_H

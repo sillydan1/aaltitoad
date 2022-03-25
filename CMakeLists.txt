@@ -55,21 +55,21 @@ if (WIN32)
     add_definitions(-DYY_NO_UNISTD_H) # UNIX std does not exist on windows platforms
 endif()
 
-add_library(${PROJECT_NAME}
-    src/runtime/ntta.cpp
-    src/runtime/component.cpp
-    src/runtime/edge.cpp
-    src/tocker-plugins/pipe_tocker.cpp
-    src/runtime/tocker.cpp
+add_library(${PROJECT_NAME} SHARED
+        src/runtime/ntta.cpp
+        src/runtime/component.cpp
+        src/runtime/edge.cpp
 
-    src/parser/h-uppaal-parser.cpp
+        src/parser/h-uppaal-parser.cpp
 
-    src/plugin_system/tocker_plugin_system.cpp
-    )
+        src/plugin_system/tocker_plugin_system.cpp
+
+        src/extensions/string_extensions.cpp)
 add_dependencies(${PROJECT_NAME} expr)
 target_link_libraries(${PROJECT_NAME} expr)
 
 add_subdirectory(src/cli/simulator)
+add_subdirectory(tocker_plugins)
 add_subdirectory(test)
 
 if(NOT WIN32)

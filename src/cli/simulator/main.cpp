@@ -23,6 +23,9 @@ int main(int argc, char** argv) {
         std::cout << PROJECT_NAME << " v" << PROJECT_VER << std::endl;
         return 0;
     }
+    if(cli_arguments["verbosity"])
+        spdlog::set_level(static_cast<spdlog::level::level_enum>(SPDLOG_LEVEL_OFF - cli_arguments["verbosity"].as_integer()));
+
     auto available_tockers = load_tockers(cli_arguments);
     if(cli_arguments["list-tockers"]) {
         std::cout << "Available Tockers: " << std::endl;
@@ -32,8 +35,6 @@ int main(int argc, char** argv) {
     }
 
     // Everything beyond this point should use spdlog for all logging
-    if(cli_arguments["verbosity"])
-        spdlog::set_level(static_cast<spdlog::level::level_enum>(SPDLOG_LEVEL_OFF - cli_arguments["verbosity"].as_integer()));
     parse_and_execute_simulator(cli_arguments);
     return 0;
 }
@@ -69,9 +70,13 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
 }
 
 tocker_plugin_system load_tockers(std::map<std::string, argument_t>& cli_arguments) {
-    std::vector<std::string> look_dirs = {"./plugin_system/"};
-    if(cli_arguments["plugin_system-dir"]) {
-        auto elements = cli_arguments["plugin_system-dir"].as_list();
+    // TODO: Figure out what are the most common env vars for library paths (No, not $PATH - that is for executables)
+    auto rpath = std::getenv("RPATH");
+    std::vector<std::string> look_dirs = { "." };
+    if(rpath)
+        look_dirs.emplace_back(rpath);
+    if(cli_arguments["tocker-dir"]) {
+        auto elements = cli_arguments["tocker-dir"].as_list();
         look_dirs.insert(look_dirs.end(), elements.begin(), elements.end());
     }
     tocker_plugin_system t{};
