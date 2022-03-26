@@ -22,6 +22,8 @@ bool is_required(const std::string& s) {
 }
 
 bool is_required_provided(std::map<std::string, argument_t>& provided_args, const std::vector<option_t>& options) {
+    if(provided_args["version"])
+        return true;
     for(auto& opt : options) {
         if(is_required(opt.long_option) && !provided_args[opt.long_option])
             return false;
