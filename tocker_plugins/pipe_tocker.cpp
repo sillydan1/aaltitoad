@@ -22,6 +22,10 @@ symbol_table_t pipe_tocker_t::tock(const symbol_table_t &environment) const {
 }
 
 extern "C" {
+    const char* get_plugin_name() {
+        return "pipe_tocker";
+    }
+
     pipe_tocker_t* create_pipe_tocker(const std::string &argument, const ntta_t& ntta) {
         auto f = fopen(argument.c_str(), "rw");
         return new pipe_tocker_t{f, ntta};

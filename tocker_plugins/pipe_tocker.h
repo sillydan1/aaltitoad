@@ -17,6 +17,7 @@ public:
 };
 
 extern "C" {
+    const char* get_plugin_name();
     pipe_tocker_t* create_pipe_tocker(const std::string& argument, const ntta_t& ntta);
     void destroy_pipe_tocker(pipe_tocker_t* tocker);
 };

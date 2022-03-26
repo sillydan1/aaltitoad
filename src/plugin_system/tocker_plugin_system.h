@@ -6,6 +6,7 @@
 
 using tocker_creator = tocker_t*(*)(const std::string&, const ntta_t&);
 using tocker_deleter = void(*)(tocker_t*);
+using tocker_name = const char*(*)();
 using tocker_interface = std::pair<tocker_creator, tocker_deleter>;
 using tocker_map_t = std::map<std::string, tocker_interface>;
 class tocker_plugin_system {
