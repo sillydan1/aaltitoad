@@ -5,10 +5,8 @@
 #include <runtime/ntta.h>
 
 using tocker_creator = tocker_t*(*)(const std::string&, const ntta_t&);
-using tocker_deleter = void(*)(tocker_t*);
 using tocker_name = const char*(*)();
-using tocker_interface = std::pair<tocker_creator, tocker_deleter>;
-using tocker_map_t = std::map<std::string, tocker_interface>;
+using tocker_map_t = std::map<std::string, tocker_creator>;
 class tocker_plugin_system {
 public:
     static tocker_map_t load(const std::vector<std::string>& search_directories);

@@ -28,10 +28,8 @@ extern "C" {
 
     pipe_tocker_t* create_pipe_tocker(const std::string &argument, const ntta_t& ntta) {
         auto f = fopen(argument.c_str(), "rw");
+        if(!f)
+            throw std::logic_error("Could not open file "+argument);
         return new pipe_tocker_t{f, ntta};
-    }
-
-    void destroy_pipe_tocker(pipe_tocker_t* tocker) {
-        delete tocker;
     }
 }

@@ -28,12 +28,10 @@ tocker_map_t tocker_plugin_system::load(const std::vector<std::string> &search_d
                             throw std::logic_error("Could not load as a shared/dynamic library");
                         auto stem = std::string(load_symbol<tocker_name>(handle, "get_plugin_name")());
                         auto create_symbol_name  = "create_" + stem;
-                        auto destroy_symbol_name = "destroy_" + stem;
                         auto ctor = load_symbol<tocker_creator>(handle, create_symbol_name);
-                        auto dtor = load_symbol<tocker_deleter>(handle, destroy_symbol_name);
                         if(loaded_tockers.contains(stem))
                             throw std::logic_error("Tocker with name '"+stem+"' is already loaded");
-                        loaded_tockers.insert(std::make_pair<>(stem, std::make_pair<>(ctor,dtor)));
+                        loaded_tockers.insert(std::make_pair<>(stem, ctor));
                         spdlog::debug("Loaded tocker '{0}'", stem);
                     }
                 }

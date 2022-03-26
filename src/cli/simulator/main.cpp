@@ -64,7 +64,7 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
                 spdlog::warn("tocker type '{0}' not recognized", arg);
                 continue;
             }
-            automata.tockers.emplace_back(available_tockers[s[0]].first(s[1].substr(0,s[1].size()-1), automata));
+            automata.tockers.emplace_back(available_tockers[s[0]](s[1].substr(0,s[1].size()-1), automata));
         }
     }
 
