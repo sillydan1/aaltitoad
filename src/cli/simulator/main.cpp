@@ -72,8 +72,8 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     t.start();
     auto x = 10;
     for(int i = 0; i < x; i++) {
-        automata.tick();
         automata.tock();
+        automata.tick();
     }
     spdlog::info("{1} ticks took {0}ms", t.milliseconds_elapsed(), x);
 }

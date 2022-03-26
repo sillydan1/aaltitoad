@@ -33,7 +33,7 @@ void ntta_t::tock() {
     this->operator+=(tock_values());
 }
 
-symbol_table_t ntta_t::tock_values() {
+symbol_table_t ntta_t::tock_values() const {
     // TODO: Plugin-able tockers (blocking, buffered)
     //       interesting_tocker (blocking)
     //       piped_tocker (blocking)
