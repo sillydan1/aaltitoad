@@ -18,7 +18,8 @@ make
 ```
 If the CPM step is taking a long time, try rerunning with `-DCPM_SOURCE_CACHE=~/.cache/CPM`
 
-## Contributing
-If you want to contribute to the project you can raise an issue, fork the repo and register pull requests 
+## Tocker plugins
+Aaltitoad supports third party "tocker" libraries, so you can inject custom integrations directly into the runtime.
 
-You are also welcome to reach out to [me](https://github.com/sillydan1) directly.
+
+If you have any questions, you are welcome to reach out to [me](https://github.com/sillydan1) directly.
