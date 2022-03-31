@@ -1,6 +1,7 @@
 #include "h-uppaal-parser.h"
 #include "parser/driver.h"
 #include <nlohmann/json.hpp>
+#include <extensions/string_extensions.h>
 
 /// Keys to check for in the model file(s)
 constexpr const char* initial_location = "initial_location";
@@ -97,5 +98,5 @@ symbol_value_t h_uppaal_parser_t::parse_symbol(const nlohmann::json& json) {
         return (bool)json;
     if(json.is_string())
         return (std::string)json;
-    throw std::logic_error((std::stringstream{} << "Not a symbol literal: " << json).str());
+    throw std::logic_error((string_builder{} << "Not a symbol literal: " << json));
 }

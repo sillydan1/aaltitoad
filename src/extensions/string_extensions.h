@@ -22,8 +22,6 @@
 std::vector<std::string> split(const std::string& s, char delimiter);
 std::vector<std::string> split(const std::string& s, const std::string& delimiter);
 std::vector<std::string> regex_split(const std::string& s, const std::string& regex);
-// TODO: IFDEF WINDOWS default delimiter is '\\'
-std::string GetFileNameOnly(const std::string& fullpath, char delimiter = '/');
 
 void ltrim(std::string &s);
 void rtrim(std::string &s);
@@ -33,5 +31,15 @@ std::string rtrim_copy(std::string s);
 std::string trim_copy(std::string s);
 bool contains(const std::string& s, const std::string& substring);
 std::optional<const size_t> containsString(const std::string& s, const std::string& substring);
+
+struct string_builder {
+    std::stringstream ss;
+    template<typename T>
+    auto operator<<(const T &data) -> string_builder& {
+        ss << data;
+        return *this;
+    }
+    operator std::string() const { return ss.str(); }
+};
 
 #endif //MAVE_STRINGEXTENSIONS_H
