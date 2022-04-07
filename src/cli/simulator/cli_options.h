@@ -31,4 +31,4 @@ bool is_required_provided(std::map<std::string, argument_t>& provided_args, cons
     return true;
 }
 
-#endif //AALTITOAD_CLI_OPTIONS_H
+#endif

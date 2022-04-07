@@ -16,8 +16,8 @@
     You should have received a copy of the GNU General Public License
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MAVE_STRINGEXTENSIONS_H
-#define MAVE_STRINGEXTENSIONS_H
+#ifndef AALTITOAD_STRINGEXTENSIONS_H
+#define AALTITOAD_STRINGEXTENSIONS_H
 
 std::vector<std::string> split(const std::string& s, char delimiter);
 std::vector<std::string> split(const std::string& s, const std::string& delimiter);
@@ -42,4 +42,4 @@ struct string_builder {
     operator std::string() const { return ss.str(); }
 };
 
-#endif //MAVE_STRINGEXTENSIONS_H
+#endif //AALTITOAD_STRINGEXTENSIONS_H
