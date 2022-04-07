@@ -57,11 +57,7 @@ add_library(${PROJECT_NAME} SHARED
         src/runtime/ntta.cpp
         src/runtime/component.cpp
         src/runtime/edge.cpp
-
-        src/parser_plugins/h-uppaal-parser.cpp
-
         src/plugin_system/plugin_system.cpp
-
         src/extensions/string_extensions.cpp)
 add_dependencies(${PROJECT_NAME} expr)
 target_link_libraries(${PROJECT_NAME} expr)

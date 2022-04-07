@@ -18,10 +18,10 @@ namespace plugins {
         plugin_map_t loaded_plugins{};
         for (auto &directory: search_directories) {
             if (!std::filesystem::exists(directory)) {
-                spdlog::warn("{0} does not exist", directory);
+                spdlog::trace("Does not exist: {0}", directory);
                 continue;
             }
-            spdlog::trace("Searching '{0}' for tockers", directory);
+            spdlog::trace("Searching for plugins in: {0}", directory);
             for (const auto &entry: std::filesystem::directory_iterator(directory)) {
                 try {
                     if (entry.is_regular_file()) {
@@ -49,11 +49,11 @@ namespace plugins {
                                     break;
                                 }
                             }
-                            spdlog::debug("Loaded tocker '{0}'", stem);
+                            spdlog::debug("Loaded plugin '{0}'", stem);
                         }
                     }
                 } catch (std::exception &e) {
-                    spdlog::info("Failed to load '{0}' as a plugin: {1}", entry.path().string(), e.what());
+                    spdlog::warn("Failed to load '{0}' as a plugin: {1}", entry.path().string(), e.what());
                 }
             }
         }

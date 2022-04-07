@@ -1,6 +1,5 @@
 #ifndef AALTITOAD_PLUGIN_SYSTEM_H
 #define AALTITOAD_PLUGIN_SYSTEM_H
-#include <aaltitoadpch.h>
 #include <dlfcn.h>
 #include <runtime/tocker.h>
 #include <runtime/ntta.h>
@@ -10,7 +9,7 @@ enum class plugin_type : unsigned int {
     parser
 };
 using get_plugin_name_t = const char*(*)();
-using get_plugin_type_t = const unsigned int(*)();
+using get_plugin_type_t = unsigned int(*)();
 using tocker_ctor_t = tocker_t*(*)(const std::string&, const ntta_t&);
 using parser_func_t = ntta_t*(*)(const std::vector<std::string>&, const std::vector<std::string>&);
 using plugin_function_t = std::variant<tocker_ctor_t, parser_func_t>;

@@ -1,6 +1,5 @@
 #include "h-uppaal-parser.h"
 #include "parser/driver.h"
-#include <nlohmann/json.hpp>
 #include <extensions/string_extensions.h>
 
 /// Keys to check for in the model file(s)
@@ -18,7 +17,7 @@ constexpr const char* guard = "guard";
 constexpr const char* update = "update";
 constexpr const char* symbols = "parts";
 
-ntta_t h_uppaal_parser_t::parse_folder(const std::vector<std::string>& filepaths, const std::vector<std::string>& ignore_list) {
+ntta_t* h_uppaal_parser_t::parse_folder(const std::vector<std::string>& filepaths, const std::vector<std::string>& ignore_list) {
     symbol_table_t symbol_table{};
     component_map_t components{};
     for(const auto& filepath: filepaths) {
@@ -44,8 +43,7 @@ ntta_t h_uppaal_parser_t::parse_folder(const std::vector<std::string>& filepaths
             }
         }
     }
-
-    return ntta_t(state_t{components, symbol_table});
+    return new ntta_t(state_t{components, symbol_table});
 }
 
 bool h_uppaal_parser_t::is_component(const nlohmann::json& json) {
@@ -103,10 +101,16 @@ symbol_value_t h_uppaal_parser_t::parse_symbol(const nlohmann::json& json) {
     throw std::logic_error((string_builder{} << "Not a symbol literal: " << json));
 }
 
-extern "C" const char *get_plugin_name() {
-    return "h_uppaal_parser";
-}
+extern "C" {
+    const char *get_plugin_name() {
+        return "h_uppaal_parser";
+    }
 
-extern "C" ntta_t h_uppaal_parser_load(const std::vector<std::string>& folders, const std::vector<std::string>& ignore_list) {
-    return h_uppaal_parser_t::parse_folder(folders, ignore_list);
+    unsigned int get_plugin_type() {
+        return static_cast<unsigned int>(plugin_type::parser);
+    }
+
+    ntta_t* load(const std::vector<std::string> &folders, const std::vector<std::string> &ignore_list) {
+        return h_uppaal_parser_t::parse_folder(folders, ignore_list);
+    }
 }

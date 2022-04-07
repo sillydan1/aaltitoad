@@ -54,10 +54,11 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     }
 
     /// Parse provided model
-    t.start();
+    spdlog::debug("Parsing with {0} as a parser", selected_parser);
     auto parser = std::get<parser_func_t>(available_plugins.at(selected_parser).second);
+    t.start();
     auto automata = std::unique_ptr<ntta_t>(parser(cli_arguments["input"].as_list(), ignore_list));
-    spdlog::info("model parsing took {0}ms", t.milliseconds_elapsed());
+    spdlog::info("Model parsing took {0}ms", t.milliseconds_elapsed());
 
     /// Inject tockers - CLI Format: "name(argument)"
     for(auto& arg : cli_arguments["tocker"].as_list_or_default({})) {

@@ -23,7 +23,11 @@ extern "C" {
         return "pipe_tocker";
     }
 
-    pipe_tocker_t* create_pipe_tocker(const std::string &argument, const ntta_t& ntta) {
+    unsigned int get_plugin_type() {
+        return static_cast<unsigned int>(plugin_type::tocker);
+    }
+
+    pipe_tocker_t* create_tocker(const std::string &argument, const ntta_t& ntta) {
         if(!contains(argument, ";"))
             throw std::logic_error("invalid argument format for pipe_tocker, please provide both an input and output pipe seperated by semicolon");
         auto s = split(argument, ";");
