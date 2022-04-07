@@ -11,7 +11,8 @@ namespace plugins {
 
     bool is_dynamic_library(const std::string& filename) {
         return contains(filename, ".so")
-               || contains(filename, ".dll");
+               || contains(filename, ".dll")
+               || contains(filename, ".dylib");
     }
 
     plugin_map_t load(const std::vector<std::string> &search_directories) {

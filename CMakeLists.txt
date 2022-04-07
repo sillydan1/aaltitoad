@@ -24,7 +24,7 @@ set(CXX_STANDARD_REQUIRED ON)
 set(SPDLOG_BUILD_SHARED)
 
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE=true)
-CPMAddPackage("gh:sillydan1/expr@1.2.0")
+CPMAddPackage("gh:sillydan1/expr@1.3.0")
 CPMAddPackage("gh:sillydan1/tinytimer@1.0.0")
 CPMAddPackage("gh:sillydan1/overload#1.0.0")
 CPMAddPackage("gh:sillydan1/ctlparser@1.0.0")

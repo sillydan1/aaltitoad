@@ -14,6 +14,8 @@ std::vector<option_t> get_options() {
 
             {"plugin-dir",  'P', argument_requirement::REQUIRE_ARG,  "Specify directories to look for parser plugins"},
             {"list-plugins",'L', argument_requirement::NO_ARG,       "List found plugins and exit"},
+
+            {"ticks",       'n', argument_requirement::REQUIRE_ARG,  "Specify the amount of ticks to perform default is infinite"},
     };
 }
 
