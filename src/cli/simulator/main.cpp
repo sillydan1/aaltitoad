@@ -43,7 +43,7 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
 
     /// Parser related arguments
     Timer<unsigned int> t{};
-    std::__1::vector<std::string> ignore_list{};
+    std::vector<std::string> ignore_list{};
     if(cli_arguments["ignore"])
         ignore_list = cli_arguments["ignore"].as_list();
 

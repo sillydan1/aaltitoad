@@ -16,7 +16,7 @@
 
 # 3.16+ because of target_precompiled_header
 cmake_minimum_required(VERSION 3.16)
-project(aaltitoad VERSION 0.9.2)
+project(aaltitoad VERSION 1.0.0)
 include(cmake/CPM.cmake)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_CXX_STANDARD 20)
