@@ -9,9 +9,11 @@ std::vector<option_t> get_options() {
             {"input",       'f', argument_requirement::REQUIRE_ARG,  "(Required) input folder containing diagram files to parse and simulate"},
             {"ignore",      'i', argument_requirement::REQUIRE_ARG,  "Specify a file to ignore (-i file1 -i file2 for multiple files)"},
 
-            {"tocker",      't', argument_requirement::REQUIRE_ARG,  "Specify a plugin_system by name to instantiate"},
-            {"tocker-dir",  'T', argument_requirement::REQUIRE_ARG,  "Specify additional directories to search for plugin plugin_system"},
-            {"list-tockers",'L', argument_requirement::NO_ARG,       "List available tockers and exit"},
+            {"tocker",      't', argument_requirement::REQUIRE_ARG,  "Specify a tocker by name to instantiate"},
+            {"parser",      'p', argument_requirement::REQUIRE_ARG,  "Specify the parser to use"},
+
+            {"plugin-dir",  'P', argument_requirement::REQUIRE_ARG,  "Specify directories to look for parser plugins"},
+            {"list-plugins",'L', argument_requirement::NO_ARG,       "List found plugins and exit"},
     };
 }
 

@@ -24,7 +24,7 @@ set(CXX_STANDARD_REQUIRED ON)
 set(SPDLOG_BUILD_SHARED)
 
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE=true)
-CPMAddPackage("gh:sillydan1/expr#feature/declarations")
+CPMAddPackage("gh:sillydan1/expr@1.2.0")
 CPMAddPackage("gh:sillydan1/tinytimer@1.0.0")
 CPMAddPackage("gh:sillydan1/overload#1.0.0")
 CPMAddPackage("gh:sillydan1/ctlparser@1.0.0")
@@ -46,8 +46,6 @@ include_directories(
         ${expr_SOURCE_DIR}/include
         ${expr_BUILD_DIR}
         ${optionparser_SOURCE_DIR}/src
-        dep/cparse
-        dep
         src
 )
 add_definitions(-DYYERROR_VERBOSE)
@@ -60,16 +58,17 @@ add_library(${PROJECT_NAME} SHARED
         src/runtime/component.cpp
         src/runtime/edge.cpp
 
-        src/parser/h-uppaal-parser.cpp
+        src/parser_plugins/h-uppaal-parser.cpp
 
-        src/plugin_system/tocker_plugin_system.cpp
+        src/plugin_system/plugin_system.cpp
 
         src/extensions/string_extensions.cpp)
 add_dependencies(${PROJECT_NAME} expr)
 target_link_libraries(${PROJECT_NAME} expr)
 
 add_subdirectory(src/cli/simulator)
-add_subdirectory(tocker_plugins)
+add_subdirectory(src/tocker_plugins)
+add_subdirectory(src/parser_plugins)
 add_subdirectory(test)
 
 if(NOT WIN32)

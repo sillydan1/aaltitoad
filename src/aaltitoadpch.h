@@ -45,6 +45,7 @@
 
 // Other
 #include <symbol_table.h>
+#include <extensions/string_extensions.h>
 
 // Debug files
 #ifndef NDEBUG

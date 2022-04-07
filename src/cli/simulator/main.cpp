@@ -1,14 +1,12 @@
 #include <aaltitoadpch.h>
 #include <config.h>
-#include <parser/h-uppaal-parser.h>
 #include "cli_options.h"
 #include <Timer.hpp>
-#include <plugin_system/tocker_plugin_system.h>
-#include <extensions/string_extensions.h>
+#include <plugin_system/plugin_system.h>
 
 void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_arguments);
-tocker_map_t load_tockers(std::map<std::string, argument_t>& cli_arguments);
-auto instantiate_tocker(const std::string& arg, const tocker_map_t& available_tockers, const ntta_t& automata) -> std::optional<tocker_t*>;
+auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
+auto instantiate_tocker(const std::string& arg, const plugin_map_t& available_plugins, const ntta_t& automata) -> std::optional<tocker_t*>;
 
 int main(int argc, char** argv) {
     auto options = get_options();
@@ -33,12 +31,12 @@ int main(int argc, char** argv) {
 }
 
 void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_arguments) {
-    /// Load tockers
-    auto available_tockers = load_tockers(cli_arguments);
-    if(cli_arguments["list-tockers"]) {
-        std::cout << "Available Tockers: " << std::endl;
-        for(auto& t : available_tockers)
-            std::cout << "  - " << t.first << std::endl;
+    /// Load plugins
+    auto available_plugins = load_plugins(cli_arguments);
+    if(cli_arguments["list-plugins"] || available_plugins.empty()) {
+        std::cout << "Found Plugins: " << std::endl;
+        for(auto& t : available_plugins)
+            std::cout << "  - " << t.first << " (" << static_cast<unsigned int>(t.second.first) << ")" << std::endl;
         return;
     }
 
@@ -48,53 +46,64 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     if(cli_arguments["ignore"])
         ignore_list = cli_arguments["ignore"].as_list();
 
+    /// Get the parser
+    auto selected_parser = cli_arguments["parser"].as_string_or_default("h_uppaal_parser");
+    if(!available_plugins.contains(selected_parser) || available_plugins.at(selected_parser).first != plugin_type::parser) {
+        spdlog::critical("No such parser available: '{0}'", selected_parser);
+        return;
+    }
+
     /// Parse provided model
     t.start();
-    auto automata = h_uppaal_parser_t::parse_folder(cli_arguments["input"].as_string(), ignore_list);
+    auto parser = std::get<parser_func_t>(available_plugins.at(selected_parser).second);
+    auto automata = std::unique_ptr<ntta_t>(parser(cli_arguments["input"].as_list(), ignore_list));
     spdlog::info("model parsing took {0}ms", t.milliseconds_elapsed());
 
     /// Inject tockers - CLI Format: "name(argument)"
     for(auto& arg : cli_arguments["tocker"].as_list_or_default({})) {
-        auto tocker = instantiate_tocker(arg, available_tockers, automata);
+        auto tocker = instantiate_tocker(arg, available_plugins, *automata);
         if(tocker.has_value())
-            automata.tockers.emplace_back(tocker.value());
+            automata->tockers.emplace_back(tocker.value());
     }
 
     /// Run
     t.start();
     auto x = 10;
     for(int i = 0; i < x; i++) {
-        automata.tock();
-        automata.tick();
+        automata->tock();
+        automata->tick();
     }
     spdlog::info("{0} ticks took {1}ms", x, t.milliseconds_elapsed());
 }
 
-tocker_map_t load_tockers(std::map<std::string, argument_t>& cli_arguments) {
+auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t {
     // TODO: Figure out what are the most common env vars for library paths (No, not $PATH - that is for executables)
     auto rpath = std::getenv("RPATH");
-    std::vector<std::string> look_dirs = { "." };
+    std::vector<std::string> look_dirs = { ".", "src/plugins", "plugins" };
     if(rpath)
         look_dirs.emplace_back(rpath);
-    if(cli_arguments["tocker-dir"]) {
-        auto elements = cli_arguments["tocker-dir"].as_list();
-        look_dirs.insert(look_dirs.end(), elements.begin(), elements.end());
-    }
-    return tocker_plugin_system::load(look_dirs);
+    auto provided_dirs = cli_arguments["plugin-dir"].as_list_or_default({});
+    look_dirs.insert(look_dirs.end(), provided_dirs.begin(), provided_dirs.end());
+    return plugins::load(look_dirs);
 }
 
-auto instantiate_tocker(const std::string& arg, const tocker_map_t& available_tockers, const ntta_t& automata) -> std::optional<tocker_t*> {
+auto instantiate_tocker(const std::string& arg, const plugin_map_t& available_plugins, const ntta_t& automata) -> std::optional<tocker_t*> {
     try {
         auto s = split(arg, "(");
         if(s.size() < 2) {
             spdlog::error("Invalid tocker instantiation format. It should be 'tocker(<argument>)'");
             return {};
         }
-        if(available_tockers.find(s[0]) == available_tockers.end()) {
+        if(available_plugins.find(s[0]) == available_plugins.end()) {
             spdlog::warn("tocker type '{0}' not recognized", arg);
             return {};
         }
-        return available_tockers.at(s[0])(s[1].substr(0, s[1].size() - 1), automata);
+        if(available_plugins.at(s[0]).first != plugin_type::tocker) {
+            spdlog::error("{0} is not a tocker plugin", s[0]);
+            return {};
+        }
+        auto tocker_ctor = std::get<tocker_ctor_t>(available_plugins.at(s[0]).second);
+        return tocker_ctor(s[1].substr(0, s[1].size() - 1), automata);
     } catch (std::exception& e) {
         spdlog::error("Error during tocker instantiation: {0}", e.what());
         return {};
