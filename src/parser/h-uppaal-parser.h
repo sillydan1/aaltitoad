@@ -18,7 +18,6 @@ private:
 
     static bool is_symbols(const nlohmann::json& json);
     static symbol_table_t parse_symbols(const nlohmann::json& symbols);
-
     static symbol_value_t parse_symbol(const nlohmann::json& symbol);
 };
 

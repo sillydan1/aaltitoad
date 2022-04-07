@@ -67,7 +67,7 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
         automata.tock();
         automata.tick();
     }
-    spdlog::info("{1} ticks took {0}ms", t.milliseconds_elapsed(), x);
+    spdlog::info("{0} ticks took {1}ms", x, t.milliseconds_elapsed());
 }
 
 tocker_map_t load_tockers(std::map<std::string, argument_t>& cli_arguments) {

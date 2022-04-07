@@ -22,6 +22,8 @@ state_diff_t ntta_t::tick() const {
             spdlog::warn("Non deterministic choice ({0} choices)", enabled_edges.size());
 
         // TODO: Pick strategy
+        // TODO: Reject Overlapping Update Influences
+        // TODO: Allow Idempotent updates
         auto& picked_edge = enabled_edges[0];
         symbol_changes += picked_edge->evaluate_updates(state.symbols);
         location_changes[component.first] = picked_edge->to;
