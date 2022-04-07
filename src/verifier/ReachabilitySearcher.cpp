@@ -138,6 +138,7 @@ auto ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
         }
         if(trace.empty()) {
             spdlog::info("No trace available");
+            printf("[]\n"); // TODO: This should be able to print to a file
             continue;
         }
         spdlog::info("Trace:");
