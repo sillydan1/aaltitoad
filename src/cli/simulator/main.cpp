@@ -8,6 +8,7 @@
 
 void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_arguments);
 tocker_map_t load_tockers(std::map<std::string, argument_t>& cli_arguments);
+auto instantiate_tocker(const std::string& arg, const tocker_map_t& available_tockers, const ntta_t& automata) -> std::optional<tocker_t*>;
 
 int main(int argc, char** argv) {
     auto options = get_options();
@@ -53,19 +54,10 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     spdlog::info("model parsing took {0}ms", t.milliseconds_elapsed());
 
     /// Inject tockers - CLI Format: "name(argument)"
-    if(cli_arguments["tocker"]) {
-        for(auto& arg : cli_arguments["tocker"].as_list()) {
-            auto s = split(arg, "(");
-            if(s.size() < 2) {
-                spdlog::error("Invalid tocker instantiation format. It should be 'tocker(<argument>)'");
-                continue;
-            }
-            if(available_tockers.find(s[0]) == available_tockers.end()) {
-                spdlog::warn("tocker type '{0}' not recognized", arg);
-                continue;
-            }
-            automata.tockers.emplace_back(available_tockers[s[0]](s[1].substr(0,s[1].size()-1), automata));
-        }
+    for(auto& arg : cli_arguments["tocker"].as_list_or_default({})) {
+        auto tocker = instantiate_tocker(arg, available_tockers, automata);
+        if(tocker.has_value())
+            automata.tockers.emplace_back(tocker.value());
     }
 
     /// Run
@@ -89,4 +81,22 @@ tocker_map_t load_tockers(std::map<std::string, argument_t>& cli_arguments) {
         look_dirs.insert(look_dirs.end(), elements.begin(), elements.end());
     }
     return tocker_plugin_system::load(look_dirs);
+}
+
+auto instantiate_tocker(const std::string& arg, const tocker_map_t& available_tockers, const ntta_t& automata) -> std::optional<tocker_t*> {
+    try {
+        auto s = split(arg, "(");
+        if(s.size() < 2) {
+            spdlog::error("Invalid tocker instantiation format. It should be 'tocker(<argument>)'");
+            return {};
+        }
+        if(available_tockers.find(s[0]) == available_tockers.end()) {
+            spdlog::warn("tocker type '{0}' not recognized", arg);
+            return {};
+        }
+        return available_tockers.at(s[0])(s[1].substr(0, s[1].size() - 1), automata);
+    } catch (std::exception& e) {
+        spdlog::error("Error during tocker instantiation: {0}", e.what());
+        return {};
+    }
 }
