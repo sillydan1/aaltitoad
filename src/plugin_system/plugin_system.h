@@ -8,6 +8,13 @@ enum class plugin_type : unsigned int {
     tocker = 0,
     parser
 };
+const char* plugin_type_name(const plugin_type& t) {
+    switch (t) {
+        case plugin_type::tocker: return "tocker";
+        case plugin_type::parser: return "parser";
+        default: return "unknown/unsupported";
+    }
+}
 using get_plugin_name_t = const char*(*)();
 using get_plugin_type_t = unsigned int(*)();
 using tocker_ctor_t = tocker_t*(*)(const std::string&, const ntta_t&);

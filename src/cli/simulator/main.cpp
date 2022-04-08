@@ -36,7 +36,7 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     if(cli_arguments["list-plugins"] || available_plugins.empty()) {
         std::cout << "Found Plugins: " << std::endl;
         for(auto& t : available_plugins)
-            std::cout << "  - " << t.first << " (" << static_cast<unsigned int>(t.second.first) << ")" << std::endl;
+            std::cout << "  - " << t.first << " (" << plugin_type_name(t.second.first) << ")" << std::endl;
         return;
     }
 
