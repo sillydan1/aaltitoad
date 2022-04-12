@@ -41,6 +41,7 @@ struct plugin_t {
 };
 
 using plugin_map_t = std::map<std::string, plugin_t>;
+std::ostream& operator<<(std::ostream&, const plugin_map_t&);
 
 namespace plugins {
     plugin_map_t load(const std::vector<std::string> &search_directories);

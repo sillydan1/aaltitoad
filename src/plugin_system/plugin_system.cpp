@@ -62,3 +62,9 @@ namespace plugins {
         return loaded_plugins;
     }
 }
+
+std::ostream& operator<<(std::ostream& stream, const plugin_map_t& map) {
+    for(auto& t : map)
+        stream << "  - " << t.first << " " << t.second.version << " (" << plugin_type_name(t.second.type) << ")" << std::endl;
+    return stream;
+}
