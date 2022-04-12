@@ -1,9 +1,9 @@
-#ifndef AALTITOAD_H_UPPAAL_PARSER_H
-#define AALTITOAD_H_UPPAAL_PARSER_H
-#include "../plugin_system/plugin_system.h"
+#ifndef AALTITOAD_HAWK_PARSER_H
+#define AALTITOAD_HAWK_PARSER_H
+#include "plugin_system/plugin_system.h"
 #include <nlohmann/json.hpp>
 
-struct h_uppaal_parser_t {
+class hawk_parser_t {
     static ntta_t* parse_folder(const std::vector<std::string>& folder_paths, const std::vector<std::string>& ignore_list = {});
 private:
     static bool is_component(const nlohmann::json& json);
@@ -21,4 +21,4 @@ extern "C" {
     ntta_t* load(const std::vector<std::string>& folders, const std::vector<std::string>& ignore_list);
 }
 
-#endif //AALTITOAD_H_UPPAAL_PARSER_H
+#endif //AALTITOAD_HAWK_PARSER_H

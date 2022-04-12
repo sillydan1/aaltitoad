@@ -35,18 +35,19 @@ namespace plugins {
                             auto stem = std::string(load_symbol<get_plugin_name_t>(handle, "get_plugin_name")());
                             auto type = static_cast<plugin_type>(load_symbol<get_plugin_type_t>(handle,
                                                                                                 "get_plugin_type")());
+                            auto version = std::string(load_symbol<get_plugin_version_t>(handle, "get_plugin_version")());
                             if (loaded_plugins.contains(stem))
                                 throw std::logic_error("Plugin with name '" + stem +
                                                        "' is already loaded. All plugins must have unique names");
                             switch (type) {
                                 case plugin_type::tocker: {
                                     auto ctor = load_symbol<tocker_ctor_t>(handle, "create_tocker");
-                                    loaded_plugins.insert(std::make_pair<>(stem, std::make_pair(type,ctor)));
+                                    loaded_plugins.insert(std::make_pair(stem, plugin_t{type, version, ctor}));
                                     break;
                                 }
                                 case plugin_type::parser: {
                                     auto load = load_symbol<parser_func_t>(handle, "load");
-                                    loaded_plugins.insert(std::make_pair<>(stem, std::make_pair(type, load)));
+                                    loaded_plugins.insert(std::make_pair<>(stem, plugin_t{type, version, load}));
                                     break;
                                 }
                             }

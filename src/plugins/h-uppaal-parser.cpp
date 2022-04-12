@@ -106,6 +106,10 @@ extern "C" {
         return "h_uppaal_parser";
     }
 
+    const char* get_plugin_version() {
+        return PLUGIN_VERSION;
+    }
+
     unsigned int get_plugin_type() {
         return static_cast<unsigned int>(plugin_type::parser);
     }

@@ -36,7 +36,7 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     if(cli_arguments["list-plugins"] || available_plugins.empty()) {
         std::cout << "Found Plugins: " << std::endl;
         for(auto& t : available_plugins)
-            std::cout << "  - " << t.first << " (" << plugin_type_name(t.second.first) << ")" << std::endl;
+            std::cout << "  - " << t.first << " " << t.second.version << " (" << plugin_type_name(t.second.type) << ")" << std::endl;
         return;
     }
 
@@ -48,14 +48,14 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
 
     /// Get the parser
     auto selected_parser = cli_arguments["parser"].as_string_or_default("h_uppaal_parser");
-    if(!available_plugins.contains(selected_parser) || available_plugins.at(selected_parser).first != plugin_type::parser) {
+    if(!available_plugins.contains(selected_parser) || available_plugins.at(selected_parser).type != plugin_type::parser) {
         spdlog::critical("No such parser available: '{0}'", selected_parser);
         return;
     }
 
     /// Parse provided model
     spdlog::debug("Parsing with {0} as a parser", selected_parser);
-    auto parser = std::get<parser_func_t>(available_plugins.at(selected_parser).second);
+    auto parser = std::get<parser_func_t>(available_plugins.at(selected_parser).function);
     t.start();
     auto automata = std::unique_ptr<ntta_t>(parser(cli_arguments["input"].as_list(), ignore_list));
     spdlog::info("Model parsing took {0}ms", t.milliseconds_elapsed());
@@ -100,11 +100,11 @@ auto instantiate_tocker(const std::string& arg, const plugin_map_t& available_pl
             spdlog::warn("tocker type '{0}' not recognized", arg);
             return {};
         }
-        if(available_plugins.at(s[0]).first != plugin_type::tocker) {
+        if(available_plugins.at(s[0]).type != plugin_type::tocker) {
             spdlog::error("{0} is not a tocker plugin", s[0]);
             return {};
         }
-        auto tocker_ctor = std::get<tocker_ctor_t>(available_plugins.at(s[0]).second);
+        auto tocker_ctor = std::get<tocker_ctor_t>(available_plugins.at(s[0]).function);
         return tocker_ctor(s[1].substr(0, s[1].size() - 1), automata);
     } catch (std::exception& e) {
         spdlog::error("Error during tocker instantiation: {0}", e.what());

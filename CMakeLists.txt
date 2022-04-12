@@ -62,9 +62,13 @@ add_library(${PROJECT_NAME} SHARED
 add_dependencies(${PROJECT_NAME} expr)
 target_link_libraries(${PROJECT_NAME} expr)
 
+add_subdirectory(src/plugins)
+if(NOT TARGET plugins)
+    add_custom_target(plugins)
+    add_dependencies(plugins h-uppaal-parser hawk-parser pipe_tocker)
+endif()
+
 add_subdirectory(src/cli/simulator)
-add_subdirectory(src/tocker_plugins)
-add_subdirectory(src/parser_plugins)
 add_subdirectory(test)
 
 if(NOT WIN32)

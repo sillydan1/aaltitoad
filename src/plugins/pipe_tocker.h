@@ -2,7 +2,7 @@
 #define AALTITOAD_PIPE_TOCKER_H
 #include "runtime/tocker.h"
 #include "runtime/ntta.h"
-#include "../plugin_system/plugin_system.h"
+#include "plugin_system/plugin_system.h"
 
 class pipe_tocker_t : public tocker_t {
     mutable std::ifstream input_pipe;
@@ -16,9 +16,9 @@ public:
 
 extern "C" {
     const char* get_plugin_name();
+    const char* get_plugin_version();
     unsigned int get_plugin_type();
     pipe_tocker_t* create_tocker(const std::string& argument, const ntta_t& ntta);
-    void destroy_pipe_tocker(pipe_tocker_t* tocker);
 };
 
 #endif //AALTITOAD_PIPE_TOCKER_H
