@@ -38,8 +38,8 @@ CPMAddPackage("gh:nlohmann/json@3.10.5")
 include_directories(
         ${CMAKE_BINARY_DIR}
         ${argvparse_SOURCE_DIR}/include
+        ${argvparse_SOURCE_DIR}/src
         ${overload_SOURCE_DIR}/include
-        ${argvparse_SOURCE_DIR}/src # For some reason windows cant find files that are just right the hell there...
         ${rapidjson_SOURCE_DIR}/include
         ${ctlparser_SOURCE_DIR}/include
         ${json_SOURCE_DIR}/include
@@ -50,10 +50,6 @@ include_directories(
         ${optionparser_SOURCE_DIR}/src
         src
 )
-add_definitions(-DYYERROR_VERBOSE)
-if (WIN32)
-    add_definitions(-DYY_NO_UNISTD_H) # UNIX std does not exist on windows platforms
-endif()
 
 add_library(${PROJECT_NAME} SHARED
         src/runtime/ntta.cpp
@@ -61,14 +57,9 @@ add_library(${PROJECT_NAME} SHARED
         src/runtime/edge.cpp
         src/plugin_system/plugin_system.cpp
         src/extensions/string_extensions.cpp)
-add_dependencies(${PROJECT_NAME} expr)
 target_link_libraries(${PROJECT_NAME} expr)
 
 add_subdirectory(src/plugins)
-if(NOT TARGET plugins)
-    add_custom_target(plugins)
-    add_dependencies(plugins h-uppaal-parser hawk-parser pipe_tocker)
-endif()
 
 add_subdirectory(src/cli/simulator)
 add_subdirectory(test)
