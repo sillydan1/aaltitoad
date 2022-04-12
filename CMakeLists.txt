@@ -17,11 +17,14 @@
 # 3.16+ because of target_precompiled_header
 cmake_minimum_required(VERSION 3.16)
 project(aaltitoad VERSION 1.0.0)
-include(cmake/CPM.cmake)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CXX_STANDARD_REQUIRED ON)
 set(SPDLOG_BUILD_SHARED)
+set(CONFIG_IN_FILE src/config.h.in)
+set(CONFIG_OUT_FILE config.h)
+include(cmake/CPM.cmake)
+include(cmake/VER.cmake)
 
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE=true)
 CPMAddPackage("gh:sillydan1/expr@1.3.0")
@@ -32,7 +35,6 @@ CPMAddPackage("gh:sillydan1/argvparse@1.2.2")
 CPMAddPackage("gh:gabime/spdlog@1.8.2")
 CPMAddPackage("gh:nlohmann/json@3.10.5")
 
-configure_file(src/config.h.in config.h)
 include_directories(
         ${CMAKE_BINARY_DIR}
         ${argvparse_SOURCE_DIR}/include

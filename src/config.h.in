@@ -2,10 +2,11 @@
 #define AALTITOAD_CONFIG_H_IN_H
 
 #define PROJECT_NAME "@PROJECT_NAME@"
-#define PROJECT_VER  "@PROJECT_VERSION@"
+#define PROJECT_VER  "@PROJECT_VERSION@+@GIT_SLUG@"
 #define PROJECT_VER_MAJOR @PROJECT_VERSION_MAJOR@
 #define PROJECT_VER_MINOR @PROJECT_VERSION_MINOR@
 #define PROJECT_VER_PATCH @PROJECT_VERSION_PATCH@
+#define PROJECT_VER_SLUG "@GIT_SLUG@"
 
 auto get_license() {
      return "                 Copyright (C) 2022  Asger Gitz-Johansen\n"
