@@ -21,6 +21,7 @@ int main(int argc, char** argv) {
         print_argument_help(options);
         return 0;
     }
+    spdlog::trace("Welcome to {0} v{1}", PROJECT_NAME, PROJECT_VER);
     if(cli_arguments["version"]) {
         std::cout << PROJECT_NAME << " v" << PROJECT_VER << std::endl;
         return 0;
