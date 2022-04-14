@@ -28,9 +28,8 @@ template<typename T>
 auto has_cycle_dfs(const graph<T>& g) -> bool {
     std::unordered_map<unsigned int, dfs_decoration> decorations{};
     for(unsigned int i = 0; i < g.nodes.size(); i++) {
-        auto b = has_cycle_dfs(g, i, decorations);
-        if(b)
-            return b;
+        if(has_cycle_dfs(g, i, decorations))
+            return true;
     }
     return false;
 }
