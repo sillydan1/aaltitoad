@@ -30,7 +30,39 @@ TEST_CASE("givenGraphWithAnAcyclicSCC_whenCheckingSCCForCycles_thenReturnFalse")
     association_graph<std::string> my_graph{{{"L0"}, {"L1"}, {"L2"}}};
     my_graph.insert_edge(0, 1);
     my_graph.insert_edge(1, 2);
+    my_graph.insert_edge(2, 2);
     auto sccs = tarjan(my_graph);
+
+    REQUIRE(sccs.size() == 3);
+    for(auto& scc : sccs) {
+        if(std::find_if(scc.begin(), scc.end(), [](const auto& n){ return n->data == "L2"; }) != scc.end())
+            REQUIRE(has_cycle_dfs<std::string>(scc));
+        else
+            REQUIRE(!has_cycle_dfs<std::string>(scc));
+    }
+}
+
+TEST_CASE("givenGraphWithDisconnectedNode_whenCheckingSCCForCycles_thenSomeCyclesAreFound") {
+    association_graph<std::string> my_graph{{{"L0"}, {"L1"}, {"L2"}}};
+    my_graph.insert_edge(0, 1);
+    my_graph.insert_edge(2, 2);
+    auto sccs = tarjan(my_graph);
+
+    REQUIRE(sccs.size() == 3);
+    for(auto& scc : sccs) {
+        if(std::find_if(scc.begin(), scc.end(), [](const auto& n){ return n->data == "L2"; }) != scc.end())
+            REQUIRE(has_cycle_dfs<std::string>(scc));
+        else
+            REQUIRE(!has_cycle_dfs<std::string>(scc));
+    }
+}
+
+TEST_CASE("givenGraphWithCycleAndNonCycle_whenCheckingSCCForCycles_thenSomeCyclesAreFound") {
+    association_graph<std::string> my_graph{{{"L0"}, {"L1"}, {"L2"}}};
+    my_graph.insert_edge(0, 1);
+    my_graph.insert_edge(1, 2);
+    auto sccs = tarjan(my_graph);
+
     REQUIRE(sccs.size() == 3);
     for(auto& scc : sccs)
         REQUIRE(!has_cycle_dfs<std::string>(scc));
@@ -52,7 +84,7 @@ TEST_CASE("toyExampleOfCyclicAndNonCyclicSCCs", "[.]") {
     my_graph.insert_edge(2, 3);
     my_graph.insert_edge(3, 2);
     // SCC 4
-    //my_graph.insert_edge(7, 7);
+    //my_graph.insert_edge(7, 7); // Not cyclic.
     // Extras
     my_graph.insert_edge(7, 6);
     my_graph.insert_edge(7, 3);
