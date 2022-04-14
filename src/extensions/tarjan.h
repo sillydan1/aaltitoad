@@ -31,10 +31,8 @@ void strong_connect(const association_node_t<T>* v,
         if(!decorations.contains(w)) {
             strong_connect(w, input_graph, decorations, index, stack, sccs);
             decoration_v.low_link = std::min(decoration_v.low_link, decorations.at(w).low_link);
-        } else if(decorations.at(w).index < decoration_v.index) {
-            if(decorations.at(w).on_stack)
-                decoration_v.low_link = std::min(decoration_v.low_link, decorations.at(w).index);
-        }
+        } else if(decorations.at(w).on_stack)
+            decoration_v.low_link = std::min(decoration_v.low_link, decorations.at(w).index);
     }
 
     if(decoration_v.low_link == decoration_v.index) {
