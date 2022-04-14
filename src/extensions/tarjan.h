@@ -3,15 +3,15 @@
 #include "graph.h"
 #include <stack>
 
-struct tarjan_element {
+struct tarjan_decoration {
     unsigned int index;
     unsigned int low_link;
     bool on_stack;
 };
 
 template<typename T>
-void strong_connect(const T& v, const graph<T>& input_graph, std::unordered_map<T,tarjan_element>& decorations, unsigned int& index, std::stack<T>& stack, std::vector<T>& scc) {
-    decorations.insert(std::make_pair(v, tarjan_element{.index=index, .low_link=index, .on_stack=true}));
+void strong_connect(const T& v, const graph<T>& input_graph, std::unordered_map<T,tarjan_decoration>& decorations, unsigned int& index, std::stack<T>& stack, std::vector<T>& scc) {
+    decorations.insert(std::make_pair(v, tarjan_decoration{.index=index, .low_link=index, .on_stack=true}));
     auto& decoration_v = decorations[v];
     stack.push(v);
     index++;
@@ -46,7 +46,7 @@ auto tarjan(const graph<T>& input_graph) {
     std::vector<std::vector<T>> sccs{};
     std::vector<T> scc{};
     std::stack<T> S{};
-    std::unordered_map<T,tarjan_element> search_decorations{};
+    std::unordered_map<T,tarjan_decoration> search_decorations{};
     unsigned int index = 0;
     for(auto& v : input_graph.nodes) {
         if(!search_decorations.contains(v)) {

@@ -9,7 +9,7 @@ bool compare_scc(const std::vector<std::string>& actual, const std::vector<std::
                        });
 }
 
-TEST_CASE("exploration_please_remove") {
+TEST_CASE("givenGraphWithFourSCCs_whenLookingForSCCs_thenFourSCCsAreFound") {
     /**
      * Example graph:
      * https://upload.wikimedia.org/wikipedia/commons/6/60/Tarjan%27s_Algorithm_Animation.gif
@@ -60,4 +60,22 @@ TEST_CASE("exploration_please_remove") {
     REQUIRE(found_scc2);
     REQUIRE(found_scc3);
     REQUIRE(found_scc4);
+}
+
+TEST_CASE("givenNonLoopingGraph_whenSearchForSCCs_thenTwoSCCsFound") {
+    graph<std::string> my_graph{};
+    my_graph.nodes = {{"L0", "L1", "L2", "L3"}};
+    my_graph.edges.insert(std::make_pair(0, 1));
+    my_graph.edges.insert(std::make_pair(0, 2));
+    auto strongly_connected_components = tarjan(my_graph);
+    REQUIRE(strongly_connected_components.size() == 2);
+    std::vector<std::string> scc1 = {"L0", "L1", "L2"};
+    std::vector<std::string> scc2 = {"L3"};
+    bool found_scc1 = false, found_scc2 = false;
+    for(auto& scc : strongly_connected_components) {
+        found_scc1 |= compare_scc(scc, scc1);
+        found_scc2 |= compare_scc(scc, scc2);
+    }
+    REQUIRE(found_scc1);
+    REQUIRE(found_scc2);
 }

@@ -5,10 +5,10 @@
 template<typename T>
 struct graph {
     using vertex_collection = std::vector<T>;
-    using vertex_ref = typename vertex_collection::const_iterator;
+    using edge_map = std::unordered_multimap<unsigned int, unsigned int>;
 
     vertex_collection nodes;
-    std::unordered_multimap<unsigned int, unsigned int> edges; // key = from, value = to
+    edge_map edges; // key = from, value = to
 };
 
 #endif
