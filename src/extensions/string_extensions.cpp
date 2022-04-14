@@ -18,7 +18,6 @@
  */
 #include <aaltitoadpch.h>
 #include <cctype>
-#include <locale>
 #include <regex>
 #include <extensions/string_extensions.h>
 
