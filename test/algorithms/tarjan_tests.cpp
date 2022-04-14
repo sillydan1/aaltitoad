@@ -1,11 +1,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include "extensions/tarjan.h"
 
-bool compare_scc(const std::vector<std::string>& actual, const std::vector<std::string>& expected) {
+template<typename T>
+bool compare_scc(const scc_t<T>& actual, const std::vector<T>& expected) {
     return std::all_of(actual.begin(),
                        actual.end(),
                        [&expected](const auto& s){
-                           return std::find(expected.begin(), expected.end(), s) != expected.end();
+                           return std::find_if(expected.begin(), expected.end(), [&s](const auto& e){ return s->data == e; }) != expected.end();
                        });
 }
 
@@ -19,28 +20,28 @@ TEST_CASE("givenGraphWithFourSCCs_whenLookingForSCCs_thenFourSCCsAreFound") {
      *  { L6, L5 }
      *  { L7 }
      * */
-    graph<std::string> my_graph{};
-    my_graph.nodes = {{"L0", "L1", "L2", "L3",
-                          "L4", "L5", "L6", "L7"}};
+    association_graph<std::string> my_graph{{
+        {"L0"}, {"L1"}, {"L2"}, {"L3"},
+        {"L4"}, {"L5"}, {"L6"}, {"L7"}}};
     // SCC 1
-    my_graph.edges.insert(std::make_pair(0, 4));
-    my_graph.edges.insert(std::make_pair(4, 1));
-    my_graph.edges.insert(std::make_pair(1, 0));
+    my_graph.insert_edge(0, 4);
+    my_graph.insert_edge(4, 1);
+    my_graph.insert_edge(1, 0);
     // SCC 2
-    my_graph.edges.insert(std::make_pair(5, 6));
-    my_graph.edges.insert(std::make_pair(6, 5));
+    my_graph.insert_edge(5, 6);
+    my_graph.insert_edge(6, 5);
     // SCC 3
-    my_graph.edges.insert(std::make_pair(2, 3));
-    my_graph.edges.insert(std::make_pair(3, 2));
+    my_graph.insert_edge(2, 3);
+    my_graph.insert_edge(3, 2);
     // SCC 4
-    my_graph.edges.insert(std::make_pair(7, 7));
+    my_graph.insert_edge(7, 7);
     // Extras
-    my_graph.edges.insert(std::make_pair(7, 6));
-    my_graph.edges.insert(std::make_pair(7, 3));
-    my_graph.edges.insert(std::make_pair(6, 2));
-    my_graph.edges.insert(std::make_pair(5, 4));
-    my_graph.edges.insert(std::make_pair(5, 1));
-    my_graph.edges.insert(std::make_pair(2, 1));
+    my_graph.insert_edge(7, 6);
+    my_graph.insert_edge(7, 3);
+    my_graph.insert_edge(6, 2);
+    my_graph.insert_edge(5, 4);
+    my_graph.insert_edge(5, 1);
+    my_graph.insert_edge(2, 1);
 
     auto strongly_connected_components = tarjan(my_graph);
 
@@ -63,10 +64,11 @@ TEST_CASE("givenGraphWithFourSCCs_whenLookingForSCCs_thenFourSCCsAreFound") {
 }
 
 TEST_CASE("givenNonLoopingGraph_whenSearchForSCCs_thenTwoSCCsFound") {
-    graph<std::string> my_graph{};
-    my_graph.nodes = {{"L0", "L1", "L2", "L3"}};
-    my_graph.edges.insert(std::make_pair(0, 1));
-    my_graph.edges.insert(std::make_pair(0, 2));
+    association_graph<std::string> my_graph{{
+        {"L0"},{"L1"},{"L2"},{"L3"}
+    }};
+    my_graph.insert_edge(0,1);
+    my_graph.insert_edge(0,2);
     auto strongly_connected_components = tarjan(my_graph);
     REQUIRE(strongly_connected_components.size() == 2);
     std::vector<std::string> scc1 = {"L0", "L1", "L2"};

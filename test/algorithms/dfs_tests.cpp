@@ -16,3 +16,10 @@ TEST_CASE("givenAcyclicGraph_whenCheckingForCycles_thenReturnFalse") {
     my_graph.edges.insert(std::make_pair(0, 4));
     REQUIRE(!has_cycle_dfs(my_graph));
 }
+
+TEST_CASE("experimental") {
+    association_graph<std::string> my_graph{{{"L0"}, {"L1"}, {"L2"}}};
+    my_graph.insert_edge(0,1);
+    my_graph.insert_edge(1,2);
+    my_graph.insert_edge(2,0);
+}
