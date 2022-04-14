@@ -3,25 +3,11 @@
 #include <vector>
 
 template<typename T>
-struct [[deprecated("Use association_graph instead")]] graph {
-    using vertex_collection = std::vector<T>;
-    using edge_map = std::unordered_multimap<unsigned int, unsigned int>;
-    vertex_collection nodes;
-    edge_map edges;
-};
-
-template<typename T>
 class association_graph {
 public:
     struct node {
         T data;
         std::vector<node*> outgoing_edges{};
-        auto operator==(const node& other) const -> bool {
-            return data == other.data;
-        }
-        auto operator!=(const node& other) const -> bool {
-            return !this->operator==(other);
-        }
     };
     explicit association_graph(std::vector<node>&& nodes) : nodes{std::move(nodes)} {}
     explicit association_graph(const std::vector<node>& nodes) : nodes{nodes} {}
