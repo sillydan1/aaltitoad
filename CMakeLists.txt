@@ -50,8 +50,9 @@ include_directories(
         ${optionparser_SOURCE_DIR}/src
         src
 )
-
-add_library(${PROJECT_NAME} SHARED
+# TODO: Look at https://cmake.org/cmake/help/latest/variable/BUILD_SHARED_LIBS.html
+# TODO: SHARED has been disabled, because coverage does not work on shared libraries
+add_library(${PROJECT_NAME} #SHARED
         src/runtime/ntta.cpp
         src/runtime/component.cpp
         src/runtime/edge.cpp
