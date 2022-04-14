@@ -70,7 +70,7 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     t.start();
     auto x = cli_arguments["ticks"].as_integer_or_default(-1);
     spdlog::info("Simulating...");
-    for(int i = 0; i < x || x < 0; i++) {
+    for(unsigned int i = 0; i < x || x < 0; i++) {
         automata->tock();
         automata->tick();
     }

@@ -39,7 +39,7 @@ struct string_builder {
         ss << data;
         return *this;
     }
-    operator std::string() const { return ss.str(); }
+    operator std::string() const { return ss.str(); } // NOLINT(google-explicit-constructor)
 };
 
 #endif //AALTITOAD_STRINGEXTENSIONS_H
