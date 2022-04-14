@@ -16,35 +16,39 @@ template<typename T>
 using tarjan_stack = std::stack<const association_node_t<T>*>;
 
 template<typename T>
-void strong_connect(const association_node_t<T>& v,
+void strong_connect(const association_node_t<T>* v,
                     const association_graph<T>& input_graph,
                     tarjan_decorations_t<T>& decorations,
                     unsigned int& index,
                     tarjan_stack<T>& stack,
-                    scc_t<T>& scc) {
-    decorations.insert(std::make_pair(&v, tarjan_decoration{.index=index, .low_link=index, .on_stack=true}));
-    auto& decoration_v = decorations[&v];
-    stack.push(&v);
+                    std::vector<scc_t<T>>& sccs) {
+    decorations.insert(std::make_pair(v, tarjan_decoration{.index=index, .low_link=index, .on_stack=true}));
+    auto& decoration_v = decorations[v];
+    stack.push(v);
     index++;
 
-    for(const auto& w : v.outgoing_edges) {
-        if(!decorations.contains(w))
-            strong_connect(*w, input_graph, decorations, index, stack, scc);
-        else if(decorations.at(w).on_stack)
-            decoration_v.low_link = std::min(decoration_v.low_link, decorations.at(w).index);
+    for(const auto& w : v->outgoing_edges) {
+        if(!decorations.contains(w)) {
+            strong_connect(w, input_graph, decorations, index, stack, sccs);
+            decoration_v.low_link = std::min(decoration_v.low_link, decorations.at(w).low_link);
+        } else if(decorations.at(w).index < decoration_v.index) {
+            if(decorations.at(w).on_stack)
+                decoration_v.low_link = std::min(decoration_v.low_link, decorations.at(w).index);
+        }
     }
 
     if(decoration_v.low_link == decoration_v.index) {
+        scc_t<T> scc{};
         auto& w = stack.top();
-        stack.pop();
-        decorations.at(w).on_stack = false;
-        scc.push_back(w);
-        while(*w != v) {
-            w = stack.top();
+        while(decorations.at(w).index >= decoration_v.index) {
             stack.pop();
             decorations.at(w).on_stack = false;
             scc.push_back(w);
+            if(stack.empty())
+                break;
+            w = stack.top();
         }
+        sccs.push_back(scc);
     }
 }
 
@@ -52,14 +56,12 @@ void strong_connect(const association_node_t<T>& v,
 template<typename T>
 auto tarjan(const association_graph<T>& input_graph) {
     std::vector<scc_t<T>> sccs{};
-    tarjan_stack<T> S{};
     tarjan_decorations_t<T> search_decorations{};
     unsigned int index = 0;
     for(auto& v : input_graph.get_nodes()) {
         if(!search_decorations.contains(&v)) {
-            scc_t<T> scc{};
-            strong_connect(v, input_graph, search_decorations, index, S, scc);
-            sccs.push_back(scc);
+            tarjan_stack<T> S{};
+            strong_connect(&v, input_graph, search_decorations, index, S, sccs);
         }
     }
     return sccs;

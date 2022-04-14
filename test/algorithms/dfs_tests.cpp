@@ -31,24 +31,9 @@ TEST_CASE("givenGraphWithAnAcyclicSCC_whenCheckingSCCForCycles_thenReturnFalse")
     my_graph.insert_edge(0, 1);
     my_graph.insert_edge(1, 2);
     auto sccs = tarjan(my_graph);
-    REQUIRE(sccs.size() == 1);
+    REQUIRE(sccs.size() == 3);
     for(auto& scc : sccs)
         REQUIRE(!has_cycle_dfs<std::string>(scc));
-}
-
-TEST_CASE("givenGraphWithACyclicAndAcyclicSCCs_whenCheckingSCCForCycles_thenReturnTrueThenFalse") {
-    association_graph<std::string> my_graph{{{"L0"}, {"L1"}, {"L2"}, {"L3"}}};
-    my_graph.insert_edge(0, 2);
-    my_graph.insert_edge(3, 2);
-    my_graph.insert_edge(1, 2);
-    my_graph.insert_edge(2, 2);
-    auto sccs = tarjan(my_graph);
-    for(auto& scc : sccs) {
-        std::cout << "{ ";
-        for(auto& n : scc)
-            std::cout << n->data << " ";
-        std::cout << "} (cyclic: " << std::boolalpha << has_cycle_dfs<std::string>(scc) << ")" << std::endl;
-    }
 }
 
 TEST_CASE("toyExampleOfCyclicAndNonCyclicSCCs", "[.]") {

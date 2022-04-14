@@ -3,10 +3,10 @@
 
 template<typename T>
 bool compare_scc(const scc_t<T>& actual, const std::vector<T>& expected) {
-    return std::all_of(actual.begin(),
-                       actual.end(),
-                       [&expected](const auto& s){
-                           return std::find_if(expected.begin(), expected.end(), [&s](const auto& e){ return s->data == e; }) != expected.end();
+    return std::all_of(expected.begin(),
+                       expected.end(),
+                       [&actual](const auto& s){
+                           return std::find_if(actual.begin(), actual.end(), [&s](const auto& e){ return s == e->data; }) != actual.end();
                        });
 }
 
@@ -63,21 +63,55 @@ TEST_CASE("givenGraphWithFourSCCs_whenLookingForSCCs_thenFourSCCsAreFound") {
     REQUIRE(found_scc4);
 }
 
-TEST_CASE("givenNonLoopingGraph_whenSearchForSCCs_thenTwoSCCsFound") {
+TEST_CASE("givenNonLoopingGraph_whenSearchForSCCs_thenFourSCCsFound") {
     association_graph<std::string> my_graph{{
         {"L0"},{"L1"},{"L2"},{"L3"}
     }};
     my_graph.insert_edge(0,1);
     my_graph.insert_edge(0,2);
     auto strongly_connected_components = tarjan(my_graph);
-    REQUIRE(strongly_connected_components.size() == 2);
-    std::vector<std::string> scc1 = {"L0", "L1", "L2"};
-    std::vector<std::string> scc2 = {"L3"};
-    bool found_scc1 = false, found_scc2 = false;
+    REQUIRE(strongly_connected_components.size() == 4);
+    std::vector<std::string> scc1 = {"L0"};
+    std::vector<std::string> scc2 = {"L1"};
+    std::vector<std::string> scc3 = {"L2"};
+    std::vector<std::string> scc4 = {"L3"};
+    bool found_scc1 = false;
+    bool found_scc2 = false;
+    bool found_scc3 = false;
+    bool found_scc4 = false;
     for(auto& scc : strongly_connected_components) {
         found_scc1 |= compare_scc(scc, scc1);
         found_scc2 |= compare_scc(scc, scc2);
+        found_scc3 |= compare_scc(scc, scc3);
+        found_scc4 |= compare_scc(scc, scc4);
     }
     REQUIRE(found_scc1);
     REQUIRE(found_scc2);
+    REQUIRE(found_scc3);
+    REQUIRE(found_scc4);
+}
+
+TEST_CASE("givenGraphWithWithWeaklyConnectedComponents_whenSearchForSCCs_thenFourSCCsFound") {
+    association_graph<std::string> my_graph{{{"L0"}, {"L1"}, {"L2"}, {"L3"}}};
+    my_graph.insert_edge(0, 2);
+    my_graph.insert_edge(1, 2);
+    my_graph.insert_edge(3, 2);
+    my_graph.insert_edge(2, 2);
+    auto sccs = tarjan(my_graph);
+    REQUIRE(sccs.size() == 4);
+    std::vector<std::string> scc1 = {"L0"};
+    std::vector<std::string> scc2 = {"L1"};
+    std::vector<std::string> scc3 = {"L2"};
+    std::vector<std::string> scc4 = {"L3"};
+    bool found_scc1 = false, found_scc2 = false, found_scc3 = false, found_scc4 = false;
+    for(auto& scc : sccs) {
+        found_scc1 |= compare_scc(scc, scc1);
+        found_scc2 |= compare_scc(scc, scc2);
+        found_scc3 |= compare_scc(scc, scc3);
+        found_scc4 |= compare_scc(scc, scc4);
+    }
+    REQUIRE(found_scc1);
+    REQUIRE(found_scc2);
+    REQUIRE(found_scc3);
+    REQUIRE(found_scc4);
 }
