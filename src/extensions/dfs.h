@@ -7,28 +7,31 @@ struct dfs_decoration {
     bool visited = false;
     bool finished = false;
 };
+template<typename T>
+using dfs_decorations_t = std::unordered_map<const association_node_t<T>*, dfs_decoration>;
 
 template<typename T>
-auto has_cycle_dfs(const graph<T>& g, unsigned int node_index, std::unordered_map<unsigned int, dfs_decoration>& decorations) {
-    if(decorations[node_index].finished)
+auto has_cycle_dfs(const association_graph<T>& g, const association_node_t<T>* n, dfs_decorations_t<T>& decorations) {
+    if(decorations[n].finished)
         return false;
-    if(decorations[node_index].visited)
+    if(decorations[n].visited)
         return true;
-    decorations.at(node_index).visited = true;
-    auto range = g.edges.equal_range(node_index);
-    for(auto it = range.first; it != range.second; ++it) {
-        if(has_cycle_dfs(g, it->second, decorations))
+    decorations.at(n).visited = true;
+
+    for(auto& neighbor : n->outgoing_edges) {
+        if(has_cycle_dfs(g, neighbor, decorations))
             return true;
     }
-    decorations.at(node_index).finished = true;
+
+    decorations.at(n).finished = true;
     return false;
 }
 
 template<typename T>
-auto has_cycle_dfs(const graph<T>& g) -> bool {
-    std::unordered_map<unsigned int, dfs_decoration> decorations{};
-    for(unsigned int i = 0; i < g.nodes.size(); i++) {
-        if(has_cycle_dfs(g, i, decorations))
+auto has_cycle_dfs(const association_graph<T>& g) -> bool {
+    dfs_decorations_t<T> decorations{};
+    for(auto& node : g.get_nodes()) {
+        if(has_cycle_dfs(g, &node, decorations))
             return true;
     }
     return false;
