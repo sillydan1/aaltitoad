@@ -1,10 +1,16 @@
 #include "hawk-parser.h"
+#include "extensions/graph_algorithms"
+#include <ranges>
+#include <regex>
+#include <extensions/map_extensions.h>
+#include <Timer.hpp>
 
 /// Keys to check for in the model file(s)
 constexpr const char* initial_location = "initial_location";
 constexpr const char* final_location = "final_location";
 constexpr const char* locations = "locations";
 constexpr const char* declarations = "declarations";
+constexpr const char* sub_components = "sub_components";
 constexpr const char* immediacy = "urgency";
 constexpr const char* immediate = "URGENT";
 constexpr const char* edges = "edges";
@@ -15,18 +21,24 @@ constexpr const char* guard = "guard";
 constexpr const char* update = "update";
 constexpr const char* symbols = "parts";
 
-ntta_t* hawk_parser_t::parse_folders(const std::vector<std::string> &folder_paths, const std::vector<std::string> &ignore_list) {
+ntta_t* hawk_parser_t::parse_folders(const std::vector<std::string>& folder_paths, const std::vector<std::string>& ignore_list) {
     symbol_table_t symbol_table{};
-    std::unordered_map<std::string, nlohmann::json> templates{};
+    template_map templates{};
     for(const auto& filepath : folder_paths) {
         for (const auto &entry: std::filesystem::directory_iterator(filepath)) {
             try {
-                if (std::find(ignore_list.begin(), ignore_list.end(), entry.path().c_str()) != ignore_list.end())
+                if(std::find_if(ignore_list.begin(), ignore_list.end(),
+                    [&entry](const auto& i) {
+                        return std::regex_match(entry.path().c_str(), std::regex{i, std::regex::extended});
+                    }) != ignore_list.end())
                     continue;
                 std::ifstream ifs(entry.path());
                 auto json = nlohmann::json::parse(ifs);
-                if(is_template(json))
+                if(is_template(json)) {
+                    if(templates.contains(json[name]))
+                        throw std::logic_error("Multiple definitions of component template");
                     templates[json[name]] = json;
+                }
                 if(is_symbols(json))
                     symbol_table += {}; // TODO: Implement parse_symbols(json);
             } catch (std::exception &e) {
@@ -36,10 +48,7 @@ ntta_t* hawk_parser_t::parse_folders(const std::vector<std::string> &folder_path
         }
     }
     /// ==== Verification of syntax step ====
-    /// TODO: Composition should be performed recursively.
-    /// TODO: Because of this, we should check for loops in the declarations
-    /// TODO: (Do this with a dependency graph, and check for loops in there)
-    /// TODO: If a loop is found, we should simply throw a syntax_error.
+    check_for_invalid_subcomponent_composition(templates); // throws if invalid component is found
     // std::unordered_map<std::string, nlohmann::json> composed_components{};
     /// NOTE: Remember to think in terms of _input syntax_.
     /// ==== Composition Step ====
@@ -65,6 +74,47 @@ bool hawk_parser_t::is_template(const nlohmann::json &json) {
 
 bool hawk_parser_t::is_symbols(const nlohmann::json &json) {
     return json.contains(symbols);
+}
+
+void hawk_parser_t::check_for_invalid_subcomponent_composition(const template_map& templates) {
+    spdlog::info("Analyzing component template dependencies");
+    spdlog::trace("Generating dependency graph");
+    Timer<int> t{};
+    t.start();
+    auto template_names = get_key_set(templates);
+    association_graph<std::string> subcomponent_dependency_graph{template_names};
+    for(int i = 0; i < template_names.size(); i++) {
+        for(auto& j : templates.at(template_names[i])[sub_components]) {
+            auto& component_name = j["component"];
+            auto tmp = std::find(template_names.begin(), template_names.end(), component_name);
+            if(tmp == template_names.end())
+                throw std::logic_error(to_string(component_name) + ": No such component template");
+            subcomponent_dependency_graph.insert_edge(i, tmp-template_names.begin());
+        }
+    }
+    spdlog::trace("Dependency graph generation took {0}ms", t.milliseconds_elapsed());
+    spdlog::trace("Searching for strongly connected components");
+    t.start();
+    auto sccs = tarjan(subcomponent_dependency_graph);
+    spdlog::trace("SCC generation took {0}ms", t.milliseconds_elapsed());
+    spdlog::trace("Looking for cycles in {0} strongly connected components", sccs.size());
+    t.start();
+    std::vector<std::string> cycles{};
+    for(auto& scc : sccs) {
+        if(has_cycle_dfs<std::string>(scc)) {
+            std::stringstream ss{"Cyclic dependency detected in: [ "};
+            for(auto& e : scc)
+                ss << e << " ";
+            ss << "]";
+            cycles.push_back(ss.str());
+        }
+    }
+    if(!cycles.empty()) {
+        for(auto& c : cycles)
+            spdlog::error(c);
+        throw std::logic_error("Found cyclic dependencies");
+    }
+    spdlog::trace("Strongly connected component cycle check took {0}ms", t.milliseconds_elapsed());
 }
 
 extern "C" {

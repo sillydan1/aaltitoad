@@ -9,6 +9,11 @@ public:
         T data;
         std::vector<node*> outgoing_edges{};
     };
+    explicit association_graph(const std::vector<T>& data_nodes) : nodes{} {
+        nodes.reserve(data_nodes.size());
+        for(auto& dn : data_nodes)
+            nodes.push_back({dn});
+    }
     explicit association_graph(std::vector<node>&& nodes) : nodes{std::move(nodes)} {}
     explicit association_graph(const std::vector<node>& nodes) : nodes{nodes} {}
     //// To keep edge pointers valid you must never add new nodes to
