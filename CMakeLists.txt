@@ -50,23 +50,25 @@ include_directories(
         ${optionparser_SOURCE_DIR}/src
         src
 )
-# TODO: Look at https://cmake.org/cmake/help/latest/variable/BUILD_SHARED_LIBS.html
-# TODO: SHARED has been disabled, because coverage does not work on shared libraries
-add_library(${PROJECT_NAME} #SHARED
+set(${PROJECT_NAME}_SOURCES
         src/runtime/ntta.cpp
         src/runtime/component.cpp
         src/runtime/edge.cpp
         src/plugin_system/plugin_system.cpp
         src/extensions/string_extensions.cpp)
+
+if(NOT DEFINED TEST_COVERAGE)
+    add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES})
+    install(TARGETS ${PROJECT_NAME})
+else()
+    add_library(${PROJECT_NAME} ${${PROJECT_NAME}_SOURCES})
+endif()
 target_link_libraries(${PROJECT_NAME} expr)
 
 add_subdirectory(src/plugins)
-
 add_subdirectory(src/cli/simulator)
 add_subdirectory(test)
 
 if(NOT WIN32)
     target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
 endif()
-
-# install(TARGETS ${PROJECT_NAME})
