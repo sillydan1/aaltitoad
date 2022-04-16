@@ -12,6 +12,11 @@ struct template_symbol_collection_t {
 class hawk_parser_t {
 public:
     static ntta_t* parse_folders(const std::vector<std::string>& folder_paths, const std::vector<std::string>& ignore_list);
+
+private:
+    static ntta_t* from_syntax(const template_symbol_collection_t& syntax);
+    static component_t parse_component(const nlohmann::json& component);
+    static symbol_table_t parse_component_declarations(const nlohmann::json& component);
 };
 
 extern "C" {
