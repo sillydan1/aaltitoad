@@ -22,8 +22,13 @@ constexpr const char* target_location = "target_location";
 constexpr const char* guard = "guard";
 constexpr const char* update = "update";
 constexpr const char* symbols = "parts";
-
 using syntax_layer = value_layer<template_symbol_collection_t>;
+void operator+=(template_map& a, const template_map& b) {
+    a.insert(b.begin(), b.end());
+}
+void operator+=(template_symbol_collection_t& a, const template_map& b) {
+    a.map += b;
+}
 
 class file_parser_layer : public syntax_layer {
 public:
@@ -128,7 +133,48 @@ private:
 
 class parallel_composition_layer : public syntax_layer {
 public:
+    parallel_composition_layer() : syntax_layer("parallel_composition_layer") {}
+    auto on_call(const template_symbol_collection_t& templates) -> template_symbol_collection_t override {
+        auto main_component_template_it = std::find_if(templates.map.begin(), templates.map.end(),
+                                                    [](const auto& e){ return e.second[is_main]; });
+        template_symbol_collection_t return_value{.symbols=templates.symbols};
+        nlohmann::json main_component_sub_component = {
+                {"component", main_component_template_it->first},
+                {"identifier", main_component_template_it->first}
+        };
+        return_value += parallel_compose(main_component_sub_component, "", templates);
+        return return_value;
+    }
 
+private:
+    static auto has_ingoing_edge(const nlohmann::json& parent_edges, const std::string& identifier) {
+        return std::any_of(parent_edges.begin(), parent_edges.end(),
+                           [&identifier](const auto& j){ return j.at("target_sub_component") == identifier; });
+    }
+    // We have guaranteed no infinite recursion in the composition_check_layer, so no need to worry
+    static auto parallel_compose(const nlohmann::json& sub_component_object, // NOLINT(misc-no-recursion)
+                                 const std::string& parent_component,
+                                 const template_symbol_collection_t& templates) -> template_map {
+        template_map return_value{};
+        auto this_template_name = sub_component_object["component"];
+        auto this_template_identifier = sub_component_object["identifier"];
+        return_value[this_template_name] = templates.map.at(this_template_name);
+        return_value[this_template_name]["component_identifier"] = this_template_identifier;
+        return_value[this_template_name]["parent_component"] = parent_component;
+
+        auto& parent_edges = templates.map.at(this_template_name)["edges"];
+        for(auto& c : templates.map.at(this_template_name)[sub_components]) {
+            auto sub_component_identifier = c["identifier"];
+            if(!has_ingoing_edge(parent_edges, sub_component_identifier))
+                return_value += parallel_compose(c, this_template_name, templates);
+        }
+        return return_value;
+    }
+};
+
+class sequential_composition_layer : public syntax_layer {
+public:
+private:
 };
 
 #endif //AALTITOAD_HAWK_LAYERS_H

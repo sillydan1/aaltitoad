@@ -8,6 +8,7 @@ ntta_t* hawk_parser_t::parse_folders(const std::vector<std::string>& folder_path
     value_layer_stack<template_symbol_collection_t> parser_stack{on_apply_call};
     parser_stack.add_layer<file_parser_layer>(folder_paths, ignore_list);
     parser_stack.add_layer<composition_check_layer>();
+    parser_stack.add_layer<parallel_composition_layer>();
     auto collection = parser_stack.apply();
 
     spdlog::debug("====/HAWK ====");
