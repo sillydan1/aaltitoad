@@ -53,7 +53,7 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     }
 
     /// Parse provided model
-    spdlog::debug("Parsing with {0} as a parser", selected_parser);
+    spdlog::info("Parsing with {0} plugin", selected_parser);
     auto parser = std::get<parser_func_t>(available_plugins.at(selected_parser).function);
     t.start();
     auto automata = std::unique_ptr<ntta_t>(parser(cli_arguments["input"].as_list(), ignore_list));
