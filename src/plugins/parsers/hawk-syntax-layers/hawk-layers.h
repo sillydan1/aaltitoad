@@ -207,9 +207,9 @@ private:
             if(!has_ingoing_edge(component["edges"], s["identifier"]))
                 continue;
             auto sub_component = sequential_compose(templates.at(s["component"]), templates);
-            // TODO: Also compose declarations
+            // TODO: Also annotate declarations and expressions
             // annotations
-            std::string sub_component_annotation_string = s["identifier"];
+            auto sub_component_annotation_string = std::string(component["name"]) + "." + std::string(s["identifier"]);
             annotate(sub_component["initial_location"]["id"], sub_component_annotation_string);
             annotate(sub_component["final_location"]["id"], sub_component_annotation_string);
             for(auto& l : sub_component["locations"]) {
