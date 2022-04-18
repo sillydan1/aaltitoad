@@ -5,18 +5,21 @@
 
 ntta_t* hawk_parser_t::parse_folders(const std::vector<std::string>& folder_paths, const std::vector<std::string>& ignore_list) {
     spdlog::debug("==== HAWK ====");
-    auto on_apply_call = [](const auto& layer_name){ spdlog::trace("Engaging layer '{0}'", layer_name); };
+    Timer<unsigned int> t{}; t.start();
+    auto on_apply_call = [](const auto& layer_name){ spdlog::debug("=====<{0}>=====", layer_name); };
     value_layer_stack<template_symbol_collection_t> parser_stack{on_apply_call};
     parser_stack.add_layer<file_parser_layer>(folder_paths, ignore_list);
     parser_stack.add_layer<composition_check_layer>();
     parser_stack.add_layer<parallel_composition_layer>();
     parser_stack.add_layer<sequential_composition_layer>();
     auto ret = from_syntax(parser_stack.apply());
-    spdlog::debug("====/HAWK ====");
+    spdlog::debug("====/HAWK ==== ({0}ms)", t.milliseconds_elapsed());
     return ret;
 }
 
 ntta_t* hawk_parser_t::from_syntax(const template_symbol_collection_t& syntax) {
+    spdlog::debug("=====<parse_syntax_as_ntta>=====");
+    spdlog::info("Converting syntax into ntta_t");
     symbol_table_t symbol_table{syntax.symbols};
     component_map_t components{};
     for(auto& component : syntax.map) {

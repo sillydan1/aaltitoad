@@ -35,6 +35,7 @@ public:
     file_parser_layer(const std::vector<std::string>& folder_paths, const std::vector<std::string>& ignore_list)
      : syntax_layer{"file_parser_layer"}, folder_paths{folder_paths}, ignore_list{ignore_list} {}
     auto on_call(const template_symbol_collection_t& c) -> template_symbol_collection_t override {
+        spdlog::info("Loading input files");
         symbol_table_t symbol_table{};
         template_map templates{};
         Timer<unsigned int> t{}; t.start();
@@ -135,6 +136,7 @@ class parallel_composition_layer : public syntax_layer {
 public:
     parallel_composition_layer() : syntax_layer("parallel_composition_layer") {}
     auto on_call(const template_symbol_collection_t& templates) -> template_symbol_collection_t override {
+        spdlog::info("Composing parallel templates");
         auto main_component_template_it = std::find_if(templates.map.begin(), templates.map.end(),
                                                     [](const auto& e){ return e.second[is_main]; });
         template_symbol_collection_t return_value{.symbols=templates.symbols};
@@ -186,6 +188,7 @@ class sequential_composition_layer : public syntax_layer {
 public:
     sequential_composition_layer() : syntax_layer("sequential_composition_layer") {}
     auto on_call(const template_symbol_collection_t& templates) -> template_symbol_collection_t override {
+        spdlog::info("Composing sequential templates");
         template_symbol_collection_t return_value{.symbols=templates.symbols};
         for(auto& t : templates.map)
             return_value.map.insert(std::make_pair(t.first, sequential_compose(t.second, templates.map)));

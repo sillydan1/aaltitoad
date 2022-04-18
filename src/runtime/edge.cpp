@@ -12,7 +12,7 @@ auto edge_t::evaluate_updates(const symbol_table_t& environment) const -> symbol
 auto edge_t::is_satisfied(const symbol_table_t& environment) const -> bool {
     driver drv{environment};
     auto res = drv.parse(guardExpression);
-    if(res)
-        throw std::logic_error("Unable to evaluate update expression "+updateExpression);
-    return std::get<bool>(drv.result["expression_result"]);
+    if(res != 0)
+        throw std::logic_error(std::get<std::string>(drv.error) + " in guard expression: " + guardExpression);
+    return std::get<bool>(drv.expression_result);
 }
