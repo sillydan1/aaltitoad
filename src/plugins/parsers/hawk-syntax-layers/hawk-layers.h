@@ -48,14 +48,31 @@ public:
                                     }) != ignore_list.end())
                         continue;
                     std::ifstream ifs(entry.path());
-                    auto json = nlohmann::json::parse(ifs);
+                    std::string str;
+                    std::string file_contents;
+                    bool skip = false;
+                    while (std::getline(ifs, str)) {
+                        if(contains(str,"/*"))
+                            skip = true;
+                        if(skip && contains(str, "*/")) {
+                            auto x = split(str,"*/");
+                            str = x[1];
+                            skip = false;
+                        }
+                        if(skip)
+                            continue;
+                        file_contents += str;
+                        file_contents.push_back('\n');
+
+                    }
+                    auto json = nlohmann::json::parse(file_contents);
                     if(is_template(json)) {
                         if(templates.contains(json[name]))
                             throw std::logic_error("Multiple definitions of component template");
                         templates[json[name]] = json;
                     }
                     if(is_symbols(json))
-                        symbol_table += {}; // TODO: Implement parse_symbols(json);
+                        symbol_table += parse_symbols(json);
                 } catch (std::exception &e) {
                     spdlog::error("Unable to parse json file {0}: {1}", entry.path().c_str(), e.what());
                     throw e;
@@ -79,6 +96,49 @@ private:
     }
     static bool is_symbols(const nlohmann::json &json) {
         return json.contains(symbols);
+    }
+
+    static auto parse_symbols(const nlohmann::json& json) -> symbol_table_t {
+        symbol_table_t symbol_table{};
+        for(auto& symbol : json[symbols])
+            symbol_table[symbol["ID"]] = parse_symbol(symbol["Type"], symbol);
+        return symbol_table;
+    }
+
+    static auto parse_symbol(const std::string& type, const nlohmann::json& json) -> symbol_value_t {
+        if(json.contains("Value"))
+            return parse_literal(json["Value"]);
+        // Custom types:
+        // PersistentVariable
+        if(type == "DigitalOutput")
+            return false;
+        if(type == "DigitalInput")
+            return false;
+        if(type == "AnalogOutput")
+            return 0;
+        if(type == "AnalogInput")
+            return 0;
+        if(type == "HighSpeedCounter")
+            return 0;
+        if(type == "DigitalToggleSwitch")
+            return false;
+        if(type == "EMR")
+            return false;
+        if(type == "Timer")
+            return 0;
+        throw std::logic_error((string_builder{} << "Unsupported part type: " << type << " :\n" << std::setw(2) << json));
+    }
+
+    static auto parse_literal(const nlohmann::json& json) -> symbol_value_t {
+        if(json.is_number_float())
+            return (float)json;
+        if(json.is_number())
+            return (int)json;
+        if(json.is_boolean())
+            return (bool)json;
+        if(json.is_string())
+            return (std::string)json;
+        throw std::logic_error((string_builder{} << "Not a symbol literal: " << json));
     }
 };
 

@@ -26,8 +26,7 @@ ntta_t* hawk_parser_t::from_syntax(const template_symbol_collection_t& syntax) {
         try {
             spdlog::trace("Parsing component {0}", component.first);
             components.insert({component.first, parse_component(component.second)});
-            // TODO: There's a problem in the expr grammar that makes some declarations infinitely loop
-            // TODO: symbol_table += parse_component_declarations(component.second);
+            symbol_table += parse_component_declarations(component.second);
         } catch (std::exception& e) {
             spdlog::error("Unable to convert syntax to ntta {0}", e.what());
             throw e;
@@ -55,7 +54,7 @@ symbol_table_t hawk_parser_t::parse_component_declarations(const nlohmann::json&
         return {};
     driver drv{{}};
     auto res = drv.parse(json[declarations]);
-    if (res)
+    if(res != 0)
         throw std::logic_error(std::string("Unable to evaluate declaration expression ") + std::string(json[declarations]));
     return drv.result;
 }
