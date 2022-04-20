@@ -134,7 +134,7 @@ std::vector<TTA::StateChange> BFSCrossProduct(const VariableValueVector& a, cons
     while(!frontier.empty()) {
         auto statechange = frontier.top();
         frontier.pop();
-        auto& curr = statechange.first;
+        auto curr = statechange.first;
         auto& idx  = statechange.second;
         if(idx >= a.size()) {
             crossProduct.push_back(statechange.first);
@@ -142,7 +142,7 @@ std::vector<TTA::StateChange> BFSCrossProduct(const VariableValueVector& a, cons
             TTA::StateChange stA{};
             AssignVariable(stA.symbols, derivedSymbols, a[idx].first, a[idx].second);
             TTA::StateChange stB{};
-            AssignVariable(stB.symbols, derivedSymbols, a[idx].first, a[idx].second);
+            AssignVariable(stB.symbols, derivedSymbols, b[idx].first, b[idx].second);
             frontier.push(std::make_pair(curr + stA, idx+1));
             frontier.push(std::make_pair(curr + stB, idx+1));
         }

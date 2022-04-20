@@ -22,11 +22,35 @@
 #include <tinytimer/Timer.hpp>
 #include <verifier/trace_output/TTAResugarizer.h>
 
+auto TTA::operator==(const TTA &other) -> bool {
+    for(auto& c : components) {
+        if(c.second.currentLocation.identifier != other.components.at(c.first).currentLocation.identifier)
+            return false;
+    }
+    for(auto& s : symbols.map()) {
+        if(s.second != other.symbols.map()[s.first])
+            return false;
+    }
+    return true;
+}
+
+auto TTA::operator!=(const TTA &other) -> bool {
+    return !(*this == other);
+}
+
 TTA::StateChange operator+(TTA::StateChange a, TTA::StateChange b) {
     // Merge a and b
-    a.symbols.map().merge(b.symbols.map());
-    a.componentLocations.merge(b.componentLocations);
-    return a;
+    // a.symbols.map().merge(b.symbols.map());
+    TTA::StateChange cpy{};
+    for(auto& s : a.symbols.map())
+        cpy.symbols[s.first] = s.second;
+    for(auto& s : b.symbols.map())
+        cpy.symbols[s.first] = s.second;
+    for(auto& c : a.componentLocations)
+        cpy.componentLocations[c.first] = c.second;
+    for(auto& c : b.componentLocations)
+        cpy.componentLocations[c.first] = c.second;
+    return cpy;
 }
 
 TTA operator<<(const TTA& aa, const TTA::StateChange& b) {
