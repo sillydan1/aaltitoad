@@ -119,8 +119,21 @@ auto ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
             if(exists) {
                 auto range = Passed.equal_range(stateHash);
                 auto count = Passed.count(stateHash);
-                if(count > 1)
-                    spdlog::warn("HASH COLLISIONS: {0}", count);
+                if(count > 1) {
+                    std::stringstream ss{};
+                    int c = 0;
+                    for (auto it = range.first; it != range.second; ++it) {
+                        ss << it->second.tta.GetCurrentStateString();
+                        for(auto t = range.first; t != range.second; ++t) {
+                            if(it->second.tta != t->second.tta)
+                                c++;
+                        }
+                    }
+                    if(c > 0) {
+                        spdlog::warn("HASH COLLISIONS: {0}", c);
+                        spdlog::warn(ss.str());
+                    }
+                }
 
                 if(stateHash == range.first->second.prevStateHash) {
                     spdlog::critical("Breaking out of infinite loop. Something is wrong.");
@@ -129,10 +142,6 @@ auto ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
 
                 stateHash = range.first->second.prevStateHash;
                 trace.push_back(range.first->second.tta.GetCurrentStateString());
-                if(count > 1) {
-                    for (auto it = range.first; it != range.second; ++it)
-                        spdlog::warn(it->second.tta.GetCurrentStateString());
-                }
             } else {
                 spdlog::critical("Unable to resolve witnessing trace. ");
                 break;
