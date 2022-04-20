@@ -329,8 +329,12 @@ std::string TTA::GetCurrentStateString() const {
     std::stringstream ss{}; ss << "{";
     for(auto& component : components)
         ss<<"\""<<component.first<<"\""<<": "<<"\""<<component.second.currentLocation.identifier<<"\",";
-    for(auto& symbol : symbols.map())
-        ss<<"\""<<symbol.first<<"\""<<": "<<"\""<<symbol.second.str()<<"\",";
+    for(auto& symbol : symbols.map()) {
+        if(symbol.second->type == TIMER)
+            ss << "\"" << symbol.first << "\"" << ": " << "\"" << symbol.second.asDouble() << "\",";
+        else
+            ss << "\"" << symbol.first << "\"" << ": " << "\"" << symbol.second.str() << "\",";
+    }
     ss << R"("OBJECT_END":"true"})"; // This is just a bad way of ending a json object. 
     return ss.str();
 }
