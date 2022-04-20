@@ -88,7 +88,7 @@ std::ostream& operator<<(json_ostream jos, const ntta_t& tta) {
     for(auto iter = tta.state.symbols.begin(); iter != tta.state.symbols.end(); ++iter) {
         if(iter != tta.state.symbols.begin())
             ss << ",";
-        ss << "\"" << iter->first << "\":\"" << stream_mods::json << iter->second << "\"";
+        ss << "\"" << iter->first << "\":" << stream_mods::json << iter->second << "";
     }
     ss << "}}";
     auto j = nlohmann::json::parse(ss.str());

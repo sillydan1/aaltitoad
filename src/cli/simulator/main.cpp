@@ -69,12 +69,19 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     /// Run
     t.start();
     auto x = cli_arguments["ticks"].as_integer_or_default(-1);
-    spdlog::info("Simulating...");
-    for (unsigned int i = 0; i < x || x < 0; i++) {
-        automata->tock();
-        automata->tick();
+    std::stringstream ss{};
+    ss << std::setw(2) << stream_mods::json << *automata;
+    spdlog::info("Simulating...\n{0}", ss.str());
+    unsigned int i = 0;
+    try {
+        for (; i < x || x < 0; i++) {
+            automata->tock();
+            automata->tick();
+        }
+    } catch (std::exception& e) {
+        spdlog::error(e.what());
     }
-    spdlog::info("{0} ticks took {1}ms", x, t.milliseconds_elapsed());
+    spdlog::info("{0} ticks took {1}ms", i, t.milliseconds_elapsed());
 }
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t {

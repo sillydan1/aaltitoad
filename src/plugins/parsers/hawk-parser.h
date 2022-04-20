@@ -9,6 +9,7 @@ struct template_symbol_collection_t {
     template_map map;
 };
 
+//// Ignore with regex's like so: "(.*)(\.parts)"
 class hawk_parser_t {
 public:
     static ntta_t* parse_folders(const std::vector<std::string>& folder_paths, const std::vector<std::string>& ignore_list);
