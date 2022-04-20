@@ -327,7 +327,8 @@ bool ReachabilitySearcher::AreQueriesAnswered(const std::vector<QueryResultPair>
 bool ReachabilitySearcher::IsSearchStateTockable(const SearchState& state) {
     return (!state.justTocked && !state.tta.IsCurrentStateImmediate());
 }
-
+#include <random>
+std::random_device r;
 ReachabilitySearcher::StateList::iterator ReachabilitySearcher::PickStateFromWaitingList(const nondeterminism_strategy_t& strategy) {
     if(Waiting.empty())
         return Waiting.end();
@@ -341,14 +342,17 @@ ReachabilitySearcher::StateList::iterator ReachabilitySearcher::PickStateFromWai
             return Waiting.begin();
         case nondeterminism_strategy_t::PICK_LAST: {
             auto begin = Waiting.begin();
-            for (auto i = 0; i < Waiting.size(); i++)
+            for (auto i = 0; i < Waiting.size()-1; i++)
                 begin++;
             return begin;
         }
         case nondeterminism_strategy_t::PICK_RANDOM:
-            auto randomPick = rand() % Waiting.size();
+            // auto randomPick = rand() % Waiting.size();
+            std::default_random_engine e1(r());
+            std::uniform_int_distribution<size_t> uniform_dist(0, Waiting.size()-1);
+            auto randomPick = uniform_dist(e1);
             auto picked = Waiting.begin();
-            for(int i = 0; i < randomPick; i++)
+            for(auto i = 0; i < randomPick; i++)
                 picked++;
             return picked;
     }
