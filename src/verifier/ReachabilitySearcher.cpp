@@ -271,12 +271,22 @@ void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<
             /// This is a lot of copying large data objects... Figure something out with maybe std::move
             auto nstate = state << change;
             auto nstatehash = nstate.GetCurrentStateHash();
-            if (Passed.find(nstatehash) == Passed.end()) {
+            auto passed_it = Passed.find(nstatehash);
+            if (passed_it == Passed.end()) {
                 if (nstatehash == state_hash) {
+                    if(nstate == state)
+                        continue;
                     spdlog::warn("Recursive state hashes!");
-                    continue;
                 }
                 Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
+            } else {
+                auto r = Passed.equal_range(nstatehash);
+                for(auto it = r.first; it != r.second; ++it) {
+                    if(nstate != it->second.tta) {
+                        Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
+                        break;
+                    }
+                }
             }
         }
     }
@@ -289,12 +299,22 @@ void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<
             /// This is a lot of copying large data objects... Figure something out with maybe std::move
             auto nstate = baseChanges << *it;
             auto nstatehash = nstate.GetCurrentStateHash();
-            if (Passed.find(nstatehash) == Passed.end()) {
+            auto passed_it = Passed.find(nstatehash);
+            if (passed_it == Passed.end()) {
                 if (nstatehash == state_hash) {
+                    if(nstate == state)
+                        continue;
                     spdlog::warn("Recursive state hashes!");
-                    continue;
                 }
                 Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
+            } else {
+                auto r = Passed.equal_range(nstatehash);
+                for(auto it = r.first; it != r.second; ++it) {
+                    if(nstate != it->second.tta) {
+                        Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
+                        break;
+                    }
+                }
             }
         }
     }
