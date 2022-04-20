@@ -16,7 +16,7 @@
 
 # 3.16+ because of target_precompiled_header
 cmake_minimum_required(VERSION 3.16)
-project(aaltitoad VERSION 0.9.2)
+project(aaltitoad VERSION 0.10.0)
 configure_file(src/config.h.in config.h)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
