@@ -28,6 +28,7 @@ std::vector<std::string> componentIgnoreList = { // NOLINT(cert-err58-cpp)
         "ignore",       // ignore all files that want to be ignored
         "Queries.json", // Queries are not component- or symbol-files
         ".parts",       // parts files are not components
+        ".DS_Store",    // OSX makes these files all the time.
 };
 
 bool ShouldSkipEntry(const std::filesystem::directory_entry& entry) {
