@@ -74,7 +74,7 @@ bool ReachabilitySearcher::IsQuerySatisfied(const Query& query, const TTA &state
 }
 
 void ReachabilitySearcher::AreQueriesSatisfied(std::vector<QueryResultPair>& queries, const TTA& state, size_t state_hash) {
-    for(auto & query : queries) {
+    for(auto& query : queries) {
         if(!query.answer) {
             query.answer = IsQuerySatisfied(*query.query, state);
             if (query.answer) {
@@ -83,6 +83,8 @@ void ReachabilitySearcher::AreQueriesSatisfied(std::vector<QueryResultPair>& que
                 auto ss = ConvertASTToString(*query.query);
                 spdlog::info("Query '{0}' is satisfied!", ss);
                 spdlog::debug("Query '{0}' was satisfied in state: \n{1}", ss, state.GetCurrentStateString());
+                if(CLIConfig::getInstance()["immediate-output"])
+                    PrintResults({query});
             }
         }
     }
@@ -209,7 +211,7 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strate
     while(stateit != Waiting.end()) {
         auto& state = stateit->second;
         auto curstatehash = stateit->first;
-        AreQueriesSatisfied(query_results, state.tta, curstatehash);
+
         if(AreQueriesAnswered(query_results)) {
             Passed.emplace(std::make_pair(curstatehash, state));
             if(CLIConfig::getInstance()["verbosity"] && CLIConfig::getInstance()["verbosity"].as_integer() >= 6)
@@ -229,6 +231,7 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strate
         AddToWaitingList(state.tta, allTickStateChanges, false, curstatehash);
 
         Passed.emplace(std::make_pair(curstatehash, state));
+        AreQueriesSatisfied(query_results, state.tta, curstatehash);
 
         cleanup_waiting_list(*this, curstatehash, state);
         stateit = PickStateFromWaitingList(strategy);
