@@ -127,6 +127,9 @@ public:
     TokenMap GetSymbolChangesAsMap(std::vector<UpdateExpression> &symbolChanges) const;
     void WarnAboutComponentOverlap(component_overlap_t& overlappingComponents) const;
     bool TypeCheck(const std::pair<const std::string, packToken> &symbol, const std::map<std::string, packToken>::iterator &changingSymbol) const;
+    /// WARNING: Very expensive operation!
+    auto operator==(const TTA& other) -> bool;
+    auto operator!=(const TTA& other) -> bool;
 };
 
 struct StateMultiChoice {

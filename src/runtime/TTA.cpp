@@ -22,11 +22,35 @@
 #include <tinytimer/Timer.hpp>
 #include <verifier/trace_output/TTAResugarizer.h>
 
+auto TTA::operator==(const TTA &other) -> bool {
+    for(auto& c : components) {
+        if(c.second.currentLocation.identifier != other.components.at(c.first).currentLocation.identifier)
+            return false;
+    }
+    for(auto& s : symbols.map()) {
+        if(s.second != other.symbols.map()[s.first])
+            return false;
+    }
+    return true;
+}
+
+auto TTA::operator!=(const TTA &other) -> bool {
+    return !(*this == other);
+}
+
 TTA::StateChange operator+(TTA::StateChange a, TTA::StateChange b) {
     // Merge a and b
-    a.symbols.map().merge(b.symbols.map());
-    a.componentLocations.merge(b.componentLocations);
-    return a;
+    // a.symbols.map().merge(b.symbols.map());
+    TTA::StateChange cpy{};
+    for(auto& s : a.symbols.map())
+        cpy.symbols[s.first] = s.second;
+    for(auto& s : b.symbols.map())
+        cpy.symbols[s.first] = s.second;
+    for(auto& c : a.componentLocations)
+        cpy.componentLocations[c.first] = c.second;
+    for(auto& c : b.componentLocations)
+        cpy.componentLocations[c.first] = c.second;
+    return cpy;
 }
 
 TTA operator<<(const TTA& aa, const TTA::StateChange& b) {
@@ -168,33 +192,31 @@ bool TTA::SetComponentLocations(const ComponentLocationMap &locationChange) {
 bool TTA::SetSymbols(const SymbolMap &symbolChange) {
     for(auto& symbol : symbolChange.map()) {
         auto symbolit = symbols.map().find(symbol.first);
-        bool noerror = TypeCheck(symbol, symbolit);
-        if(noerror) {
-            symbols.map()[symbol.first] = symbol.second;
-            if(externalSymbols.find(symbol.first) != externalSymbols.end())
-                externalSymbols[symbol.first] = symbols.find(symbol.first);
-        }
-        else return false;
+        if(!TypeCheck(symbol, symbolit))
+            return false;
+        symbols.map()[symbol.first] = symbol.second;
+        if(externalSymbols.find(symbol.first) != externalSymbols.end())
+            externalSymbols[symbol.first] = symbols.find(symbol.first);
     }
     return true;
 }
 
 bool TTA::TypeCheck(const std::pair<const std::string, packToken> &symbol,
                     const std::map<std::string, packToken>::iterator &changingSymbol) const {
-    auto x = symbol.second->type;
-    auto y = changingSymbol->second->type;
     if(changingSymbol == symbols.map().end()) {
         spdlog::critical("Attempted to change the state of TTA failed. Symbol '{0}' does not exist.", symbol.first);
         return false;
-    } else if(!(NUM & x & y) && !(x == VAR && (NUM & y))) {
-        auto a = tokenTypeToString(changingSymbol->second->type);
-        auto b = tokenTypeToString(symbol.second->type);
-        spdlog::critical(
-                "Attempted to change the state of TTA failed. Symbol '{0}' does not have the correct type. ({1} vs {2} (a := b))",
-                symbol.first, a, b);
-        return false;
     }
-    return true;
+    auto x = symbol.second->type;
+    auto y = changingSymbol->second->type;
+    if((NUM & x & y) || (x == VAR && (NUM & y)) || (x == y))
+        return true;
+    auto a = tokenTypeToString(changingSymbol->second->type);
+    auto b = tokenTypeToString(symbol.second->type);
+    spdlog::critical(
+            "Attempted to change the state of TTA failed. Symbol '{0}' does not have the correct type. ({1} vs {2} (a := b))",
+            symbol.first, a, b);
+    return false;
 }
 
 bool TTA::IsCurrentStateImmediate() const {
@@ -305,8 +327,12 @@ std::string TTA::GetCurrentStateString() const {
     std::stringstream ss{}; ss << "{";
     for(auto& component : components)
         ss<<"\""<<component.first<<"\""<<": "<<"\""<<component.second.currentLocation.identifier<<"\",";
-    for(auto& symbol : symbols.map())
-        ss<<"\""<<symbol.first<<"\""<<": "<<"\""<<symbol.second.str()<<"\",";
+    for(auto& symbol : symbols.map()) {
+        if(symbol.second->type == TIMER)
+            ss << "\"" << symbol.first << "\"" << ": " << "\"" << symbol.second.asDouble() << "\",";
+        else
+            ss << "\"" << symbol.first << "\"" << ": " << "\"" << symbol.second.str() << "\",";
+    }
     ss << R"("OBJECT_END":"true"})"; // This is just a bad way of ending a json object. 
     return ss.str();
 }

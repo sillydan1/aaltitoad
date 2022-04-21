@@ -28,6 +28,9 @@ CLIConfig::CLIConfig() {
               {"output", 'o', argument_requirement::REQUIRE_ARG,
                 "[DIR]/[FILENAME] Output file. Will be created, if not already exists"} },
             { option_requirement::Optional,
+                    {"immediate-output", '!', argument_requirement::NO_ARG,
+                            "Immediately output a trace once a query has been satisfied"} },
+            { option_requirement::Optional,
               {"query", 'q', argument_requirement::REQUIRE_ARG,
                  "[DIR]/[FILENAME] File with queries to be verified. This flag is required for verification"} },
             { option_requirement::Optional,
@@ -60,6 +63,9 @@ CLIConfig::CLIConfig() {
             { option_requirement::Optional,
                     {"notrace", 'c', argument_requirement::NO_ARG,
                             "Disable print of traces to stdout"} },
+            { option_requirement::Optional,
+                    {"print-memory", 'g', argument_requirement::REQUIRE_ARG,
+                            "[INTEGER] Periodically print (debug level) current searchspace size"} },
     };
     status_code = EXIT_SUCCESS;
 }

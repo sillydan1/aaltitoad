@@ -74,17 +74,19 @@ bool ReachabilitySearcher::IsQuerySatisfied(const Query& query, const TTA &state
 }
 
 void ReachabilitySearcher::AreQueriesSatisfied(std::vector<QueryResultPair>& queries, const TTA& state, size_t state_hash) {
-    for(auto & query : queries) {
-        if(!query.answer) {
-            query.answer = IsQuerySatisfied(*query.query, state);
-            if (query.answer) {
-                query.acceptingStateHash = state_hash;
-                query.acceptingState.tta = state; // TODO: This is terrible
-                auto ss = ConvertASTToString(*query.query);
-                spdlog::info("Query '{0}' is satisfied!", ss);
-                spdlog::debug("Query '{0}' was satisfied in state: \n{1}", ss, state.GetCurrentStateString());
-            }
-        }
+    for(auto& query : queries) {
+        if(query.answer)
+            continue;
+        if(!IsQuerySatisfied(*query.query, state))
+            continue;
+        query.answer = true;
+        query.acceptingStateHash = state_hash;
+        query.acceptingState.tta = state; // TODO: This is terrible
+        auto ss = ConvertASTToString(*query.query);
+        spdlog::info("Query '{0}' is satisfied!", ss);
+        spdlog::debug("Query '{0}' was satisfied in state: \n{1}", ss, state.GetCurrentStateString());
+        if(CLIConfig::getInstance()["immediate-output"])
+            PrintResults({query});
     }
 }
 
@@ -117,8 +119,21 @@ auto ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
             if(exists) {
                 auto range = Passed.equal_range(stateHash);
                 auto count = Passed.count(stateHash);
-                if(count > 1)
-                    spdlog::warn("HASH COLLISIONS: {0}", count);
+                if(count > 1) {
+                    std::stringstream ss{};
+                    int c = 0;
+                    for (auto it = range.first; it != range.second; ++it) {
+                        ss << it->second.tta.GetCurrentStateString();
+                        for(auto t = range.first; t != range.second; ++t) {
+                            if(it->second.tta != t->second.tta)
+                                c++;
+                        }
+                    }
+                    if(c > 0) {
+                        spdlog::warn("HASH COLLISIONS: {0}", c);
+                        spdlog::warn(ss.str());
+                    }
+                }
 
                 if(stateHash == range.first->second.prevStateHash) {
                     spdlog::critical("Breaking out of infinite loop. Something is wrong.");
@@ -127,10 +142,6 @@ auto ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
 
                 stateHash = range.first->second.prevStateHash;
                 trace.push_back(range.first->second.tta.GetCurrentStateString());
-                if(count > 1) {
-                    for (auto it = range.first; it != range.second; ++it)
-                        spdlog::warn(it->second.tta.GetCurrentStateString());
-                }
             } else {
                 spdlog::critical("Unable to resolve witnessing trace. ");
                 break;
@@ -206,10 +217,19 @@ std::string debug_get_symbol_map_string_representation(const TTA::SymbolMap& map
 
 bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strategy_t& strategy) {
     auto stateit = Waiting.begin();
+    Timer<unsigned int> periodic_timer{};
+    periodic_timer.start();
     while(stateit != Waiting.end()) {
+        if(CLIConfig::getInstance()["print-memory"]) {
+            if(periodic_timer.milliseconds_elapsed() >= CLIConfig::getInstance()["print-memory"].as_integer()) {
+                spdlog::debug("Waiting list size: {0}", Waiting.size());
+                periodic_timer.start();
+            }
+        }
+
         auto& state = stateit->second;
         auto curstatehash = stateit->first;
-        AreQueriesSatisfied(query_results, state.tta, curstatehash);
+
         if(AreQueriesAnswered(query_results)) {
             Passed.emplace(std::make_pair(curstatehash, state));
             if(CLIConfig::getInstance()["verbosity"] && CLIConfig::getInstance()["verbosity"].as_integer() >= 6)
@@ -229,6 +249,7 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strate
         AddToWaitingList(state.tta, allTickStateChanges, false, curstatehash);
 
         Passed.emplace(std::make_pair(curstatehash, state));
+        AreQueriesSatisfied(query_results, state.tta, curstatehash);
 
         cleanup_waiting_list(*this, curstatehash, state);
         stateit = PickStateFromWaitingList(strategy);
@@ -259,12 +280,22 @@ void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<
             /// This is a lot of copying large data objects... Figure something out with maybe std::move
             auto nstate = state << change;
             auto nstatehash = nstate.GetCurrentStateHash();
-            if (Passed.find(nstatehash) == Passed.end()) {
+            auto passed_it = Passed.find(nstatehash);
+            if (passed_it == Passed.end()) {
                 if (nstatehash == state_hash) {
+                    if(nstate == state)
+                        continue;
                     spdlog::warn("Recursive state hashes!");
-                    continue;
                 }
                 Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
+            } else {
+                auto r = Passed.equal_range(nstatehash);
+                for(auto it = r.first; it != r.second; ++it) {
+                    if(nstate != it->second.tta) {
+                        Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
+                        break;
+                    }
+                }
             }
         }
     }
@@ -277,12 +308,22 @@ void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<
             /// This is a lot of copying large data objects... Figure something out with maybe std::move
             auto nstate = baseChanges << *it;
             auto nstatehash = nstate.GetCurrentStateHash();
-            if (Passed.find(nstatehash) == Passed.end()) {
+            auto passed_it = Passed.find(nstatehash);
+            if (passed_it == Passed.end()) {
                 if (nstatehash == state_hash) {
+                    if(nstate == state)
+                        continue;
                     spdlog::warn("Recursive state hashes!");
-                    continue;
                 }
                 Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
+            } else {
+                auto r = Passed.equal_range(nstatehash);
+                for(auto it = r.first; it != r.second; ++it) {
+                    if(nstate != it->second.tta) {
+                        Waiting.emplace(std::make_pair(nstatehash, SearchState{nstate, state_hash, justTocked}));
+                        break;
+                    }
+                }
             }
         }
     }
@@ -293,9 +334,12 @@ bool ReachabilitySearcher::AreQueriesAnswered(const std::vector<QueryResultPair>
 }
 
 bool ReachabilitySearcher::IsSearchStateTockable(const SearchState& state) {
-    return (!state.justTocked && !state.tta.IsCurrentStateImmediate());
+    return !state.justTocked
+        && !state.tta.IsCurrentStateImmediate();
 }
 
+#include <random>
+std::random_device r;
 ReachabilitySearcher::StateList::iterator ReachabilitySearcher::PickStateFromWaitingList(const nondeterminism_strategy_t& strategy) {
     if(Waiting.empty())
         return Waiting.end();
@@ -309,14 +353,17 @@ ReachabilitySearcher::StateList::iterator ReachabilitySearcher::PickStateFromWai
             return Waiting.begin();
         case nondeterminism_strategy_t::PICK_LAST: {
             auto begin = Waiting.begin();
-            for (auto i = 0; i < Waiting.size(); i++)
+            for (auto i = 0; i < Waiting.size()-1; i++)
                 begin++;
             return begin;
         }
         case nondeterminism_strategy_t::PICK_RANDOM:
-            auto randomPick = rand() % Waiting.size();
+            // auto randomPick = rand() % Waiting.size();
+            std::default_random_engine e1(r());
+            std::uniform_int_distribution<size_t> uniform_dist(0, Waiting.size()-1);
+            auto randomPick = uniform_dist(e1);
             auto picked = Waiting.begin();
-            for(int i = 0; i < randomPick; i++)
+            for(auto i = 0; i < randomPick; i++)
                 picked++;
             return picked;
     }
