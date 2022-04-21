@@ -100,8 +100,14 @@ bool TTASuccessorGenerator::IsStateInteresting(const TTA& ttaState) {
                 [](const auto& edge){ return edge.ContainsExternalChecks(); });
 }
 
+struct SymbolNamePair {
+    SymbolNamePair(const std::string& varname, const TTASymbol_t& symbol)
+     : varname(varname), symbol(symbol) {}
+    std::string varname;
+    TTASymbol_t symbol;
+};
 using VariableValueCollection = std::set<std::pair<std::string, TTASymbol_t>>;
-using VariableValueVector = std::vector<std::pair<std::string, TTASymbol_t>>;
+using VariableValueVector = std::vector<SymbolNamePair>;
 
 void AssignVariable(TTA::SymbolMap& outputMap, const TTA::SymbolMap& currentValues, const std::string &varname, const TTASymbol_t &newValue) {
     std::visit(overload(
@@ -124,13 +130,36 @@ void AssignVariable(TTA::SymbolMap& outputMap, const TTA::SymbolMap& currentValu
     ), newValue);
 }
 
-std::vector<TTA::StateChange> SymbolsCrossProduct(const VariableValueVector& a, const VariableValueVector& b, const TTA::SymbolMap& derivedSymbols) {
-    std::unordered_multimap<std::string, TTASymbol_t> m{};
-    for(auto& x : a)
-        m.emplace(x.first, x.second);
-    for(auto& y : b)
-        m.emplace(y.first, y.second);
-    // sizeof(keys) * for each key
+void add(std::vector<bool>& v) {
+    for(auto i = 0; i < v.size(); i++) {
+        if(v[i])
+            continue;
+        for(; i >= 0; i--)
+            v[i].flip();
+        break;
+    }
+}
+
+std::vector<TTA::StateChange> SymbolsCrossProduct(const VariableValueVector& positives,
+                                                  const VariableValueVector& negatives,
+                                                  unsigned int predicate_count,
+                                                  const TTA::SymbolMap& derivedSymbols) {
+    std::vector<TTA::StateChange> return_value{};
+    std::vector<bool> bitset(predicate_count);
+    for(auto i = 0; i < pow(2, predicate_count); i++) {
+        TTA::StateChange change{};
+        auto j = 0;
+        for(auto b : bitset) {
+            if(b)
+                AssignVariable(change.symbols, derivedSymbols, positives[j].varname, positives[j].symbol);
+            else
+                AssignVariable(change.symbols, derivedSymbols, negatives[j].varname, negatives[j].symbol);
+            j++;
+        }
+        return_value.push_back(change);
+        add(bitset);
+    }
+    return return_value;
 }
 
 /// This absolutely explodes into a billion pieces if the sizeof(a) or b becomes too large.
@@ -150,9 +179,9 @@ std::vector<TTA::StateChange> BFSCrossProduct(const VariableValueVector& a, cons
             crossProduct.push_back(statechange.first);
         } else {
             TTA::StateChange stA{};
-            AssignVariable(stA.symbols, derivedSymbols, a[idx].first, a[idx].second);
+            AssignVariable(stA.symbols, derivedSymbols, a[idx].varname, a[idx].symbol);
             TTA::StateChange stB{};
-            AssignVariable(stB.symbols, derivedSymbols, b[idx].first, b[idx].second);
+            AssignVariable(stB.symbols, derivedSymbols, b[idx].varname, b[idx].symbol);
             frontier.push(std::make_pair(curr + stA, idx+1));
             frontier.push(std::make_pair(curr + stB, idx+1));
         }
@@ -164,38 +193,31 @@ std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA
     // Get all the interesting variable predicates
     auto interestingVarPredicates = GetInterestingVariablePredicatesInState(ttaState);
     if(interestingVarPredicates.empty()) return {};
-    VariableValueCollection positives{};
-    VariableValueCollection negatives{};
-    for (auto &predicate : interestingVarPredicates) {
-        auto pos = std::make_pair(predicate.variable, predicate.GetValueOverTheEdge());
-        if(negatives.find(pos) == negatives.end())
-            positives.insert(pos);
-
-        auto neg = std::make_pair(predicate.variable, predicate.GetValueOnTheEdge());
-        if(positives.find(neg) == positives.end())
-            negatives.insert(neg);
+    VariableValueVector positives{};
+    VariableValueVector negatives{};
+    for (auto& predicate : interestingVarPredicates) {
+        positives.emplace_back(predicate.variable, predicate.GetValueOverTheEdge());
+        negatives.emplace_back(predicate.variable, predicate.GetValueOnTheEdge());
     }
     int limit = -1;
+    auto size = interestingVarPredicates.size();
     if(CLIConfig::getInstance()["explosion-limit"])
         limit = CLIConfig::getInstance()["explosion-limit"].as_integer();
     spdlog::trace("Size of the set of interesting changes is {0}, this means you will get {1} new states",
-                 positives.size(), static_cast<int>(pow(2, positives.size())));
-    if(positives.size() < limit || limit == -1) {
-        VariableValueVector ps{positives.begin(), positives.end()};
-        VariableValueVector ns{negatives.begin(), negatives.end()};
-        return BFSCrossProduct(ps, ns, ttaState.GetSymbols());
-    }
+                  size, static_cast<int>(pow(2, size)));
+    if(size < limit || limit == -1)
+        return SymbolsCrossProduct(positives, negatives, size, ttaState.GetSymbols());
     spdlog::warn("The Tock explosion was too large, trying a weaker strategy - This will likely result in wrong answers.");
     // TODO: This is technically incorrect. These state changes may have an effect on the reachable state space if they are applied together
     std::vector<TTA::StateChange> allChanges{};
     for(auto& positive : positives) {
         TTA::StateChange stP{}; // Positive path
-        AssignVariable(stP.symbols, ttaState.GetSymbols(), positive.first, positive.second);
+        AssignVariable(stP.symbols, ttaState.GetSymbols(), positive.varname, positive.symbol);
         allChanges.push_back(stP);
     }
     for(auto& negative : negatives) {
         TTA::StateChange stN{}; // Negative path
-        AssignVariable(stN.symbols, ttaState.GetSymbols(), negative.first, negative.second);
+        AssignVariable(stN.symbols, ttaState.GetSymbols(), negative.varname, negative.symbol);
         allChanges.push_back(stN);
     }
     spdlog::trace("Amount of Tock changes: {0}", allChanges.size());
