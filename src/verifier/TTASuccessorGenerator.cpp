@@ -146,7 +146,8 @@ std::vector<TTA::StateChange> SymbolsCrossProduct(const VariableValueVector& pos
                                                   const TTA::SymbolMap& derivedSymbols) {
     std::vector<TTA::StateChange> return_value{};
     std::vector<bool> bitset(predicate_count);
-    for(auto i = 0; i < pow(2, predicate_count); i++) {
+    auto size = pow(2, predicate_count);
+    for(auto i = 0; i < size; i++) {
         TTA::StateChange change{};
         auto j = 0;
         for(auto b : bitset) {
@@ -189,10 +190,11 @@ std::vector<TTA::StateChange> BFSCrossProduct(const VariableValueVector& a, cons
     return crossProduct;
 }
 
-std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA &ttaState) {
+std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA& ttaState) {
     // Get all the interesting variable predicates
     auto interestingVarPredicates = GetInterestingVariablePredicatesInState(ttaState);
-    if(interestingVarPredicates.empty()) return {};
+    if(interestingVarPredicates.empty())
+        return {};
     VariableValueVector positives{};
     VariableValueVector negatives{};
     for (auto& predicate : interestingVarPredicates) {

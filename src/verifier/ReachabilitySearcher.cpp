@@ -334,8 +334,10 @@ bool ReachabilitySearcher::AreQueriesAnswered(const std::vector<QueryResultPair>
 }
 
 bool ReachabilitySearcher::IsSearchStateTockable(const SearchState& state) {
-    return (!state.justTocked && !state.tta.IsCurrentStateImmediate());
+    return !state.justTocked
+        && !state.tta.IsCurrentStateImmediate();
 }
+
 #include <random>
 std::random_device r;
 ReachabilitySearcher::StateList::iterator ReachabilitySearcher::PickStateFromWaitingList(const nondeterminism_strategy_t& strategy) {
