@@ -124,6 +124,15 @@ void AssignVariable(TTA::SymbolMap& outputMap, const TTA::SymbolMap& currentValu
     ), newValue);
 }
 
+std::vector<TTA::StateChange> SymbolsCrossProduct(const VariableValueVector& a, const VariableValueVector& b, const TTA::SymbolMap& derivedSymbols) {
+    std::unordered_multimap<std::string, TTASymbol_t> m{};
+    for(auto& x : a)
+        m.emplace(x.first, x.second);
+    for(auto& y : b)
+        m.emplace(y.first, y.second);
+    // sizeof(keys) * for each key
+}
+
 /// This absolutely explodes into a billion pieces if the sizeof(a) or b becomes too large.
 /// i.e. just 16 changes equals 65536 stateChanges (2^N)
 /// - which is not something that doesnt happen
