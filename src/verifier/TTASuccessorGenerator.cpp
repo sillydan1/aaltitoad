@@ -123,6 +123,7 @@ void AssignVariable(TTA::SymbolMap& outputMap, const TTA::SymbolMap& currentValu
             [&](const std::string& v)    { outputMap.map()[varname] = v; }
     ), newValue);
 }
+
 /// This absolutely explodes into a billion pieces if the sizeof(a) or b becomes too large.
 /// i.e. just 16 changes equals 65536 stateChanges (2^N)
 /// - which is not something that doesnt happen
@@ -136,7 +137,7 @@ std::vector<TTA::StateChange> BFSCrossProduct(const VariableValueVector& a, cons
         frontier.pop();
         auto& curr = statechange.first;
         auto& idx  = statechange.second;
-        if(idx >= a.size()) {
+        if(idx >= a.size() || idx >= b.size()) {
             crossProduct.push_back(statechange.first);
         } else {
             TTA::StateChange stA{};

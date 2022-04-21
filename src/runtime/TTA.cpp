@@ -192,33 +192,31 @@ bool TTA::SetComponentLocations(const ComponentLocationMap &locationChange) {
 bool TTA::SetSymbols(const SymbolMap &symbolChange) {
     for(auto& symbol : symbolChange.map()) {
         auto symbolit = symbols.map().find(symbol.first);
-        bool noerror = TypeCheck(symbol, symbolit);
-        if(noerror) {
-            symbols.map()[symbol.first] = symbol.second;
-            if(externalSymbols.find(symbol.first) != externalSymbols.end())
-                externalSymbols[symbol.first] = symbols.find(symbol.first);
-        }
-        else return false;
+        if(!TypeCheck(symbol, symbolit))
+            return false;
+        symbols.map()[symbol.first] = symbol.second;
+        if(externalSymbols.find(symbol.first) != externalSymbols.end())
+            externalSymbols[symbol.first] = symbols.find(symbol.first);
     }
     return true;
 }
 
 bool TTA::TypeCheck(const std::pair<const std::string, packToken> &symbol,
                     const std::map<std::string, packToken>::iterator &changingSymbol) const {
-    auto x = symbol.second->type;
-    auto y = changingSymbol->second->type;
     if(changingSymbol == symbols.map().end()) {
         spdlog::critical("Attempted to change the state of TTA failed. Symbol '{0}' does not exist.", symbol.first);
         return false;
-    } else if(!(NUM & x & y) && !(x == VAR && (NUM & y))) {
-        auto a = tokenTypeToString(changingSymbol->second->type);
-        auto b = tokenTypeToString(symbol.second->type);
-        spdlog::critical(
-                "Attempted to change the state of TTA failed. Symbol '{0}' does not have the correct type. ({1} vs {2} (a := b))",
-                symbol.first, a, b);
-        return false;
     }
-    return true;
+    auto x = symbol.second->type;
+    auto y = changingSymbol->second->type;
+    if((NUM & x & y) || (x == VAR && (NUM & y)) || (x == y))
+        return true;
+    auto a = tokenTypeToString(changingSymbol->second->type);
+    auto b = tokenTypeToString(symbol.second->type);
+    spdlog::critical(
+            "Attempted to change the state of TTA failed. Symbol '{0}' does not have the correct type. ({1} vs {2} (a := b))",
+            symbol.first, a, b);
+    return false;
 }
 
 bool TTA::IsCurrentStateImmediate() const {
