@@ -134,7 +134,7 @@ std::vector<TTA::StateChange> BFSCrossProduct(const VariableValueVector& a, cons
     while(!frontier.empty()) {
         auto statechange = frontier.top();
         frontier.pop();
-        auto curr = statechange.first;
+        auto& curr = statechange.first;
         auto& idx  = statechange.second;
         if(idx >= a.size()) {
             crossProduct.push_back(statechange.first);
