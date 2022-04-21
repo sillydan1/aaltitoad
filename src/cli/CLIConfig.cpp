@@ -63,6 +63,9 @@ CLIConfig::CLIConfig() {
             { option_requirement::Optional,
                     {"notrace", 'c', argument_requirement::NO_ARG,
                             "Disable print of traces to stdout"} },
+            { option_requirement::Optional,
+                    {"print-memory", 'g', argument_requirement::REQUIRE_ARG,
+                            "[INTEGER] Periodically print (debug level) current searchspace size"} },
     };
     status_code = EXIT_SUCCESS;
 }

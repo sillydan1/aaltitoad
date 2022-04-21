@@ -75,18 +75,18 @@ bool ReachabilitySearcher::IsQuerySatisfied(const Query& query, const TTA &state
 
 void ReachabilitySearcher::AreQueriesSatisfied(std::vector<QueryResultPair>& queries, const TTA& state, size_t state_hash) {
     for(auto& query : queries) {
-        if(!query.answer) {
-            query.answer = IsQuerySatisfied(*query.query, state);
-            if (query.answer) {
-                query.acceptingStateHash = state_hash;
-                query.acceptingState.tta = state; // TODO: This is terrible
-                auto ss = ConvertASTToString(*query.query);
-                spdlog::info("Query '{0}' is satisfied!", ss);
-                spdlog::debug("Query '{0}' was satisfied in state: \n{1}", ss, state.GetCurrentStateString());
-                if(CLIConfig::getInstance()["immediate-output"])
-                    PrintResults({query});
-            }
-        }
+        if(query.answer)
+            continue;
+        if(!IsQuerySatisfied(*query.query, state))
+            continue;
+        query.answer = true;
+        query.acceptingStateHash = state_hash;
+        query.acceptingState.tta = state; // TODO: This is terrible
+        auto ss = ConvertASTToString(*query.query);
+        spdlog::info("Query '{0}' is satisfied!", ss);
+        spdlog::debug("Query '{0}' was satisfied in state: \n{1}", ss, state.GetCurrentStateString());
+        if(CLIConfig::getInstance()["immediate-output"])
+            PrintResults({query});
     }
 }
 
@@ -217,7 +217,16 @@ std::string debug_get_symbol_map_string_representation(const TTA::SymbolMap& map
 
 bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strategy_t& strategy) {
     auto stateit = Waiting.begin();
+    Timer<unsigned int> periodic_timer{};
+    periodic_timer.start();
     while(stateit != Waiting.end()) {
+        if(CLIConfig::getInstance()["print-memory"]) {
+            if(periodic_timer.milliseconds_elapsed() >= CLIConfig::getInstance()["print-memory"].as_integer()) {
+                spdlog::debug("Waiting list size: {0}", Waiting.size());
+                periodic_timer.start();
+            }
+        }
+
         auto& state = stateit->second;
         auto curstatehash = stateit->first;
 
