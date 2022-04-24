@@ -18,6 +18,9 @@
  */
 #ifndef AALTITOAD_STRINGEXTENSIONS_H
 #define AALTITOAD_STRINGEXTENSIONS_H
+#include <regex>
+#include <string>
+#include <vector>
 
 std::vector<std::string> split(const std::string& s, char delimiter);
 std::vector<std::string> split(const std::string& s, const std::string& delimiter);
@@ -31,6 +34,7 @@ std::string rtrim_copy(std::string s);
 std::string trim_copy(std::string s);
 bool contains(const std::string& s, const std::string& substring);
 std::optional<const size_t> containsString(const std::string& s, const std::string& substring);
+std::string regex_replace_all(const std::string& original, const std::regex& reg, const std::string& replacement);
 
 struct string_builder {
     std::stringstream ss;

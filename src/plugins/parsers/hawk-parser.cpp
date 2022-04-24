@@ -12,6 +12,7 @@ ntta_t* hawk_parser_t::parse_folders(const std::vector<std::string>& folder_path
     parser_stack.add_layer<composition_check_layer>();
     parser_stack.add_layer<parallel_composition_layer>();
     parser_stack.add_layer<sequential_composition_layer>();
+    parser_stack.add_layer<parameterization_layer>();
     auto ret = from_syntax(parser_stack.apply());
     spdlog::debug("====/HAWK ==== ({0}ms)", t.milliseconds_elapsed());
     return ret;

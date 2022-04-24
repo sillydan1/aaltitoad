@@ -103,3 +103,10 @@ std::optional<const size_t> containsString(const std::string& s, const std::stri
     if(i == std::string::npos) return {};
     return {i};
 }
+
+std::string regex_replace_all(const std::string& original, const std::regex& reg, const std::string& replacement) {
+    auto temp = std::regex_replace(original, reg, replacement);
+    while(std::regex_match(temp, reg))
+        temp = std::regex_replace(temp, reg, replacement);
+    return temp;
+}

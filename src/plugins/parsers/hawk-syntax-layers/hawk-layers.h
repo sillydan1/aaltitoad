@@ -31,6 +31,10 @@ void operator+=(template_map& a, const template_map& b) {
 void operator+=(template_symbol_collection_t& a, const template_map& b) {
     a.map += b;
 }
+void operator+=(template_symbol_collection_t& a, const template_symbol_collection_t& b) {
+    a.map += b.map;
+    a.symbols += b.symbols;
+}
 
 class file_parser_layer : public syntax_layer {
 public:
@@ -228,13 +232,19 @@ private:
     // We have guaranteed no infinite recursion in the composition_check_layer, so no need to worry
     static auto parallel_compose(const nlohmann::json& sub_component_object, // NOLINT(misc-no-recursion)
                                  const std::string& parent_component,
-                                 const template_symbol_collection_t& templates) -> template_map {
-        template_map return_value{};
+                                 const template_symbol_collection_t& templates) -> template_symbol_collection_t {
+        template_symbol_collection_t return_value{};
         auto this_template_name = sub_component_object["component"];
         auto this_template_identifier = sub_component_object["identifier"];
-        return_value[this_template_name] = templates.map.at(this_template_name);
-        return_value[this_template_name]["component_identifier"] = this_template_identifier;
-        return_value[this_template_name]["parent_component"] = parent_component;
+        return_value.map[this_template_name] = templates.map.at(this_template_name);
+        return_value.map[this_template_name]["component_identifier"] = this_template_identifier;
+        return_value.map[this_template_name]["parent_component"] = parent_component;
+
+        driver drv{{}};
+        auto res = drv.parse(templates.map.at(this_template_name)[syntax_constants::declarations]);
+        if(res != 0)
+            throw std::logic_error(std::get<std::string>(drv.error));
+        return_value.symbols += drv.result;
 
         auto& parent_edges = templates.map.at(this_template_name)[syntax_constants::edges];
         for(auto& c : templates.map.at(this_template_name)[syntax_constants::sub_components]) {
@@ -296,6 +306,35 @@ private:
     }
 };
 
+class expression_parameterizer : public driver {
+public:
+    std::string expression;
+    using parameter_map_t = std::unordered_map<std::string, std::pair<std::string, symbol_value_t>>;
+    const parameter_map_t& parameter_mapping{};
+    explicit expression_parameterizer(const symbol_table_t& env, const parameter_map_t& mapping)
+     : driver{env}, parameter_mapping{mapping} {}
+    auto parse(const std::string& expr) -> int override {
+        expression = expr;
+        return driver::parse(expr);
+    }
+    auto get_symbol(const std::string& identifier) -> symbol_value_t override {
+        if(environment.contains(identifier))
+            return driver::get_symbol(identifier);
+        for(auto& key : get_key_set(parameter_mapping)) {
+            if(identifier == key)
+                return parameter_mapping.at(key).second;
+            if(contains(identifier, key)) {
+                auto parameterized_ident = std::regex_replace(identifier, std::regex(key), parameter_mapping.at(key).first);
+                if(environment.contains(parameterized_ident)) {
+                    expression = regex_replace_all(expression, std::regex(identifier), parameterized_ident);
+                    return driver::get_symbol(parameterized_ident);
+                }
+            }
+        }
+        throw std::out_of_range("No parameterization available for identifier: "+identifier);
+    }
+};
+
 class parameterization_layer : public syntax_layer {
 public:
     parameterization_layer() : syntax_layer("parameterization_layer") {}
@@ -303,28 +342,39 @@ public:
         spdlog::info("Parameterizing components");
         auto return_value = components;
         // For each component
-        for(auto& component : get_value_set(components.map)) {
-            // For each parameter/argument pair (argument has been provided in a previous step)
-            // For each edge
-            for(auto& edge : component["edges"]) {
-                // unperformant approach:
-                // Perform for update and guard expressions:
-                auto update = std::string(edge[syntax_constants::update]);
-                auto res = driver{components.symbols}.parse(update);
-                // call expr on expression
-                // if out_of_range error of key x
-                //   does x have substring of parameter?
-                //   replace substring with argument
-                //   call expr again
-                //   if fails -> parser error. Unable to parameterize variable x
+        for(auto& component : return_value.map) {
+            expression_parameterizer::parameter_map_t parameter_argument_mapping{};
+            auto get_positional_arguments = [](const std::string& inputstr){
+                // Remove "xxx(" and ")"'s
+                auto r = std::regex_replace(std::regex_replace(inputstr, std::regex("^.+\\("), ""), std::regex("\\)"), "");
+                return split(r, ',');
+            };
+            auto params = get_positional_arguments(component.first);
+            auto args = get_positional_arguments(component.second["component_identifier"]);
+            if(params.size() != args.size())
+                throw std::logic_error("Unable to parameterize component. Provided arguments does not match parameters");
+            for(int i = 0; i < params.size(); i++) {
+                symbol_value_t v{}; v = args[i];
+                parameter_argument_mapping.insert_or_assign(params[i], std::make_pair(args[i], v));
+            }
 
-                // Naïve approach:
-                // Perform the following for update and guard expressions:
-                // Replace parameter bare-words
-                // Replace ".<parameter>" substrings
-                // Call expr to ensure no syntax errors have occurred.
+            // TODO: Parameterize DECLARATIONS too?! omg hawks are insane
+            expression_parameterizer parameterizer{components.symbols, parameter_argument_mapping};
+            for (auto &edge: component.second["edges"]) {
+                auto update = std::string(edge[syntax_constants::update]);
+                auto guard = std::string(edge[syntax_constants::guard]);
+                auto update_res = parameterizer.parse(update);
+                edge[syntax_constants::update] = parameterizer.expression;
+                if(update_res != 0)
+                    throw std::logic_error(std::get<std::string>(parameterizer.error));
+
+                auto guard_res = parameterizer.parse(guard);
+                edge[syntax_constants::guard] = parameterizer.expression;
+                if(guard_res != 0)
+                    throw std::logic_error(std::get<std::string>(parameterizer.error));
             }
         }
+        spdlog::info("Finished");
         return return_value;
     }
 };
