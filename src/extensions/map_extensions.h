@@ -10,6 +10,12 @@ struct key_element_t {
         return keyValuePair.first;
     }
 };
+struct value_element_t {
+    template <typename T>
+    typename T::first_type operator()(T keyValuePair) const {
+        return keyValuePair.second;
+    }
+};
 
 template<typename K, typename V>
 auto get_key_set(const std::unordered_map<K,V>& m) -> std::vector<K> {
@@ -24,4 +30,17 @@ auto get_key_set(const std::map<K,V>& m) -> std::vector<K> {
     return keys;
 }
 
-#endif //AALTITOAD_MAP_EXTENSIONS_H
+template<typename K, typename V>
+auto get_value_set(const std::unordered_map<K,V>& m) -> std::vector<V> {
+    std::vector<V> values{};
+    transform(m.begin(), m.end(), back_inserter(values), value_element_t());
+    return values;
+}
+template<typename K, typename V>
+auto get_value_set(const std::map<K,V>& m) -> std::vector<V> {
+    std::vector<V> values{};
+    transform(m.begin(), m.end(), back_inserter(values), value_element_t());
+    return values;
+}
+
+#endif

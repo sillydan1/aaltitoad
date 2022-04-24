@@ -36,6 +36,7 @@ ntta_t* hawk_parser_t::from_syntax(const template_symbol_collection_t& syntax) {
 }
 
 component_t hawk_parser_t::parse_component(const nlohmann::json& json) {
+    using namespace syntax_constants;
     location_map_t location_list{};
     for(auto& location : json[locations])
         location_list.insert({location["id"], location_t{location[immediacy] == immediate}});
@@ -50,6 +51,7 @@ component_t hawk_parser_t::parse_component(const nlohmann::json& json) {
 }
 
 symbol_table_t hawk_parser_t::parse_component_declarations(const nlohmann::json& json) {
+    using namespace syntax_constants;
     if(!json.contains(declarations))
         return {};
     driver drv{{}};

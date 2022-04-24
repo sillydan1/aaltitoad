@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Asger Gitz-Johansen
+# Copyright (C) 2022 Asger Gitz-Johansen
 # This file is part of aaltitoad.
 #
 #  aaltitoad is free software: you can redistribute it and/or modify
@@ -28,11 +28,12 @@ include(cmake/VER.cmake)
 
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE=true)
 #CPMAddPackage("gh:sillydan1/expr@1.3.0")
-CPMAddPackage("gh:sillydan1/expr#patch/fix-conflicts")
+CPMAddPackage("gh:sillydan1/expr#patch/virtual-driver")
 CPMAddPackage("gh:sillydan1/tinytimer@1.0.0")
 CPMAddPackage("gh:sillydan1/overload#1.0.0")
 CPMAddPackage("gh:sillydan1/ctlparser@1.0.0")
 CPMAddPackage("gh:sillydan1/argvparse@1.2.2")
+CPMAddPackage("gh:sillydan1/yathreadpool@1.0.0")
 CPMAddPackage("gh:gabime/spdlog@1.8.2")
 CPMAddPackage("gh:nlohmann/json@3.10.5")
 
@@ -43,6 +44,7 @@ include_directories(
         ${overload_SOURCE_DIR}/include
         ${rapidjson_SOURCE_DIR}/include
         ${ctlparser_SOURCE_DIR}/include
+        ${yathreadpool_SOURCE_DIR}/include
         ${json_SOURCE_DIR}/include
         ${spdlog_SOURCE_DIR}/include
         ${tinytimer_SOURCE_DIR}

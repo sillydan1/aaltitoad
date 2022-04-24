@@ -7,21 +7,23 @@
 #include "../hawk-parser.h"
 
 /// Keys to check for in the model file(s)
-constexpr const char* initial_location = "initial_location";
-constexpr const char* final_location = "final_location";
-constexpr const char* locations = "locations";
-constexpr const char* declarations = "declarations";
-constexpr const char* sub_components = "sub_components";
-constexpr const char* immediacy = "urgency";
-constexpr const char* immediate = "URGENT";
-constexpr const char* edges = "edges";
-constexpr const char* name = "name";
-constexpr const char* is_main = "main";
-constexpr const char* source_location = "source_location";
-constexpr const char* target_location = "target_location";
-constexpr const char* guard = "guard";
-constexpr const char* update = "update";
-constexpr const char* symbols = "parts";
+namespace syntax_constants {
+    constexpr const char *initial_location = "initial_location";
+    constexpr const char *final_location = "final_location";
+    constexpr const char *locations = "locations";
+    constexpr const char *declarations = "declarations";
+    constexpr const char *sub_components = "sub_components";
+    constexpr const char *immediacy = "urgency";
+    constexpr const char *immediate = "URGENT";
+    constexpr const char *edges = "edges";
+    constexpr const char *name = "name";
+    constexpr const char *is_main = "main";
+    constexpr const char *source_location = "source_location";
+    constexpr const char *target_location = "target_location";
+    constexpr const char *guard = "guard";
+    constexpr const char *update = "update";
+    constexpr const char *symbols = "parts";
+}
 using syntax_layer = value_layer<template_symbol_collection_t>;
 void operator+=(template_map& a, const template_map& b) {
     a.insert(b.begin(), b.end());
@@ -48,28 +50,12 @@ public:
                                     }) != ignore_list.end())
                         continue;
                     std::ifstream ifs(entry.path());
-                    std::string str;
-                    std::string file_contents;
-                    bool skip = false;
-                    while (std::getline(ifs, str)) {
-                        if(contains(str,"/*"))
-                            skip = true;
-                        if(skip && contains(str, "*/")) {
-                            auto x = split(str,"*/");
-                            str = x[1];
-                            skip = false;
-                        }
-                        if(skip)
-                            continue;
-                        file_contents += str;
-                        file_contents.push_back('\n');
-
-                    }
+                    auto file_contents = load_ignore_comments(ifs);
                     auto json = nlohmann::json::parse(file_contents);
                     if(is_template(json)) {
-                        if(templates.contains(json[name]))
+                        if(templates.contains(json[syntax_constants::name]))
                             throw std::logic_error("Multiple definitions of component template");
-                        templates[json[name]] = json;
+                        templates[json[syntax_constants::name]] = json;
                     }
                     if(is_symbols(json))
                         symbol_table += parse_symbols(json);
@@ -88,19 +74,19 @@ private:
     const std::vector<std::string>& ignore_list;
 
     static bool is_template(const nlohmann::json &json) {
-        return json.contains(locations) &&
-               json.contains(edges) &&
-               json.contains(name) &&
-               json.contains(initial_location) &&
-               json.contains(final_location);
+        return json.contains(syntax_constants::locations) &&
+               json.contains(syntax_constants::edges) &&
+               json.contains(syntax_constants::name) &&
+               json.contains(syntax_constants::initial_location) &&
+               json.contains(syntax_constants::final_location);
     }
     static bool is_symbols(const nlohmann::json &json) {
-        return json.contains(symbols);
+        return json.contains(syntax_constants::symbols);
     }
 
     static auto parse_symbols(const nlohmann::json& json) -> symbol_table_t {
         symbol_table_t symbol_table{};
-        for(auto& symbol : json[symbols])
+        for(auto& symbol : json[syntax_constants::symbols])
             symbol_table[symbol["ID"]] = parse_symbol(symbol["Type"], symbol);
         return symbol_table;
     }
@@ -140,8 +126,29 @@ private:
             return (std::string)json;
         throw std::logic_error((string_builder{} << "Not a symbol literal: " << json));
     }
+
+    static auto load_ignore_comments(std::ifstream& ifs) -> std::string {
+        bool skip = false;
+        std::string str;
+        std::string file_contents;
+        while (std::getline(ifs, str)) {
+            if(contains(str,"/*"))
+                skip = true;
+            if(skip && contains(str, "*/")) {
+                auto x = split(str,"*/");
+                str = x[1];
+                skip = false;
+            }
+            if(skip)
+                continue;
+            file_contents += str;
+            file_contents.push_back('\n');
+        }
+        return file_contents;
+    }
 };
 
+// TODO: Recursion should be supported (but do it cleverly.)
 class composition_check_layer : public syntax_layer {
 public:
     composition_check_layer() : syntax_layer{"composition_check_layer"} {}
@@ -158,7 +165,7 @@ private:
         auto template_names = get_key_set(templates);
         association_graph<std::string> subcomponent_dependency_graph{template_names};
         for(int i = 0; i < template_names.size(); i++) {
-            for(auto& j : templates.at(template_names[i])[sub_components]) {
+            for(auto& j : templates.at(template_names[i])[syntax_constants::sub_components]) {
                 auto& component_name = j["component"];
                 auto tmp = std::find(template_names.begin(), template_names.end(), component_name);
                 if(tmp == template_names.end())
@@ -198,7 +205,7 @@ public:
     auto on_call(const template_symbol_collection_t& templates) -> template_symbol_collection_t override {
         spdlog::info("Composing parallel templates");
         auto main_component_template_it = std::find_if(templates.map.begin(), templates.map.end(),
-                                                    [](const auto& e){ return e.second[is_main]; });
+                                                    [](const auto& e){ return e.second[syntax_constants::is_main]; });
         template_symbol_collection_t return_value{.symbols=templates.symbols};
         nlohmann::json main_component_sub_component = {
                 {"component", main_component_template_it->first},
@@ -229,8 +236,8 @@ private:
         return_value[this_template_name]["component_identifier"] = this_template_identifier;
         return_value[this_template_name]["parent_component"] = parent_component;
 
-        auto& parent_edges = templates.map.at(this_template_name)["edges"];
-        for(auto& c : templates.map.at(this_template_name)[sub_components]) {
+        auto& parent_edges = templates.map.at(this_template_name)[syntax_constants::edges];
+        for(auto& c : templates.map.at(this_template_name)[syntax_constants::sub_components]) {
             auto sub_component_identifier = c["identifier"];
             if(!has_ingoing_edge(parent_edges, sub_component_identifier)) {
                 if(has_outgoing_edge(parent_edges, sub_component_identifier)) {
@@ -286,6 +293,39 @@ private:
             }
         }
         return composed_cpy;
+    }
+};
+
+class parameterization_layer : public syntax_layer {
+public:
+    parameterization_layer() : syntax_layer("parameterization_layer") {}
+    auto on_call(const template_symbol_collection_t& components) -> template_symbol_collection_t override {
+        spdlog::info("Parameterizing components");
+        auto return_value = components;
+        // For each component
+        for(auto& component : get_value_set(components.map)) {
+            // For each parameter/argument pair (argument has been provided in a previous step)
+            // For each edge
+            for(auto& edge : component["edges"]) {
+                // unperformant approach:
+                // Perform for update and guard expressions:
+                auto update = std::string(edge[syntax_constants::update]);
+                auto res = driver{components.symbols}.parse(update);
+                // call expr on expression
+                // if out_of_range error of key x
+                //   does x have substring of parameter?
+                //   replace substring with argument
+                //   call expr again
+                //   if fails -> parser error. Unable to parameterize variable x
+
+                // Naïve approach:
+                // Perform the following for update and guard expressions:
+                // Replace parameter bare-words
+                // Replace ".<parameter>" substrings
+                // Call expr to ensure no syntax errors have occurred.
+            }
+        }
+        return return_value;
     }
 };
 

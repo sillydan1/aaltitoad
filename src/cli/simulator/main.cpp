@@ -69,9 +69,7 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     /// Run
     t.start();
     auto x = cli_arguments["ticks"].as_integer_or_default(-1);
-    std::stringstream ss{};
-    ss << std::setw(2) << stream_mods::json << *automata;
-    spdlog::info("Simulating...\n{0}", ss.str());
+    spdlog::info("Simulating...");
     unsigned int i = 0;
     try {
         for (; i < x || x < 0; i++) {
