@@ -61,8 +61,10 @@ public:
                             throw std::logic_error("Multiple definitions of component template");
                         templates[json[syntax_constants::name]] = json;
                     }
-                    if(is_symbols(json))
+                    if(is_symbols(json)) {
+                        spdlog::trace("loading {0} as symbols", entry.path().c_str());
                         symbol_table += parse_symbols(json);
+                    }
                 } catch (std::exception &e) {
                     spdlog::error("Unable to parse json file {0}: {1}", entry.path().c_str(), e.what());
                     throw e;
@@ -91,15 +93,15 @@ private:
     static auto parse_symbols(const nlohmann::json& json) -> symbol_table_t {
         symbol_table_t symbol_table{};
         for(auto& symbol : json[syntax_constants::symbols])
-            symbol_table[symbol["ID"]] = parse_symbol(symbol["Type"], symbol);
+            symbol_table[symbol["ID"]] = parse_symbol(symbol);
         return symbol_table;
     }
 
-    static auto parse_symbol(const std::string& type, const nlohmann::json& json) -> symbol_value_t {
+    static auto parse_symbol(const nlohmann::json& json) -> symbol_value_t {
         if(json.contains("Value"))
             return parse_literal(json["Value"]);
         // Custom types:
-        // PersistentVariable
+        auto type = json["Type"];
         if(type == "DigitalOutput")
             return false;
         if(type == "DigitalInput")
@@ -112,10 +114,8 @@ private:
             return 0;
         if(type == "DigitalToggleSwitch")
             return false;
-        if(type == "EMR")
-            return false;
         if(type == "Timer")
-            return 0;
+            return 0; // TODO: Add Clock support to ntta_t
         throw std::logic_error((string_builder{} << "Unsupported part type: " << type << " :\n" << std::setw(2) << json));
     }
 
@@ -236,19 +236,15 @@ private:
         template_symbol_collection_t return_value{};
         auto this_template_name = sub_component_object["component"];
         auto this_template_identifier = sub_component_object["identifier"];
-        return_value.map[this_template_name] = templates.map.at(this_template_name);
-        return_value.map[this_template_name]["component_identifier"] = this_template_identifier;
-        return_value.map[this_template_name]["parent_component"] = parent_component;
-
-        driver drv{{}};
-        auto res = drv.parse(templates.map.at(this_template_name)[syntax_constants::declarations]);
-        if(res != 0)
-            throw std::logic_error(std::get<std::string>(drv.error));
-        return_value.symbols += drv.result;
+        return_value.map[this_template_identifier] = templates.map.at(this_template_name);
+        return_value.map[this_template_identifier]["template_name"] = this_template_name;
+        return_value.map[this_template_identifier]["component_identifier"] = this_template_identifier;
+        return_value.map[this_template_identifier]["parent_component"] = parent_component;
 
         auto& parent_edges = templates.map.at(this_template_name)[syntax_constants::edges];
         for(auto& c : templates.map.at(this_template_name)[syntax_constants::sub_components]) {
             auto sub_component_identifier = c["identifier"];
+            auto ident = std::string(c["identifier"]);
             if(!has_ingoing_edge(parent_edges, sub_component_identifier)) {
                 if(has_outgoing_edge(parent_edges, sub_component_identifier)) {
                     spdlog::error("Only outgoing edges for subcomponent {0} - not allowed", sub_component_identifier);
@@ -323,8 +319,8 @@ public:
         for(auto& key : get_key_set(parameter_mapping)) {
             if(identifier == key)
                 return parameter_mapping.at(key).second;
-            if(contains(identifier, key)) {
-                auto parameterized_ident = std::regex_replace(identifier, std::regex(key), parameter_mapping.at(key).first);
+            if(contains(identifier, "."+key)) {
+                auto parameterized_ident = std::regex_replace(identifier, std::regex("\\."+key), "."+parameter_mapping.at(key).first);
                 if(environment.contains(parameterized_ident)) {
                     expression = regex_replace_all(expression, std::regex(identifier), parameterized_ident);
                     return driver::get_symbol(parameterized_ident);
@@ -333,33 +329,56 @@ public:
         }
         throw std::out_of_range("No parameterization available for identifier: "+identifier);
     }
+    void set_symbol(const std::string& identifier, const symbol_value_t& value) override {
+        for(auto& key : get_key_set(parameter_mapping)) {
+            if(contains(identifier, "."+key)) { // The '.' is very important.
+                auto parameterized_ident = std::regex_replace(identifier, std::regex(key), parameter_mapping.at(key).first);
+                return driver::set_symbol(parameterized_ident, value);
+            }
+        }
+        return driver::set_symbol(identifier, value);
+    }
 };
 
 class parameterization_layer : public syntax_layer {
+    static auto get_parameter_map(const nlohmann::json& component, const std::string& component_name) {
+        expression_parameterizer::parameter_map_t parameter_argument_mapping{};
+        auto get_positional_arguments = [](const std::string& inputstr){
+            // Remove "xxx(" and ")"'s
+            if(!contains(inputstr,"("))
+                return std::vector<std::string>{};
+            auto r = std::regex_replace(std::regex_replace(inputstr, std::regex("^.+\\("), ""), std::regex("\\)"), "");
+            return split(r, ',');
+        };
+        auto params = get_positional_arguments(component_name);
+        auto args = get_positional_arguments(component["component_identifier"]);
+        if(params.size() != args.size())
+            throw std::logic_error("Unable to parameterize component. Provided arguments does not match parameters");
+        for(int i = 0; i < params.size(); i++)
+            parameter_argument_mapping.insert_or_assign(params[i], std::make_pair(args[i], symbol_value_t{} <<= args[i]));
+        return parameter_argument_mapping;
+    }
+    static symbol_table_t get_parameterized_declarations(const nlohmann::json& component, const expression_parameterizer::parameter_map_t& mapping) {
+        expression_parameterizer parameterizer{{}, mapping};
+        auto decl_res = parameterizer.parse(component[syntax_constants::declarations]);
+        if(decl_res != 0)
+            throw std::logic_error(std::get<std::string>(parameterizer.error));
+        return parameterizer.result;
+    }
 public:
     parameterization_layer() : syntax_layer("parameterization_layer") {}
     auto on_call(const template_symbol_collection_t& components) -> template_symbol_collection_t override {
         spdlog::info("Parameterizing components");
-        auto return_value = components;
-        // For each component
+        template_symbol_collection_t return_value{.symbols=components.symbols,.map=components.map};
+        spdlog::trace("parameterize and load declarations");
         for(auto& component : return_value.map) {
-            expression_parameterizer::parameter_map_t parameter_argument_mapping{};
-            auto get_positional_arguments = [](const std::string& inputstr){
-                // Remove "xxx(" and ")"'s
-                auto r = std::regex_replace(std::regex_replace(inputstr, std::regex("^.+\\("), ""), std::regex("\\)"), "");
-                return split(r, ',');
-            };
-            auto params = get_positional_arguments(component.first);
-            auto args = get_positional_arguments(component.second["component_identifier"]);
-            if(params.size() != args.size())
-                throw std::logic_error("Unable to parameterize component. Provided arguments does not match parameters");
-            for(int i = 0; i < params.size(); i++) {
-                symbol_value_t v{}; v = args[i];
-                parameter_argument_mapping.insert_or_assign(params[i], std::make_pair(args[i], v));
-            }
-
-            // TODO: Parameterize DECLARATIONS too?! omg hawks are insane
-            expression_parameterizer parameterizer{components.symbols, parameter_argument_mapping};
+            auto parameter_argument_mapping = get_parameter_map(component.second, component.second.at("template_name"));
+            return_value.symbols += get_parameterized_declarations(component.second, parameter_argument_mapping);
+        }
+        spdlog::trace("parameterize and load expressions in edges");
+        for(auto& component : return_value.map) {
+            auto parameter_argument_mapping = get_parameter_map(component.second, component.second.at("template_name"));
+            expression_parameterizer parameterizer{return_value.symbols, parameter_argument_mapping};
             for (auto &edge: component.second["edges"]) {
                 auto update = std::string(edge[syntax_constants::update]);
                 auto guard = std::string(edge[syntax_constants::guard]);
