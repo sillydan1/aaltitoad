@@ -384,13 +384,25 @@ public:
                 auto guard = std::string(edge[syntax_constants::guard]);
                 auto update_res = parameterizer.parse(update);
                 edge[syntax_constants::update] = parameterizer.expression;
-                if(update_res != 0)
-                    throw std::logic_error(std::get<std::string>(parameterizer.error));
+                if(update_res != 0) {
+                    auto err = std::get<std::string>(parameterizer.error);
+                    spdlog::error("{2}:<{0} -> {1}> - update: '{3}' - error: '{4}'",
+                                  edge[syntax_constants::source_location],
+                                  edge[syntax_constants::target_location],
+                                  component.first, update, err);
+                    throw std::logic_error(err);
+                }
 
                 auto guard_res = parameterizer.parse(guard);
                 edge[syntax_constants::guard] = parameterizer.expression;
-                if(guard_res != 0)
-                    throw std::logic_error(std::get<std::string>(parameterizer.error));
+                if(guard_res != 0) {
+                    auto err = std::get<std::string>(parameterizer.error);
+                    spdlog::error("{2}:<{0} -> {1}> - guard: '{3}' - error: '{4}'",
+                                  edge[syntax_constants::source_location],
+                                  edge[syntax_constants::target_location],
+                                  component.first, guard, err);
+                    throw std::logic_error(err);
+                }
             }
         }
         spdlog::info("Finished");
