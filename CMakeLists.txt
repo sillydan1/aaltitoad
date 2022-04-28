@@ -66,7 +66,7 @@ if(NOT DEFINED TEST_COVERAGE)
 else()
     add_library(${PROJECT_NAME} ${${PROJECT_NAME}_SOURCES})
 endif()
-target_link_libraries(${PROJECT_NAME} expr)
+target_link_libraries(${PROJECT_NAME} expr dl pthread)
 
 add_subdirectory(src/plugins)
 add_subdirectory(src/cli/simulator)
