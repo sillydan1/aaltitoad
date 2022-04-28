@@ -36,9 +36,6 @@ void ntta_t::tock() {
 }
 
 symbol_table_t ntta_t::tock_values() const {
-    // TODO: Plugin-able tockers (blocking, buffered)
-    //       interesting_tocker (blocking)
-    //       piped_tocker (blocking)
     symbol_table_t tock_changes{};
     for(auto& tocker : tockers)
         tock_changes += tocker->tock(state.symbols);
