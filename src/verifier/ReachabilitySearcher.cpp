@@ -255,7 +255,7 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strate
         stateit = PickStateFromWaitingList(strategy);
     }
     spdlog::info("Found a negative result after searching: {0} states", Passed.size());
-    if(CLIConfig::getInstance()["verbosity"].as_integer() >= 6)
+    if(CLIConfig::getInstance()["verbosity"].as_integer_or_default(0) >= 6)
         debug_print_passed_list(*this);
     if(!CLIConfig::getInstance()["notrace"])
         return query_results.size() - PrintResults(query_results) == 0;
