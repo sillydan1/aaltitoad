@@ -25,19 +25,21 @@ std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTickStates(const TTA
     return tta.GetNextTickStates(nondeterminism_strategy_t::VERIFICATION);
 }
 
-std::vector<VariablePredicate> TTASuccessorGenerator::GetInterestingVariablePredicatesInState(const TTA &ttaState) {
+std::vector<std::vector<VariablePredicate>> TTASuccessorGenerator::GetInterestingVariablePredicatesInState(const TTA &ttaState) {
     // Get all edges that we may be able to take.
     auto currentEdges = ttaState.GetCurrentEdges();
     // Filter over the "interesting" edges
     currentEdges.erase(std::remove_if(currentEdges.begin(), currentEdges.end(),
                                       [](const auto& edge){ return !edge.ContainsExternalChecks(); }), currentEdges.end());
     // Extract predicates based on the guards of those edges
-    std::vector<VariablePredicate> preds{};
+    std::vector<std::vector<VariablePredicate>> all_preds{};
     for(auto& edge : currentEdges) {
+        std::vector<VariablePredicate> preds{};
         for(auto& expr : edge.externalGuardCollection)
             preds.push_back(ConvertFromGuardExpression(expr, ttaState));
+        all_preds.push_back(preds);
     }
-    return preds; // TODO: Check for uniqueness and/or satisfiability
+    return all_preds; // TODO: Check for uniqueness and/or satisfiability
 }
 
 VariablePredicate TTASuccessorGenerator::ConvertFromGuardExpression(const TTA::GuardExpression &expressionTree, const TTA& ttaState) {
@@ -193,35 +195,25 @@ std::vector<TTA::StateChange> BFSCrossProduct(const VariableValueVector& a, cons
 std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStates(const TTA& ttaState) {
     // Get all the interesting variable predicates
     auto interestingVarPredicates = GetInterestingVariablePredicatesInState(ttaState);
-    if(interestingVarPredicates.empty())
+    std::vector<TTA::StateChange> return_value{};
+    for(auto& preds : interestingVarPredicates) {
+        auto changes = GetNextTockStatesFromPredicates(preds, ttaState.GetSymbols());
+        return_value.insert(return_value.end(), changes.begin(), changes.end());
+    }
+    return return_value;
+}
+
+std::vector<TTA::StateChange> TTASuccessorGenerator::GetNextTockStatesFromPredicates(const std::vector<VariablePredicate>& predicates, const TTA::SymbolMap& symbols) {
+    if(predicates.empty())
         return {};
     VariableValueVector positives{};
     VariableValueVector negatives{};
-    for (auto& predicate : interestingVarPredicates) {
+    for (auto& predicate : predicates) {
         positives.emplace_back(predicate.variable, predicate.GetValueOverTheEdge());
         negatives.emplace_back(predicate.variable, predicate.GetValueOnTheEdge());
     }
-    int limit = -1;
-    auto size = interestingVarPredicates.size();
-    if(CLIConfig::getInstance()["explosion-limit"])
-        limit = CLIConfig::getInstance()["explosion-limit"].as_integer();
+    auto size = predicates.size();
     spdlog::trace("Size of the set of interesting changes is {0}, this means you will get {1} new states",
                   size, static_cast<int>(pow(2, size)));
-    if(size < limit || limit == -1)
-        return SymbolsCrossProduct(positives, negatives, size, ttaState.GetSymbols());
-    spdlog::warn("The Tock explosion was too large, trying a weaker strategy - This will likely result in wrong answers.");
-    // TODO: This is technically incorrect. These state changes may have an effect on the reachable state space if they are applied together
-    std::vector<TTA::StateChange> allChanges{};
-    for(auto& positive : positives) {
-        TTA::StateChange stP{}; // Positive path
-        AssignVariable(stP.symbols, ttaState.GetSymbols(), positive.varname, positive.symbol);
-        allChanges.push_back(stP);
-    }
-    for(auto& negative : negatives) {
-        TTA::StateChange stN{}; // Negative path
-        AssignVariable(stN.symbols, ttaState.GetSymbols(), negative.varname, negative.symbol);
-        allChanges.push_back(stN);
-    }
-    spdlog::trace("Amount of Tock changes: {0}", allChanges.size());
-    return allChanges;
+    return SymbolsCrossProduct(positives, negatives, size, symbols);
 }
