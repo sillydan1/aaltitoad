@@ -26,11 +26,12 @@ public:
     /// Gets the set of states that are reachable in the given state (no tocking implications)
     static std::vector<TTA::StateChange> GetNextTickStates(const TTA& ttaStateAndGraph);
     /// Gets all the predicates
-    static std::vector<VariablePredicate> GetInterestingVariablePredicatesInState(const TTA& ttaState);
+    static std::vector<std::vector<VariablePredicate>> GetInterestingVariablePredicatesInState(const TTA& ttaState);
     /// A more efficient way of checking if the state is interesting, than getting an empty vector
     static bool IsStateInteresting(const TTA& ttaState);
     /// Finds and applies all available interesting predicates
     static std::vector<TTA::StateChange> GetNextTockStates(const TTA& ttaState);
+    static std::vector<TTA::StateChange> GetNextTockStatesFromPredicates(const std::vector<VariablePredicate>& predicates, const TTA::SymbolMap& symbols);
 
 private:
     static VariablePredicate ConvertFromGuardExpression(const TTA::GuardExpression& expressionTree, const TTA& ttaState);
