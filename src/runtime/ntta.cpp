@@ -1,5 +1,6 @@
 #include <overload.h>
 #include <nlohmann/json.hpp>
+#include <extensions/exceptions/ntta_error.h>
 #include "ntta.h"
 #include "runtime/util/ntta_state_json.h"
 
@@ -15,18 +16,22 @@ state_diff_t ntta_t::tick() const {
     symbol_table_t symbol_changes{};
     location_diff_t location_changes{};
     for(auto& component : state.components) {
-        auto enabled_edges = component.second.get_enabled_edges(state.symbols);
-        if(enabled_edges.empty())
-            continue;
-        if(enabled_edges.size() > 1)
-            spdlog::warn("Non deterministic choice ({0} choices)", enabled_edges.size());
+        try {
+            auto enabled_edges = component.second.get_enabled_edges(state.symbols);
+            if (enabled_edges.empty())
+                continue;
+            if (enabled_edges.size() > 1)
+                spdlog::warn("Non deterministic choice ({0} choices)", enabled_edges.size());
 
-        // TODO: Pick strategy
-        // TODO: Reject Overlapping Update Influences
-        // TODO: Allow Idempotent updates
-        auto& picked_edge = enabled_edges[0];
-        symbol_changes += picked_edge->evaluate_updates(state.symbols);
-        location_changes[component.first] = picked_edge->to;
+            // TODO: Pick strategy
+            // TODO: Reject Overlapping Update Influences
+            // TODO: Allow Idempotent updates
+            auto &picked_edge = enabled_edges[0];
+            symbol_changes += picked_edge->evaluate_updates(state.symbols);
+            location_changes[component.first] = picked_edge->to;
+        } catch (ntta_error& e) {
+            throw ntta_error::in_component(component.first, e);
+        }
     }
     return {location_changes, symbol_changes};
 }

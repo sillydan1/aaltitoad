@@ -71,21 +71,25 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     auto x = cli_arguments["ticks"].as_integer_or_default(-1);
     spdlog::info("Simulating...");
     unsigned int i = 0;
+#ifdef NDEBUG
     try {
+#endif
         for (; i < x || x < 0; i++) {
             automata->tock();
             automata->tick();
         }
+#ifdef NDEBUG
     } catch (std::exception& e) {
         spdlog::error(e.what());
     }
+#endif
     spdlog::info("{0} ticks took {1}ms", i, t.milliseconds_elapsed());
 }
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t {
     // TODO: Figure out what are the most common env vars for library paths (No, not $PATH - that is for executables)
     auto rpath = std::getenv("RPATH");
-    std::vector<std::string> look_dirs = { ".", "src/plugins", "plugins" };
+    std::vector<std::string> look_dirs = { ".", "lib", "plugins" };
     if(rpath)
         look_dirs.emplace_back(rpath);
     auto provided_dirs = cli_arguments["plugin-dir"].as_list_or_default({});

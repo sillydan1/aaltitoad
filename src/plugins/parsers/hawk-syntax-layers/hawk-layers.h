@@ -4,7 +4,9 @@
 #include <regex>
 #include <extensions/map_extensions.h>
 #include <Timer.hpp>
+#include <threadpool>
 #include "../hawk-parser.h"
+#include "extensions/exceptions/ntta_error.h"
 
 /// Keys to check for in the model file(s)
 namespace syntax_constants {
@@ -102,6 +104,8 @@ private:
             return parse_literal(json["Value"]);
         // Custom types:
         auto type = json["Type"];
+        if(type == "EMR")
+            return 0;
         if(type == "DigitalOutput")
             return false;
         if(type == "DigitalInput")
@@ -333,10 +337,9 @@ public:
         for(auto& key : get_key_set(parameter_mapping)) {
             if(contains(identifier, "."+key)) { // The '.' is very important.
                 auto parameterized_ident = std::regex_replace(identifier, std::regex(key), parameter_mapping.at(key).first);
-                return driver::set_symbol(parameterized_ident, value);
+                return;// driver::set_symbol(parameterized_ident, value);
             }
         }
-        return driver::set_symbol(identifier, value);
     }
 };
 
@@ -376,35 +379,42 @@ public:
             return_value.symbols += get_parameterized_declarations(component.second, parameter_argument_mapping);
         }
         spdlog::trace("parameterize and load expressions in edges");
+        int expression_res = 0;
         for(auto& component : return_value.map) {
-            auto parameter_argument_mapping = get_parameter_map(component.second, component.second.at("template_name"));
+            auto parameter_argument_mapping = get_parameter_map(component.second,
+                                                                component.second.at("template_name"));
             expression_parameterizer parameterizer{return_value.symbols, parameter_argument_mapping};
             for (auto &edge: component.second["edges"]) {
                 auto update = std::string(edge[syntax_constants::update]);
                 auto guard = std::string(edge[syntax_constants::guard]);
                 auto update_res = parameterizer.parse(update);
                 edge[syntax_constants::update] = parameterizer.expression;
-                if(update_res != 0) {
+                if (update_res != 0) {
                     auto err = std::get<std::string>(parameterizer.error);
-                    spdlog::error("{2}:<{0} -> {1}> - update: '{3}' - error: '{4}'",
+                    spdlog::error(ntta_error::update_err_format_spdlog(),
+                                  component.first,
                                   edge[syntax_constants::source_location],
                                   edge[syntax_constants::target_location],
-                                  component.first, update, err);
-                    throw std::logic_error(err);
+                                  update, err);
                 }
 
                 auto guard_res = parameterizer.parse(guard);
                 edge[syntax_constants::guard] = parameterizer.expression;
-                if(guard_res != 0) {
+                if (guard_res != 0) {
                     auto err = std::get<std::string>(parameterizer.error);
-                    spdlog::error("{2}:<{0} -> {1}> - guard: '{3}' - error: '{4}'",
+                    spdlog::error(ntta_error::guard_err_format_spdlog(),
+                                  component.first,
                                   edge[syntax_constants::source_location],
                                   edge[syntax_constants::target_location],
-                                  component.first, guard, err);
-                    throw std::logic_error(err);
+                                  guard, err);
                 }
+
+                expression_res += update_res;
+                expression_res += guard_res;
             }
         }
+        if(expression_res != 0)
+            throw std::logic_error("Errors in expressions");
         spdlog::info("Finished");
         return return_value;
     }

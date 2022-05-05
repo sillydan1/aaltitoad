@@ -46,4 +46,7 @@ struct string_builder {
     operator std::string() const { return ss.str(); } // NOLINT(google-explicit-constructor)
 };
 
+std::string string_format(const std::string &fmt, ...);
+
+
 #endif //AALTITOAD_STRINGEXTENSIONS_H

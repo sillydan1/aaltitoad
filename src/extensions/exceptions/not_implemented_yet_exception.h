@@ -18,7 +18,7 @@
  */
 #ifndef AALTITOAD_NOT_IMPLEMENTED_YET_EXCEPTION_H
 #define AALTITOAD_NOT_IMPLEMENTED_YET_EXCEPTION_H
-#include <aaltitoadpch.h>
+#include "aaltitoadpch.h"
 
 class not_implemented_yet_exception : public std::logic_error {
 public:
