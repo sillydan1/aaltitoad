@@ -331,8 +331,10 @@ TTA::GuardCollection TTAParser::ParseExternalVariablesUsedInGuardExpression(cons
     for(auto& expr : expressions) {
         // TODO: Parentheses fuck everything up. It should be fixed.
         auto ge = ParseGuardExpression(expr);
-        if(!ge)
+        if(!ge) {
+            spdlog::warn("Parsing guard expression failed: {0}", expr);
             continue;
+        }
         ge->tree_apply(doesExpressionContainExternalVariable);
         if(doesExpressionContainExternalVariableBool) {
             // Extract the expression only. TODO: Write a more flexible parser
