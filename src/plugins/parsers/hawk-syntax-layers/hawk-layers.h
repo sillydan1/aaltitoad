@@ -226,16 +226,6 @@ public:
     }
 
 private:
-    static auto parse_component_declarations(const nlohmann::json& json) -> symbol_table_t {
-        using namespace syntax_constants;
-        if(!json.contains(declarations))
-            return {};
-        expr::interpreter drv{{}};
-        auto res = drv.parse(json[declarations]);
-        if(res != 0)
-            throw std::logic_error(std::string("Unable to evaluate declaration expression ") + std::string(json[declarations]));
-        return drv.result;
-    }
     static auto has_ingoing_edge(const nlohmann::json& parent_edges, const std::string& identifier) {
         return std::any_of(parent_edges.begin(), parent_edges.end(),
                            [&identifier](const auto& j){ return j.at("target_sub_component") == identifier; });
@@ -255,8 +245,6 @@ private:
         return_value.map[this_template_identifier]["template_name"] = this_template_name;
         return_value.map[this_template_identifier]["component_identifier"] = this_template_identifier;
         return_value.map[this_template_identifier]["parent_component"] = parent_component;
-        auto decls = templates.map.at(this_template_name)[syntax_constants::declarations];
-        return_value.symbols += parse_component_declarations(decls);
 
         auto& parent_edges = templates.map.at(this_template_name)[syntax_constants::edges];
         for(auto& c : templates.map.at(this_template_name)[syntax_constants::sub_components]) {
