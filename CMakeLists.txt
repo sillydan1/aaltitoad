@@ -31,7 +31,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE=true)
 #CPMAddPackage("gh:sillydan1/expr@1.3.0")
-CPMAddPackage("gh:sillydan1/expr#patch/virtual-driver")
+CPMAddPackage("gh:sillydan1/expr#major/compilation")
 CPMAddPackage("gh:sillydan1/tinytimer@1.0.0")
 CPMAddPackage("gh:sillydan1/overload#1.0.0")
 CPMAddPackage("gh:sillydan1/ctlparser@1.0.0")
@@ -50,8 +50,10 @@ include_directories(
         ${yathreadpool_SOURCE_DIR}/include
         ${json_SOURCE_DIR}/include
         ${spdlog_SOURCE_DIR}/include
+        ${yatree_SOURCE_DIR}/include
         ${tinytimer_SOURCE_DIR}
         ${expr_SOURCE_DIR}/include
+        ${expr_SOURCE_DIR}/src
         ${expr_BUILD_DIR}
         ${optionparser_SOURCE_DIR}/src
         src

@@ -55,7 +55,7 @@ symbol_table_t hawk_parser_t::parse_component_declarations(const nlohmann::json&
     using namespace syntax_constants;
     if(!json.contains(declarations))
         return {};
-    driver drv{{}};
+    expr::interpreter drv{{}};
     auto res = drv.parse(json[declarations]);
     if(res != 0)
         throw std::logic_error(std::string("Unable to evaluate declaration expression ") + std::string(json[declarations]));

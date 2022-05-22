@@ -1,6 +1,7 @@
 #include "h-uppaal-parser.h"
 #include "parser/driver.h"
 #include <extensions/string_extensions.h>
+#include <parser/interpreter.h>
 
 /// Keys to check for in the model file(s)
 constexpr const char* initial_location = "initial_location";
@@ -75,7 +76,7 @@ component_t h_uppaal_parser_t::parse_component(const nlohmann::json& json) {
 symbol_table_t h_uppaal_parser_t::parse_component_declarations(const nlohmann::json& json) {
     if(!json.contains(declarations))
         return {};
-    driver drv{{}};
+    expr::interpreter drv{{}};
     auto res = drv.parse(json[declarations]);
     if (res)
         throw std::logic_error(std::string("Unable to evaluate declaration expression ") + std::string(json[declarations]));

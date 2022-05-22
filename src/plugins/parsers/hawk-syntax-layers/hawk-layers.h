@@ -7,6 +7,7 @@
 #include <threadpool>
 #include "../hawk-parser.h"
 #include "extensions/exceptions/ntta_error.h"
+#include <parser/interpreter.h>
 
 /// Keys to check for in the model file(s)
 namespace syntax_constants {
@@ -225,6 +226,16 @@ public:
     }
 
 private:
+    static auto parse_component_declarations(const nlohmann::json& json) -> symbol_table_t {
+        using namespace syntax_constants;
+        if(!json.contains(declarations))
+            return {};
+        expr::interpreter drv{{}};
+        auto res = drv.parse(json[declarations]);
+        if(res != 0)
+            throw std::logic_error(std::string("Unable to evaluate declaration expression ") + std::string(json[declarations]));
+        return drv.result;
+    }
     static auto has_ingoing_edge(const nlohmann::json& parent_edges, const std::string& identifier) {
         return std::any_of(parent_edges.begin(), parent_edges.end(),
                            [&identifier](const auto& j){ return j.at("target_sub_component") == identifier; });
@@ -244,6 +255,8 @@ private:
         return_value.map[this_template_identifier]["template_name"] = this_template_name;
         return_value.map[this_template_identifier]["component_identifier"] = this_template_identifier;
         return_value.map[this_template_identifier]["parent_component"] = parent_component;
+        auto decls = templates.map.at(this_template_name)[syntax_constants::declarations];
+        return_value.symbols += parse_component_declarations(decls);
 
         auto& parent_edges = templates.map.at(this_template_name)[syntax_constants::edges];
         for(auto& c : templates.map.at(this_template_name)[syntax_constants::sub_components]) {
@@ -306,28 +319,30 @@ private:
     }
 };
 
-class expression_parameterizer : public driver {
+class expression_parameterizer : public expr::interpreter {
 public:
     std::string expression;
     using parameter_map_t = std::unordered_map<std::string, std::pair<std::string, symbol_value_t>>;
     const parameter_map_t& parameter_mapping{};
     explicit expression_parameterizer(const symbol_table_t& env, const parameter_map_t& mapping)
-     : driver{env}, parameter_mapping{mapping} {}
+     : expr::interpreter{env}, parameter_mapping{mapping} {}
     auto parse(const std::string& expr) -> int override {
         expression = expr;
-        return driver::parse(expr);
+        return expr::interpreter::parse(expr);
     }
-    auto get_symbol(const std::string& identifier) -> symbol_value_t override {
+    auto get_symbol(const std::string& identifier) -> syntax_tree_t override {
         if(environment.contains(identifier))
-            return driver::get_symbol(identifier);
+            return expr::interpreter::get_symbol(identifier);
         for(auto& key : get_key_set(parameter_mapping)) {
-            if(identifier == key)
-                return parameter_mapping.at(key).second;
+            if(identifier == key) {
+                expression = regex_replace_all(expression, std::regex("[^a-zA-Z.]"+identifier), parameter_mapping.at(key).first);
+                return syntax_tree_t{parameter_mapping.at(key).second};
+            }
             if(contains(identifier, "."+key)) {
                 auto parameterized_ident = std::regex_replace(identifier, std::regex("\\."+key), "."+parameter_mapping.at(key).first);
                 if(environment.contains(parameterized_ident)) {
                     expression = regex_replace_all(expression, std::regex(identifier), parameterized_ident);
-                    return driver::get_symbol(parameterized_ident);
+                    return expr::interpreter::get_symbol(parameterized_ident);
                 }
             }
         }
@@ -337,9 +352,21 @@ public:
         for(auto& key : get_key_set(parameter_mapping)) {
             if(contains(identifier, "."+key)) { // The '.' is very important.
                 auto parameterized_ident = std::regex_replace(identifier, std::regex(key), parameter_mapping.at(key).first);
-                return;// driver::set_symbol(parameterized_ident, value);
+                expr::interpreter::set_symbol(parameterized_ident, value);
+                return;
             }
         }
+        expr::interpreter::set_symbol(identifier, value);
+    }
+    void add_tree(const std::string& identifier, const syntax_tree_t& tree) override {
+        for(auto& key : get_key_set(parameter_mapping)) {
+            if(contains(identifier, "."+key)) { // The '.' is very important.
+                auto parameterized_ident = std::regex_replace(identifier, std::regex(key), parameter_mapping.at(key).first);
+                expr::interpreter::add_tree(parameterized_ident, tree);
+                return;
+            }
+        }
+        expr::interpreter::add_tree(identifier, tree);
     }
 };
 
