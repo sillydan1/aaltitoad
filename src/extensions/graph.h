@@ -3,22 +3,24 @@
 #include <vector>
 
 template<typename T>
-class association_graph {
+struct node {
+    T data;
+    std::vector<node*> outgoing_edges{};
+};
+
+template<typename T>
+class graph {
 public:
-    struct node {
-        T data;
-        std::vector<node*> outgoing_edges{};
-    };
-    explicit association_graph(const std::vector<T>& data_nodes) : nodes{} {
+    graph(const std::initializer_list<T>& data_nodes) : nodes{} {
         nodes.reserve(data_nodes.size());
         for(auto& dn : data_nodes)
             nodes.push_back({dn});
     }
-    explicit association_graph(std::vector<node>&& nodes) : nodes{std::move(nodes)} {}
-    explicit association_graph(const std::vector<node>& nodes) : nodes{nodes} {}
+    graph(std::vector<node<T>>&& nodes) : nodes{std::move(nodes)} {} // NOLINT(google-explicit-constructor)
+    graph(const std::vector<node<T>>& nodes) : nodes{nodes} {} // NOLINT(google-explicit-constructor)
     //// To keep edge pointers valid you must never add new nodes to
     //// an association_graph after you have constructed it.
-    inline auto get_nodes() const -> const std::vector<node>& {
+    inline auto get_nodes() const -> const std::vector<node<T>>& {
         return nodes;
     }
     //// Insert a new edge from a node to another, by reference of
@@ -32,10 +34,7 @@ public:
         nodes[from_node_index].outgoing_edges.push_back(&nodes[to_node_index]);
     }
 private:
-    std::vector<node> nodes;
+    std::vector<node<T>> nodes;
 };
-
-template<typename T>
-using association_node_t = typename association_graph<T>::node;
 
 #endif

@@ -172,7 +172,7 @@ private:
         Timer<int> t{};
         t.start();
         auto template_names = get_key_set(templates);
-        association_graph<std::string> subcomponent_dependency_graph{template_names};
+        graph<std::string> subcomponent_dependency_graph{template_names};
         for(int i = 0; i < template_names.size(); i++) {
             for(auto& j : templates.at(template_names[i])[syntax_constants::sub_components]) {
                 auto& component_name = j["component"];

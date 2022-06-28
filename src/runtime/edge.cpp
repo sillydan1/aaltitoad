@@ -1,5 +1,5 @@
 #include "edge.h"
-#include "parser/interpreter.h"
+#include "drivers/interpreter.h"
 #include "extensions/exceptions/ntta_error.h"
 
 auto edge_t::evaluate_updates(const symbol_table_t& environment) const -> symbol_table_t {

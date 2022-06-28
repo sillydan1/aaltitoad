@@ -94,7 +94,7 @@ TEST_CASE("givenValidData_whenSerializedAsMachineJson_thenMachineJsonIsGenerated
     auto tta = generate_test_main_tta();
     std::stringstream ss{};
     ss << stream_mods::json << tta;
-    REQUIRE(ss.str() == "{\"locations\":{\"Main\":\"L1\"},\"symbols\":{\"a\":\"0\",\"b\":\"false\"}}");
+    REQUIRE(ss.str() == "{\"locations\":{\"Main\":\"L1\"},\"symbols\":{\"a\":0,\"b\":false}}");
 }
 
 TEST_CASE("givenNewTypeInUpdate_whenEvaluatingOneTick_thenDynamicallyChangeType") {

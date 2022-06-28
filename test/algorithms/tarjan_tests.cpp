@@ -20,9 +20,9 @@ TEST_CASE("givenGraphWithFourSCCs_whenLookingForSCCs_thenFourSCCsAreFound") {
      *  { L6, L5 }
      *  { L7 }
      * */
-    association_graph<std::string> my_graph{std::vector<association_graph<std::string>::node>{
-        {"L0"}, {"L1"}, {"L2"}, {"L3"},
-        {"L4"}, {"L5"}, {"L6"}, {"L7"}}};
+    graph<std::string> my_graph{{
+        "L0", "L1", "L2", "L3",
+        "L4", "L5", "L6", "L7"}};
     // SCC 1
     my_graph.insert_edge(0, 4);
     my_graph.insert_edge(4, 1);
@@ -64,7 +64,7 @@ TEST_CASE("givenGraphWithFourSCCs_whenLookingForSCCs_thenFourSCCsAreFound") {
 }
 
 TEST_CASE("givenNonLoopingGraph_whenSearchForSCCs_thenFourSCCsFound") {
-    association_graph<std::string> my_graph{std::vector<association_graph<std::string>::node>{
+    graph<std::string> my_graph{{
         {"L0"},{"L1"},{"L2"},{"L3"}
     }};
     my_graph.insert_edge(0,1);
@@ -92,7 +92,7 @@ TEST_CASE("givenNonLoopingGraph_whenSearchForSCCs_thenFourSCCsFound") {
 }
 
 TEST_CASE("givenGraphWithWithWeaklyConnectedComponents_whenSearchForSCCs_thenFourSCCsFound") {
-    association_graph<std::string> my_graph{std::vector<association_graph<std::string>::node>{
+    graph<std::string> my_graph{{
         {"L0"}, {"L1"}, {"L2"}, {"L3"}}};
     my_graph.insert_edge(0, 2);
     my_graph.insert_edge(1, 2);

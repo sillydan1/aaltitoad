@@ -9,15 +9,15 @@ struct tarjan_decoration {
     bool on_stack;
 };
 template<typename T>
-using scc_t = std::vector<const association_node_t<T>*>;
+using scc_t = std::vector<const node<T>*>;
 template<typename T>
-using tarjan_decorations_t = std::unordered_map<const association_node_t<T>*, tarjan_decoration>;
+using tarjan_decorations_t = std::unordered_map<const node<T>*, tarjan_decoration>;
 template<typename T>
-using tarjan_stack = std::stack<const association_node_t<T>*>;
+using tarjan_stack = std::stack<const node<T>*>;
 
 template<typename T>
-void strong_connect(const association_node_t<T>* v,
-                    const association_graph<T>& input_graph,
+void strong_connect(const node<T>* v,
+                    const graph<T>& input_graph,
                     tarjan_decorations_t<T>& decorations,
                     unsigned int& index,
                     tarjan_stack<T>& stack,
@@ -52,7 +52,7 @@ void strong_connect(const association_node_t<T>* v,
 
 //// Dev notes: T must be hashable and unique in the graph for this to work
 template<typename T>
-auto tarjan(const association_graph<T>& input_graph) {
+auto tarjan(const graph<T>& input_graph) {
     std::vector<scc_t<T>> sccs{};
     tarjan_decorations_t<T> search_decorations{};
     unsigned int index = 0;

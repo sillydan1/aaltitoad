@@ -8,12 +8,12 @@ struct dfs_decoration {
     bool finished = false;
 };
 template<typename T>
-using dfs_decorations_t = std::unordered_map<const association_node_t<T>*, dfs_decoration>;
+using dfs_decorations_t = std::unordered_map<const node<T>*, dfs_decoration>;
 template<typename T>
-using dfs_allowlist_t = std::unordered_map<const association_node_t<T>*, bool>;
+using dfs_allowlist_t = std::unordered_map<const node<T>*, bool>;
 
 template<typename T, typename F>
-auto has_cycle_dfs(const association_node_t<T>* n, dfs_decorations_t<T>& decorations, F is_allowed) {
+auto has_cycle_dfs(const node<T>* n, dfs_decorations_t<T>& decorations, F is_allowed) {
     if(!is_allowed(n))
         return false; // n is not in the allow_list, so don't include it in the dfs
     if(decorations[n].finished)
@@ -32,7 +32,7 @@ auto has_cycle_dfs(const association_node_t<T>* n, dfs_decorations_t<T>& decorat
 }
 
 template<typename T>
-auto has_cycle_dfs(const association_graph<T>& g) -> bool {
+auto has_cycle_dfs(const graph<T>& g) -> bool {
     dfs_decorations_t<T> decorations{};
     for(auto& node : g.get_nodes()) {
         if(has_cycle_dfs<T>(&node, decorations, [](auto&&){ return true; }))
