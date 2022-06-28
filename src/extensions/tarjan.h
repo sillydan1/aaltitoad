@@ -27,7 +27,8 @@ void strong_connect(const node<T>* v,
     stack.push(v);
     index++;
 
-    for(const auto& w : v->outgoing_edges) {
+    for(const auto& e : v->outgoing_edges) {
+        const auto* w = e.target;
         if(!decorations.contains(w)) {
             strong_connect(w, input_graph, decorations, index, stack, sccs);
             decoration_v.low_link = std::min(decoration_v.low_link, decorations.at(w).low_link);

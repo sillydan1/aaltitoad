@@ -12,8 +12,8 @@ using dfs_decorations_t = std::unordered_map<const node<T>*, dfs_decoration>;
 template<typename T>
 using dfs_allowlist_t = std::unordered_map<const node<T>*, bool>;
 
-template<typename T, typename F>
-auto has_cycle_dfs(const node<T>* n, dfs_decorations_t<T>& decorations, F is_allowed) {
+template<typename T>
+auto has_cycle_dfs(const node<T>* n, dfs_decorations_t<T>& decorations, const std::function<bool(const node<T>*)>& is_allowed) {
     if(!is_allowed(n))
         return false; // n is not in the allow_list, so don't include it in the dfs
     if(decorations[n].finished)
@@ -22,8 +22,8 @@ auto has_cycle_dfs(const node<T>* n, dfs_decorations_t<T>& decorations, F is_all
         return true;
     decorations.at(n).visited = true;
 
-    for(auto& neighbor : n->outgoing_edges) {
-        if(has_cycle_dfs<T>(neighbor, decorations, is_allowed))
+    for(auto& edge : n->outgoing_edges) {
+        if(has_cycle_dfs<T>(edge.target, decorations, is_allowed))
             return true;
     }
 
