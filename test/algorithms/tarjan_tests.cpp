@@ -20,7 +20,7 @@ TEST_CASE("givenGraphWithFourSCCs_whenLookingForSCCs_thenFourSCCsAreFound") {
      *  { L6, L5 }
      *  { L7 }
      * */
-    graph<std::string> my_graph{{
+    dep_graph<std::string> my_graph{{
         "L0", "L1", "L2", "L3",
         "L4", "L5", "L6", "L7"}};
     // SCC 1
@@ -64,7 +64,7 @@ TEST_CASE("givenGraphWithFourSCCs_whenLookingForSCCs_thenFourSCCsAreFound") {
 }
 
 TEST_CASE("givenNonLoopingGraph_whenSearchForSCCs_thenFourSCCsFound") {
-    graph<std::string> my_graph{{
+    dep_graph<std::string> my_graph{{
         {"L0"},{"L1"},{"L2"},{"L3"}
     }};
     my_graph.insert_edge(0,1);
@@ -92,7 +92,7 @@ TEST_CASE("givenNonLoopingGraph_whenSearchForSCCs_thenFourSCCsFound") {
 }
 
 TEST_CASE("givenGraphWithWithWeaklyConnectedComponents_whenSearchForSCCs_thenFourSCCsFound") {
-    graph<std::string> my_graph{{
+    dep_graph<std::string> my_graph{{
         {"L0"}, {"L1"}, {"L2"}, {"L3"}}};
     my_graph.insert_edge(0, 2);
     my_graph.insert_edge(1, 2);
@@ -115,4 +115,51 @@ TEST_CASE("givenGraphWithWithWeaklyConnectedComponents_whenSearchForSCCs_thenFou
     REQUIRE(found_scc2);
     REQUIRE(found_scc3);
     REQUIRE(found_scc4);
+}
+
+#include "extensions/graph/yagraph.h"
+struct node_data {
+    std::string name;
+};
+struct edge_data {
+    std::string descriptor;
+};
+namespace std {
+    template<>
+    struct hash<edge_data> {
+        inline auto operator()(const edge_data& d) const -> size_t {
+            return std::hash<std::string>{}(d.descriptor);
+        }
+    };
+    template<>
+    struct hash<node_data> {
+        inline auto operator()(const node_data& d) const -> size_t {
+            return std::hash<std::string>{}(d.name);
+        }
+    };
+}
+inline auto operator==(const edge_data& a, const edge_data& b) {
+    return a.descriptor == b.descriptor;
+}
+inline auto operator==(const node_data& a, const node_data& b) {
+    return a.name == b.name;
+}
+TEST_CASE("dwadwa") {
+    ya::graph_builder<node_data,edge_data,std::string> builder{};
+    auto g = builder
+               .add_node("0", {"zero"})
+               .add_node("1", {"one"})
+               .add_edge("2","0",{"x := 3"})
+               .add_nodes({{"3", {"three"}},{"4", {"four"}}})
+               .add_edges({{"0","1",{"x := 2"}},{"1","0",{"x := 1"}}})
+               .add_node("2", {"two"})
+               .optimize() // optional
+               .build();
+    // REQUIRE(g.nodes.size() == xx);
+    // REQUIRE(g.edges.size() == xx);
+    for(auto& n : g.nodes) {
+        std::cout << n.second.data.name << ":" << std::endl;
+        for(auto& e : n.second.outgoing_edges)
+            std::cout << "<" << n.second.data.name << ", '" << e->second.data.descriptor << "', " << e->second.target->second.data.name << ">" << std::endl;
+    }
 }

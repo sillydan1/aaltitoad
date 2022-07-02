@@ -2,13 +2,13 @@
 #include "extensions/graph_algorithms"
 
 TEST_CASE("givenVerySimpleCyclicGraph_whenCheckingForCycles_thenReturnTrue") {
-    graph<std::string> my_graph{{"L0"}};
+    dep_graph<std::string> my_graph{{"L0"}};
     my_graph.insert_edge(0,0);
     REQUIRE(has_cycle_dfs(my_graph));
 }
 
 TEST_CASE("givenAcyclicGraph_whenCheckingForCycles_thenReturnFalse") {
-    graph<std::string> my_graph{{"L0", "L1", "L2", "L3", "L4"}};
+    dep_graph<std::string> my_graph{{"L0", "L1", "L2", "L3", "L4"}};
     my_graph.insert_edge(0, 1);
     my_graph.insert_edge(2, 3);
     my_graph.insert_edge(0, 4);
@@ -16,7 +16,7 @@ TEST_CASE("givenAcyclicGraph_whenCheckingForCycles_thenReturnFalse") {
 }
 
 TEST_CASE("givenGraphWithACyclicSCC_whenCheckingSCCForCycles_thenReturnTrue") {
-    graph<std::string> my_graph{{"L0", "L1", "L2"}};
+    dep_graph<std::string> my_graph{{"L0", "L1", "L2"}};
     my_graph.insert_edge(0, 1);
     my_graph.insert_edge(1, 2);
     my_graph.insert_edge(2, 0);
@@ -27,7 +27,7 @@ TEST_CASE("givenGraphWithACyclicSCC_whenCheckingSCCForCycles_thenReturnTrue") {
 }
 
 TEST_CASE("givenGraphWithAnAcyclicSCC_whenCheckingSCCForCycles_thenReturnFalse") {
-    graph<std::string> my_graph{{"L0", "L1", "L2"}};
+    dep_graph<std::string> my_graph{{"L0", "L1", "L2"}};
     my_graph.insert_edge(0, 1);
     my_graph.insert_edge(1, 2);
     my_graph.insert_edge(2, 2);
@@ -43,7 +43,7 @@ TEST_CASE("givenGraphWithAnAcyclicSCC_whenCheckingSCCForCycles_thenReturnFalse")
 }
 
 TEST_CASE("givenGraphWithDisconnectedNode_whenCheckingSCCForCycles_thenSomeCyclesAreFound") {
-    graph<std::string> my_graph{{"L0", "L1", "L2"}};
+    dep_graph<std::string> my_graph{{"L0", "L1", "L2"}};
     my_graph.insert_edge(0, 1);
     my_graph.insert_edge(2, 2);
     auto sccs = tarjan(my_graph);
@@ -58,7 +58,7 @@ TEST_CASE("givenGraphWithDisconnectedNode_whenCheckingSCCForCycles_thenSomeCycle
 }
 
 TEST_CASE("givenGraphWithCycleAndNonCycle_whenCheckingSCCForCycles_thenSomeCyclesAreFound") {
-    graph<std::string> my_graph{{"L0", "L1", "L2"}};
+    dep_graph<std::string> my_graph{{"L0", "L1", "L2"}};
     my_graph.insert_edge(0, 1);
     my_graph.insert_edge(1, 2);
     auto sccs = tarjan(my_graph);

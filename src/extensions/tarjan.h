@@ -1,6 +1,6 @@
 #ifndef AALTITOAD_TARJAN_H
 #define AALTITOAD_TARJAN_H
-#include "graph.h"
+#include "dep_graph.h"
 #include <stack>
 
 struct tarjan_decoration {
@@ -17,7 +17,7 @@ using tarjan_stack = std::stack<const node<T>*>;
 
 template<typename T>
 void strong_connect(const node<T>* v,
-                    const graph<T>& input_graph,
+                    const dep_graph<T>& input_graph,
                     tarjan_decorations_t<T>& decorations,
                     unsigned int& index,
                     tarjan_stack<T>& stack,
@@ -53,7 +53,7 @@ void strong_connect(const node<T>* v,
 
 //// Dev notes: T must be hashable and unique in the graph for this to work
 template<typename T>
-auto tarjan(const graph<T>& input_graph) {
+auto tarjan(const dep_graph<T>& input_graph) {
     std::vector<scc_t<T>> sccs{};
     tarjan_decorations_t<T> search_decorations{};
     unsigned int index = 0;

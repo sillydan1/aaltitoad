@@ -1,6 +1,6 @@
 #ifndef AALTITOAD_DFS_H
 #define AALTITOAD_DFS_H
-#include "graph.h"
+#include "dep_graph.h"
 #include <optional>
 
 struct dfs_decoration {
@@ -32,7 +32,7 @@ auto has_cycle_dfs(const node<T>* n, dfs_decorations_t<T>& decorations, const st
 }
 
 template<typename T>
-auto has_cycle_dfs(const graph<T>& g) -> bool {
+auto has_cycle_dfs(const dep_graph<T>& g) -> bool {
     dfs_decorations_t<T> decorations{};
     for(auto& node : g.get_nodes()) {
         if(has_cycle_dfs<T>(&node, decorations, [](auto&&){ return true; }))

@@ -1,5 +1,5 @@
-#ifndef AALTITOAD_GRAPH_H
-#define AALTITOAD_GRAPH_H
+#ifndef AALTITOAD_DEP_GRAPH_H
+#define AALTITOAD_DEP_GRAPH_H
 #include <vector>
 
 template<typename N, typename E = void>
@@ -19,15 +19,15 @@ public:
 };
 
 template<typename T, typename E = void>
-class graph {
+class dep_graph {
 public:
-    graph(const std::initializer_list<T>& data_nodes) : nodes{} {
+    dep_graph(const std::initializer_list<T>& data_nodes) : nodes{} {
         nodes.reserve(data_nodes.size());
         for(auto& dn : data_nodes)
             nodes.push_back({dn});
     }
-    graph(std::vector<node<T>>&& nodes) : nodes{std::move(nodes)} {} // NOLINT(google-explicit-constructor)
-    graph(const std::vector<node<T>>& nodes) : nodes{nodes} {} // NOLINT(google-explicit-constructor)
+    dep_graph(std::vector<node<T>>&& nodes) : nodes{std::move(nodes)} {} // NOLINT(google-explicit-constructor)
+    dep_graph(const std::vector<node<T>>& nodes) : nodes{nodes} {} // NOLINT(google-explicit-constructor)
     //// To keep edge pointers valid you must never add new nodes to
     //// an association_graph after you have constructed it.
     inline auto get_nodes() const -> const std::vector<node<T>>& {
@@ -46,5 +46,33 @@ public:
 private:
     std::vector<node<T>> nodes;
 };
+
+template<typename node_t, typename edge_t>
+struct data_node_t;
+template<typename node_t, typename edge_t>
+using data_node_list_t = std::vector<data_node_t<node_t,edge_t>>;
+template<typename node_t, typename edge_t>
+using data_node_list_it = typename data_node_list_t<node_t, edge_t>::iterator;
+template<typename node_t, typename edge_t>
+using data_node_list_cit = typename data_node_list_t<node_t, edge_t>::const_iterator;
+template<typename T, typename node_t, typename edge_t>
+using data_node_listit_map_t = std::unordered_map<data_node_list_it<node_t,edge_t>, T>;
+
+template<typename node_t, typename edge_t>
+struct data_node_t {
+    struct edge {
+        edge_t data;
+        data_node_list_it<node_t,edge_t> target;
+    };
+    using edge_list_t = std::vector<edge>;
+    node_t data;
+    edge_list_t outgoing_edges;
+};
+
+template<typename node_t, typename edge_t>
+struct data_graph {
+    data_node_list_t<node_t, edge_t> nodes;
+};
+
 
 #endif
