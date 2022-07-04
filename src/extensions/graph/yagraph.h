@@ -9,6 +9,7 @@ namespace ya {
     template<typename node_data_t, typename edge_data_t, typename node_key_t> struct node;
     template<typename node_data_t, typename edge_data_t, typename node_key_t> using node_collection = std::unordered_map<node_key_t, node<node_data_t,edge_data_t,node_key_t>>;
     template<typename node_data_t, typename edge_data_t, typename node_key_t> using node_refference = typename node_collection<node_data_t,edge_data_t,node_key_t>::iterator;
+    template<typename node_data_t, typename edge_data_t, typename node_key_t> using node_const_ref  = typename ya::node_collection<node_data_t,edge_data_t,node_key_t>::const_iterator;
     template<typename node_data_t, typename edge_data_t, typename node_key_t> struct graph;
 
     template<typename node_data_t, typename edge_data_t, typename node_key_t>

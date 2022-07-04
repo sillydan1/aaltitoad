@@ -8,26 +8,28 @@ struct dfs_decoration {
     bool finished = false;
 };
 template<typename T, typename E, typename K>
-using dfs_decorations_t = std::unordered_map<const ya::node_refference<T,E,K>, dfs_decoration>;
+using dfs_decorations_t = std::unordered_map<K, dfs_decoration>;
 template<typename T, typename E, typename K>
-using dfs_allowlist_t = std::unordered_map<const ya::node_refference<T,E,K>, bool>;
+using dfs_allowlist_t = std::unordered_map<K, bool>;
+template<typename T, typename E, typename K>
+using allowance_func_t = std::function<bool(const ya::node_const_ref<T,E,K>&)>;
 
 template<typename T, typename E, typename K>
-auto has_cycle_dfs(const ya::node_refference<T,E,K> n, dfs_decorations_t<T,E,K>& decorations, const std::function<bool(const ya::node_refference<T,E,K>)>& is_allowed) {
+auto has_cycle_dfs(const ya::node_const_ref<T,E,K>& n, dfs_decorations_t<T,E,K>& decorations, const allowance_func_t<T,E,K>& is_allowed) {
     if(!is_allowed(n))
         return false; // n is not in the allow_list, so don't include it in the dfs
-    if(decorations[n].finished)
+    if(decorations[n->first].finished)
         return false;
-    if(decorations[n].visited)
+    if(decorations[n->first].visited)
         return true;
-    decorations.at(n).visited = true;
+    decorations.at(n->first).visited = true;
 
-    for(auto& edge : n->outgoing_edges) {
-        if(has_cycle_dfs<T>(edge.target, decorations, is_allowed))
+    for(auto& edge : n->second.outgoing_edges) {
+        if(has_cycle_dfs<T,E,K>(edge->second.target, decorations, is_allowed))
             return true;
     }
 
-    decorations.at(n).finished = true;
+    decorations.at(n->first).finished = true;
     return false;
 }
 
