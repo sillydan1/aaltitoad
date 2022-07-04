@@ -7,13 +7,13 @@ struct dfs_decoration {
     bool visited = false;
     bool finished = false;
 };
-template<typename T>
-using dfs_decorations_t = std::unordered_map<const node<T>*, dfs_decoration>;
-template<typename T>
-using dfs_allowlist_t = std::unordered_map<const node<T>*, bool>;
+template<typename T, typename E, typename K>
+using dfs_decorations_t = std::unordered_map<const ya::node_refference<T,E,K>, dfs_decoration>;
+template<typename T, typename E, typename K>
+using dfs_allowlist_t = std::unordered_map<const ya::node_refference<T,E,K>, bool>;
 
-template<typename T>
-auto has_cycle_dfs(const node<T>* n, dfs_decorations_t<T>& decorations, const std::function<bool(const node<T>*)>& is_allowed) {
+template<typename T, typename E, typename K>
+auto has_cycle_dfs(const ya::node_refference<T,E,K> n, dfs_decorations_t<T,E,K>& decorations, const std::function<bool(const ya::node_refference<T,E,K>)>& is_allowed) {
     if(!is_allowed(n))
         return false; // n is not in the allow_list, so don't include it in the dfs
     if(decorations[n].finished)
@@ -31,24 +31,24 @@ auto has_cycle_dfs(const node<T>* n, dfs_decorations_t<T>& decorations, const st
     return false;
 }
 
-template<typename T>
-auto has_cycle_dfs(const dep_graph<T>& g) -> bool {
-    dfs_decorations_t<T> decorations{};
-    for(auto& node : g.get_nodes()) {
-        if(has_cycle_dfs<T>(&node, decorations, [](auto&&){ return true; }))
+template<typename T, typename E, typename K>
+auto has_cycle_dfs(const ya::graph<T,E,K>& g) -> bool {
+    dfs_decorations_t<T,E,K> decorations{};
+    for(auto it = g.nodes.begin(); it != g.nodes.end(); ++it) {
+        if(has_cycle_dfs<T,E,K>(it, decorations, [](auto&&){ return true; }))
             return true;
     }
     return false;
 }
 
-template<typename T>
-auto has_cycle_dfs(const scc_t<T>& component) -> bool {
-    dfs_decorations_t<T> decorations{};
-    dfs_allowlist_t<T> allow_list{};
+template<typename T, typename E, typename K>
+auto has_cycle_dfs(const scc_t<T,E,K>& component) -> bool {
+    dfs_decorations_t<T,E,K> decorations{};
+    dfs_allowlist_t<T,E,K> allow_list{};
     for(auto& node : component)
         allow_list[node] = true;
     for(auto& node : component) {
-        if(has_cycle_dfs<T>(node, decorations, [&allow_list](const auto& n){ return allow_list.contains(n); }))
+        if(has_cycle_dfs<T,E,K>(node, decorations, [&allow_list](const auto& n){ return allow_list.contains(n); }))
             return true;
     }
     return false;

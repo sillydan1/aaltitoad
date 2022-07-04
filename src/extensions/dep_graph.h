@@ -1,7 +1,7 @@
 #ifndef AALTITOAD_DEP_GRAPH_H
 #define AALTITOAD_DEP_GRAPH_H
 #include <vector>
-
+/*
 template<typename N, typename E = void>
 class node {
     template<typename T>
@@ -74,5 +74,5 @@ struct data_graph {
     data_node_list_t<node_t, edge_t> nodes;
 };
 
-
+*/
 #endif
