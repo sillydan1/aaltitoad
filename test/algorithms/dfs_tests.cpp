@@ -3,10 +3,10 @@
 
 TEST_CASE("givenVerySimpleCyclicGraph_whenCheckingForCycles_thenReturnTrue") {
     auto my_graph = ya::graph_builder<std::string,std::string>{}
-                    .add_node("L0", "L0")
+                    .add_node({"L0"})
                     .add_edge("L0", "L0", "L0->L0")
                     .build();
-    REQUIRE(has_cycle_dfs<std::string,std::string,std::string>(my_graph));
+    REQUIRE(has_cycle_dfs(my_graph));
 }
 
 TEST_CASE("givenAcyclicGraph_whenCheckingForCycles_thenReturnFalse") {
@@ -27,7 +27,7 @@ TEST_CASE("givenGraphWithACyclicSCC_whenCheckingSCCForCycles_thenReturnTrue") {
     for(auto& scc : sccs)
         REQUIRE(has_cycle_dfs<int,char,int>(scc));
 }
-/*
+
 TEST_CASE("givenGraphWithAnAcyclicSCC_whenCheckingSCCForCycles_thenReturnFalse") {
     auto my_graph = ya::graph_builder<int,char>{}
                     .add_nodes({0,1,2})
@@ -36,10 +36,10 @@ TEST_CASE("givenGraphWithAnAcyclicSCC_whenCheckingSCCForCycles_thenReturnFalse")
     auto sccs = tarjan(my_graph);
     REQUIRE(sccs.size() == 3);
     for(auto& scc : sccs) {
-        if(std::find_if(scc.begin(), scc.end(), [](const auto& n){ return n->data == "L2"; }) != scc.end())
-            REQUIRE(has_cycle_dfs<std::string>(scc));
+        if(std::find_if(scc.begin(), scc.end(), [](const auto& n){ return n->second.data == 2; }) != scc.end())
+            REQUIRE(has_cycle_dfs<int,char,int>(scc));
         else
-            REQUIRE(!has_cycle_dfs<std::string>(scc));
+            REQUIRE(!has_cycle_dfs<int,char,int>(scc));
     }
 }
 
@@ -51,10 +51,10 @@ TEST_CASE("givenGraphWithDisconnectedNode_whenCheckingSCCForCycles_thenSomeCycle
     auto sccs = tarjan(my_graph);
     REQUIRE(sccs.size() == 3);
     for(auto& scc : sccs) {
-        if(std::find_if(scc.begin(), scc.end(), [](const auto& n){ return n->data == "L2"; }) != scc.end())
-            REQUIRE(has_cycle_dfs<std::string>(scc));
+        if(std::find_if(scc.begin(), scc.end(), [](const auto& n){ return n->second.data == 2; }) != scc.end())
+            REQUIRE(has_cycle_dfs<int,char,int>(scc));
         else
-            REQUIRE(!has_cycle_dfs<std::string>(scc));
+            REQUIRE(!has_cycle_dfs<int,char,int>(scc));
     }
 }
 
@@ -66,6 +66,5 @@ TEST_CASE("givenGraphWithCycleAndNonCycle_whenCheckingSCCForCycles_thenSomeCycle
     auto sccs = tarjan(my_graph);
     REQUIRE(sccs.size() == 3);
     for(auto& scc : sccs)
-        REQUIRE(!has_cycle_dfs<std::string>(scc));
+        REQUIRE(!has_cycle_dfs<int,char,int>(scc));
 }
-*/

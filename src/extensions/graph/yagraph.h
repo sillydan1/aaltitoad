@@ -33,16 +33,24 @@ namespace ya {
     template<typename node_data_t, typename edge_data_t, typename node_key_t = node_data_t>
     struct graph_builder {
         graph_builder() : nodes{}, edges{} {}
-        struct node_construction_object {
+        struct node_construction_object_separate_key {
             const node_key_t key;
             const node_data_t data;
+            auto get_key() -> node_key_t { return key; }
+            auto get_data() -> node_data_t { return data; }
         };
+        struct node_construction_object_only_data {
+            const node_key_t data;
+            auto get_key() -> node_key_t { return data; }
+            auto get_data() -> node_data_t { return data; }
+        };
+        using node_construction_object = std::conditional_t<std::is_same_v<node_data_t,node_key_t>, node_construction_object_only_data, node_construction_object_separate_key>;
         struct edge_construction_object {
             const node_key_t source;
             const node_key_t target;
             const edge_data_t data;
         };
-        auto add_node(const node_key_t& key, const node_data_t& data) -> graph_builder<node_data_t, edge_data_t, node_key_t>&;
+        auto add_node(const node_construction_object& data) -> graph_builder<node_data_t, edge_data_t, node_key_t>&;
         auto add_nodes(const std::initializer_list<node_construction_object>& data) -> graph_builder<node_data_t, edge_data_t, node_key_t>&;
         auto add_edge(const node_key_t& source, const node_key_t& target, const edge_data_t& data) -> graph_builder<node_data_t, edge_data_t, node_key_t>&;
         auto add_edges(const std::initializer_list<edge_construction_object> &data) -> graph_builder<node_data_t, edge_data_t, node_key_t>&;
@@ -56,15 +64,15 @@ namespace ya {
     };
 
     template<typename node_data_t, typename edge_data_t, typename node_key_t>
-    auto graph_builder<node_data_t,edge_data_t,node_key_t>::add_node(const node_key_t& key, const node_data_t& data) -> graph_builder<node_data_t,edge_data_t,node_key_t>& {
-        nodes.push_back({key, data});
+    auto graph_builder<node_data_t,edge_data_t,node_key_t>::add_node(const node_construction_object& data) -> graph_builder<node_data_t,edge_data_t,node_key_t>& {
+        nodes.push_back(data);
         return *this;
     }
 
     template<typename node_data_t, typename edge_data_t, typename node_key_t>
     auto graph_builder<node_data_t,edge_data_t,node_key_t>::add_nodes(const std::initializer_list<node_construction_object>& data) -> graph_builder<node_data_t,edge_data_t,node_key_t>& {
         for(const auto& d : data)
-            nodes.push_back({d.key, d.data});
+            nodes.push_back(d);
         return *this;
     }
 
@@ -85,7 +93,7 @@ namespace ya {
     auto graph_builder<node_data_t,edge_data_t,node_key_t>::validate() -> graph_builder<node_data_t,edge_data_t,node_key_t>& {
         node_collection<node_data_t, edge_data_t, node_key_t> check_nodes{};
         for(auto& nco : nodes)
-            check_nodes[nco.key] = {nco.data, {}};
+            check_nodes[nco.get_key()] = {nco.get_data(), {}};
         for(auto& eco : edges) {
             bool source_and_target_exist = check_nodes.contains(eco.source) && check_nodes.contains(eco.target);
 #ifndef NDEBUG
@@ -113,7 +121,7 @@ namespace ya {
         validate();
         graph<node_data_t,edge_data_t,node_key_t> result{};
         for(auto& nco : nodes)
-            result.nodes[nco.key] = {nco.data, {}};
+            result.nodes[nco.get_key()] = {nco.get_data(), {}};
         for(auto& eco : edges) {
             auto source_it = result.nodes.find(eco.source);
             auto target_it = result.nodes.find(eco.target);
@@ -125,6 +133,15 @@ namespace ya {
         }
         return result;
     }
+}
+
+namespace ya {
+    template<typename node_data_t, typename edge_data_t, typename node_key_t>
+    struct node_ref_hasher {
+        auto operator()(const ya::node_refference<node_data_t,edge_data_t,node_key_t>& r) const -> size_t {
+            return std::hash<node_key_t>{}(r->first);
+        }
+    };
 }
 
 #endif

@@ -146,12 +146,12 @@ inline auto operator==(const node_data& a, const node_data& b) {
 }
 TEST_CASE("dwadwa") {
     auto g = ya::graph_builder<node_data,edge_data,std::string>{}
-               .add_node("0", {"zero"})
-               .add_node("1", {"one"})
+               .add_node({"0", {"zero"}})
+               .add_node({"1", {"one"}})
                .add_edge("2","0",{"x := 3"})
                .add_nodes({{"3", {"three"}},{"4", {"four"}}})
                .add_edges({{"0","1",{"x := 2"}},{"1","0",{"x := 1"}}})
-               .add_node("2", {"two"})
+               .add_node({"2", {"two"}})
                .optimize() // optional
                .build();
     REQUIRE(g.nodes.size() == 5);

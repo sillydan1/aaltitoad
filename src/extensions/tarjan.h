@@ -9,11 +9,11 @@ struct tarjan_decoration {
     bool on_stack;
 };
 template<typename T, typename E, typename K>
-using scc_t = std::vector<K>;
+using scc_t = std::vector<ya::node_refference<T,E,K>>;
 template<typename T, typename E, typename K>
 using tarjan_decorations_t = std::unordered_map<K, tarjan_decoration>;
 template<typename T, typename E, typename K>
-using tarjan_stack = std::stack<K>;
+using tarjan_stack = std::stack<ya::node_refference<T,E,K>>;
 
 template<typename T, typename E, typename K>
 void strong_connect(ya::node_refference<T,E,K> v,
@@ -24,7 +24,7 @@ void strong_connect(ya::node_refference<T,E,K> v,
                     std::vector<scc_t<T,E,K>>& sccs) {
     decorations.insert(std::make_pair(v->first, tarjan_decoration{.index=index, .low_link=index, .on_stack=true}));
     auto& decoration_v = decorations[v->first];
-    stack.push(v->first);
+    stack.push(v);
     index++;
 
     for(const auto& e : v->second.outgoing_edges) {
@@ -39,9 +39,9 @@ void strong_connect(ya::node_refference<T,E,K> v,
     if(decoration_v.low_link == decoration_v.index) {
         scc_t<T,E,K> scc{};
         auto& w = stack.top();
-        while(decorations.at(w).index >= decoration_v.index) {
+        while(decorations.at(w->first).index >= decoration_v.index) {
             stack.pop();
-            decorations.at(w).on_stack = false;
+            decorations.at(w->first).on_stack = false;
             scc.push_back(w);
             if(stack.empty())
                 break;
@@ -52,7 +52,7 @@ void strong_connect(ya::node_refference<T,E,K> v,
 }
 
 template<typename T, typename E, typename K>
-auto tarjan(const ya::graph<T,E,K>& input_graph) {
+auto tarjan(ya::graph<T,E,K>& input_graph) {
     std::vector<scc_t<T,E,K>> sccs{};
     tarjan_decorations_t<T,E,K> search_decorations{};
     unsigned int index = 0;
