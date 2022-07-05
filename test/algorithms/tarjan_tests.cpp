@@ -6,12 +6,11 @@ bool compare_scc(const scc_t<T,E,K>& actual, const std::vector<T>& expected) {
     return std::all_of(expected.begin(),
                        expected.end(),
                        [&actual](const auto& s){
-                           return std::find_if(actual.begin(), actual.end(), [&s](const auto& e){ return s == e->data; }) != actual.end();
+                           return std::find_if(actual.begin(), actual.end(), [&s](const auto& e){ return s == e->second.data; }) != actual.end();
                        });
 }
-/*
+
 TEST_CASE("givenGraphWithFourSCCs_whenLookingForSCCs_thenFourSCCsAreFound") {
-    //
     // Example graph:
     // https://upload.wikimedia.org/wikipedia/commons/6/60/Tarjan%27s_Algorithm_Animation.gif
     // The Strongly connected components should be:
@@ -19,43 +18,26 @@ TEST_CASE("givenGraphWithFourSCCs_whenLookingForSCCs_thenFourSCCsAreFound") {
     //  { L3, L2 }
     //  { L6, L5 }
     //  { L7 }
-    //
-    dep_graph<std::string> my_graph{{
-        "L0", "L1", "L2", "L3",
-        "L4", "L5", "L6", "L7"}};
-    // SCC 1
-    my_graph.insert_edge(0, 4);
-    my_graph.insert_edge(4, 1);
-    my_graph.insert_edge(1, 0);
-    // SCC 2
-    my_graph.insert_edge(5, 6);
-    my_graph.insert_edge(6, 5);
-    // SCC 3
-    my_graph.insert_edge(2, 3);
-    my_graph.insert_edge(3, 2);
-    // SCC 4
-    my_graph.insert_edge(7, 7);
-    // Extras
-    my_graph.insert_edge(7, 6);
-    my_graph.insert_edge(7, 3);
-    my_graph.insert_edge(6, 2);
-    my_graph.insert_edge(5, 4);
-    my_graph.insert_edge(5, 1);
-    my_graph.insert_edge(2, 1);
-
+    auto my_graph = ya::graph_builder<int,char>{}
+                    .add_nodes({0,1,2,3,4,5,6,7})
+                    .add_edges({{0,4,'a'},{4,1,'b'},{1,0,'c'}}) // SCC1
+                    .add_edges({{5,6,'d'},{6,5,'e'}})           // SCC2
+                    .add_edges({{2,3,'f'},{3,2,'g'}})           // SCC3
+                    .add_edges({{7,7,'h'}})                     // SCC4
+                    .add_edges({{7,6,'i'},{7,3,'j'},{6,2,'k'},{5,4,'l'},{5,1,'m'},{2,1,'n'}}) // Extras
+                    .build();
     auto strongly_connected_components = tarjan(my_graph);
-
     REQUIRE(strongly_connected_components.size() == 4);
-    std::vector<std::string> scc1 = {"L1", "L4", "L0"};
-    std::vector<std::string> scc2 = {"L3", "L2"};
-    std::vector<std::string> scc3 = {"L6", "L5"};
-    std::vector<std::string> scc4 = {"L7"};
+    std::vector<int> scc1 = {1, 4, 0};
+    std::vector<int> scc2 = {3, 2};
+    std::vector<int> scc3 = {6, 5};
+    std::vector<int> scc4 = {7};
     bool found_scc1 = false, found_scc2 = false, found_scc3 = false, found_scc4 = false;
     for(auto& scc : strongly_connected_components) {
-        found_scc1 |= compare_scc(scc, scc1);
-        found_scc2 |= compare_scc(scc, scc2);
-        found_scc3 |= compare_scc(scc, scc3);
-        found_scc4 |= compare_scc(scc, scc4);
+        found_scc1 |= compare_scc<int,char,int>(scc, scc1);
+        found_scc2 |= compare_scc<int,char,int>(scc, scc2);
+        found_scc3 |= compare_scc<int,char,int>(scc, scc3);
+        found_scc4 |= compare_scc<int,char,int>(scc, scc4);
     }
     REQUIRE(found_scc1);
     REQUIRE(found_scc2);
@@ -64,26 +46,25 @@ TEST_CASE("givenGraphWithFourSCCs_whenLookingForSCCs_thenFourSCCsAreFound") {
 }
 
 TEST_CASE("givenNonLoopingGraph_whenSearchForSCCs_thenFourSCCsFound") {
-    dep_graph<std::string> my_graph{{
-        {"L0"},{"L1"},{"L2"},{"L3"}
-    }};
-    my_graph.insert_edge(0,1);
-    my_graph.insert_edge(0,2);
+    auto my_graph = ya::graph_builder<int,char>{}
+                    .add_nodes({0,1,2,3})
+                    .add_edges({{0,1,'a'},{0,2,'b'}})
+                    .build();
     auto strongly_connected_components = tarjan(my_graph);
     REQUIRE(strongly_connected_components.size() == 4);
-    std::vector<std::string> scc1 = {"L0"};
-    std::vector<std::string> scc2 = {"L1"};
-    std::vector<std::string> scc3 = {"L2"};
-    std::vector<std::string> scc4 = {"L3"};
+    std::vector<int> scc1 = {0};
+    std::vector<int> scc2 = {1};
+    std::vector<int> scc3 = {2};
+    std::vector<int> scc4 = {3};
     bool found_scc1 = false;
     bool found_scc2 = false;
     bool found_scc3 = false;
     bool found_scc4 = false;
     for(auto& scc : strongly_connected_components) {
-        found_scc1 |= compare_scc(scc, scc1);
-        found_scc2 |= compare_scc(scc, scc2);
-        found_scc3 |= compare_scc(scc, scc3);
-        found_scc4 |= compare_scc(scc, scc4);
+        found_scc1 |= compare_scc<int,char,int>(scc, scc1);
+        found_scc2 |= compare_scc<int,char,int>(scc, scc2);
+        found_scc3 |= compare_scc<int,char,int>(scc, scc3);
+        found_scc4 |= compare_scc<int,char,int>(scc, scc4);
     }
     REQUIRE(found_scc1);
     REQUIRE(found_scc2);
@@ -92,31 +73,29 @@ TEST_CASE("givenNonLoopingGraph_whenSearchForSCCs_thenFourSCCsFound") {
 }
 
 TEST_CASE("givenGraphWithWithWeaklyConnectedComponents_whenSearchForSCCs_thenFourSCCsFound") {
-    dep_graph<std::string> my_graph{{
-        {"L0"}, {"L1"}, {"L2"}, {"L3"}}};
-    my_graph.insert_edge(0, 2);
-    my_graph.insert_edge(1, 2);
-    my_graph.insert_edge(3, 2);
-    my_graph.insert_edge(2, 2);
+    auto my_graph = ya::graph_builder<int,char>{}
+                    .add_nodes({0,1,2,3})
+                    .add_edges({{0,2,'a'},{1,2,'b'},{3,2,'c'},{2,2,'d'}})
+                    .build();
     auto sccs = tarjan(my_graph);
     REQUIRE(sccs.size() == 4);
-    std::vector<std::string> scc1 = {"L0"};
-    std::vector<std::string> scc2 = {"L1"};
-    std::vector<std::string> scc3 = {"L2"};
-    std::vector<std::string> scc4 = {"L3"};
+    std::vector<int> scc1 = {0};
+    std::vector<int> scc2 = {1};
+    std::vector<int> scc3 = {2};
+    std::vector<int> scc4 = {3};
     bool found_scc1 = false, found_scc2 = false, found_scc3 = false, found_scc4 = false;
     for(auto& scc : sccs) {
-        found_scc1 |= compare_scc(scc, scc1);
-        found_scc2 |= compare_scc(scc, scc2);
-        found_scc3 |= compare_scc(scc, scc3);
-        found_scc4 |= compare_scc(scc, scc4);
+        found_scc1 |= compare_scc<int,char,int>(scc, scc1);
+        found_scc2 |= compare_scc<int,char,int>(scc, scc2);
+        found_scc3 |= compare_scc<int,char,int>(scc, scc3);
+        found_scc4 |= compare_scc<int,char,int>(scc, scc4);
     }
     REQUIRE(found_scc1);
     REQUIRE(found_scc2);
     REQUIRE(found_scc3);
     REQUIRE(found_scc4);
 }
-*/
+
 #include "extensions/graph/yagraph.h"
 struct node_data {
     std::string name;
@@ -144,7 +123,8 @@ inline auto operator==(const edge_data& a, const edge_data& b) {
 inline auto operator==(const node_data& a, const node_data& b) {
     return a.name == b.name;
 }
-TEST_CASE("dwadwa") {
+/// This is not a "unit" test per se, it's more a usage example and api usability testing
+TEST_CASE("givenComplicatedDatastructure_whenConstructingGraph_thenTheApiIsNotTooAnnoyingToUse") {
     auto g = ya::graph_builder<node_data,edge_data,std::string>{}
                .add_node({"0", {"zero"}})
                .add_node({"1", {"one"}})
