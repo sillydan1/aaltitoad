@@ -136,8 +136,18 @@ namespace ya {
 }
 
 namespace ya {
+    template <typename T, typename = std::void_t<>>
+    struct is_std_hashable : std::false_type { };
+
+    template <typename T>
+    struct is_std_hashable<T, std::void_t<decltype(std::declval<std::hash<T>>()(std::declval<T>()))>> : std::true_type { };
+
+    template <typename T>
+    constexpr bool is_std_hashable_v = is_std_hashable<T>::value;
+
     template<typename node_data_t, typename edge_data_t, typename node_key_t>
     struct node_ref_hasher {
+        static_assert(is_std_hashable_v<node_key_t>, "Node key type must be std hashable. Either implement an std::hash overload or provide a different node key type");
         auto operator()(const ya::node_refference<node_data_t,edge_data_t,node_key_t>& r) const -> size_t {
             return std::hash<node_key_t>{}(r->first);
         }
