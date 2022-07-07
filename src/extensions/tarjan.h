@@ -1,6 +1,6 @@
 #ifndef AALTITOAD_TARJAN_H
 #define AALTITOAD_TARJAN_H
-#include "graph/yagraph.h"
+#include <graph>
 #include <stack>
 
 struct tarjan_decoration {

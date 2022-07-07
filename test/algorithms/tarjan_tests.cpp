@@ -96,7 +96,7 @@ TEST_CASE("givenGraphWithWithWeaklyConnectedComponents_whenSearchForSCCs_thenFou
     REQUIRE(found_scc4);
 }
 
-#include "extensions/graph/yagraph.h"
+#include <graph>
 struct node_data {
     std::string name;
 };
