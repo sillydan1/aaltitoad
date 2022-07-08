@@ -21,9 +21,9 @@ struct ntta_t {
     void tick();
     [[nodiscard]] state_diff_t tick() const;
     void tock();
-    [[nodiscard]] symbol_table_t tock_values() const;
+    [[nodiscard]] expr::symbol_table_t tock_values() const;
     void operator+=(const state_diff_t& diff);
-    void operator+=(const symbol_table_t& diff);
+    void operator+=(const expr::symbol_table_t& diff);
 
     state_t state;
     std::vector<std::unique_ptr<tocker_t>> tockers;

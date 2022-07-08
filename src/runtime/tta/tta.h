@@ -2,23 +2,25 @@
 #define AALTITOAD_TTA_H
 #include <string>
 #include <graph>
+#include <drivers/compiler.h>
+#include <drivers/interpreter.h>
 
 namespace aaltitoad {
     struct location_t {
-        using key_t = std::string;
+        using graph_key_t = std::string;
         std::string identifier;
     };
 
     struct edge_t {
-        // guard
-        // update
-        // clock reset-set
+        expr::compiler::compiled_expr_t guard;
+        expr::compiler::compiled_expr_collection_t updates;
     };
 
     struct tta_t {
+        // --- syntax --- //
         // TODO: internal variables
-        // TODO: external variables (including clocks)
-        ya::graph<location_t, edge_t, location_t::key_t> graph;
+        // TODO: external variables (includes clocks)
+        ya::graph<location_t, edge_t, location_t::graph_key_t> graph;
 
         // --- state --- //
         // TODO: initial location
@@ -30,6 +32,10 @@ namespace aaltitoad {
         // TODO: Tick (const) - calculate changes
         // TODO: Tock (non-const) - modify the state
         // TODO: Tock (const) - calculate changes
+
+    private:
+        // --- management things --- //
+        expr::interpreter interpreter;
     };
 }
 

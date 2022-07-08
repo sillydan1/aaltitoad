@@ -13,7 +13,7 @@ void ntta_t::tick() {
 }
 
 state_diff_t ntta_t::tick() const {
-    symbol_table_t symbol_changes{};
+    expr::symbol_table_t symbol_changes{};
     location_diff_t location_changes{};
     for(auto& component : state.components) {
         try {
@@ -40,8 +40,8 @@ void ntta_t::tock() {
     this->operator+=(tock_values());
 }
 
-symbol_table_t ntta_t::tock_values() const {
-    symbol_table_t tock_changes{};
+expr::symbol_table_t ntta_t::tock_values() const {
+    expr::symbol_table_t tock_changes{};
     for(auto& tocker : tockers)
         tock_changes += tocker->tock(state.symbols);
     return tock_changes;
@@ -57,7 +57,7 @@ void ntta_t::operator+=(const state_diff_t& diff) {
     }
 }
 
-void ntta_t::operator+=(const symbol_table_t& diff) {
+void ntta_t::operator+=(const expr::symbol_table_t& diff) {
     state.symbols += diff;
 }
 
@@ -69,11 +69,11 @@ std::ostream& operator<<(std::ostream& os, const ntta_t& tta) {
 }
 
 // Overload for << state_json << symbol_value_t
-std::ostream& operator<<(json_ostream os, const symbol_value_t& v) {
+std::ostream& operator<<(json_ostream os, const expr::symbol_value_t& v) {
     std::visit(overload{
             [&os](const bool& b) { os << std::boolalpha << b; },
             [&os](const std::string& s) { os << "\"" << s << "\""; },
-            [&os](auto&& v) { os << v; }}, static_cast<const underlying_symbol_value_t&>(v));
+            [&os](auto&& v) { os << v; }}, static_cast<const expr::underlying_symbol_value_t&>(v));
     return os.os;
 }
 

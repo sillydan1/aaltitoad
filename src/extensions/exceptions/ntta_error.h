@@ -19,13 +19,13 @@ public:
     static auto guard_err_format_spdlog() {
         return string_format(guard_err_format, "{0}", "{1}", "{2}", "{3}", "{4}");
     }
-    static ntta_error edge_guard_error(const edge_t& edge, const symbol_value_t& error_val) {
+    static ntta_error edge_guard_error(const edge_t& edge, const expr::symbol_value_t& error_val) {
         return ntta_error(string_format(edge_guard_err_format,
                                      edge.from.c_str(), edge.to.c_str(),
                                      edge.guardExpression.c_str(),
                                      std::get<std::string>(error_val).c_str()));
     }
-    static ntta_error edge_update_error(const edge_t& edge, const symbol_value_t& error_val) {
+    static ntta_error edge_update_error(const edge_t& edge, const expr::symbol_value_t& error_val) {
         return ntta_error(string_format(edge_update_err_format,
                                      edge.from.c_str(), edge.to.c_str(),
                                      edge.guardExpression.c_str(),

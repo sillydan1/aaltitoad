@@ -19,7 +19,7 @@ struct test_tta_edge_defines {
     std::string u1 = "b := true";
 };
 ntta_t generate_test_main_tta(const test_tta_edge_defines& defines = {}) {
-    symbol_table_t symbols{};
+    expr::symbol_table_t symbols{};
     symbols["a"] = 0;
     symbols["b"] = false;
     location_map_t locations{};

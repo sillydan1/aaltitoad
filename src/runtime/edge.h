@@ -14,8 +14,8 @@ struct edge_t {
     explicit edge_t(const location_it& from, const location_it& to, std::string guardExpression, std::string updateExpression) :
         from{from}, to{to}, guardExpression{std::move(guardExpression)}, updateExpression{std::move(updateExpression)} {}
 
-    auto evaluate_updates(const symbol_table_t& environment) const -> symbol_table_t;
-    auto is_satisfied(const symbol_table_t& environment) const -> bool;
+    auto evaluate_updates(const expr::symbol_table_t& environment) const -> expr::symbol_table_t;
+    auto is_satisfied(const expr::symbol_table_t& environment) const -> bool;
 };
 
 using edge_list_t = std::vector<edge_t>;

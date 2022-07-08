@@ -29,7 +29,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-add_compile_definitions(DEFAULT_EXPRESSION_VALUE=true)
+add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
 #CPMAddPackage("gh:sillydan1/expr@1.3.0")
 CPMAddPackage("gh:sillydan1/expr#major/compilation")
 CPMAddPackage("gh:sillydan1/overload#1.0.0")

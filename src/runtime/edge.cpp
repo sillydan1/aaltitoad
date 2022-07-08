@@ -2,7 +2,7 @@
 #include "drivers/interpreter.h"
 #include "extensions/exceptions/ntta_error.h"
 
-auto edge_t::evaluate_updates(const symbol_table_t& environment) const -> symbol_table_t {
+auto edge_t::evaluate_updates(const expr::symbol_table_t& environment) const -> expr::symbol_table_t {
     expr::interpreter drv{environment};
     auto res = drv.parse(updateExpression);
     if(res != 0)
@@ -10,7 +10,7 @@ auto edge_t::evaluate_updates(const symbol_table_t& environment) const -> symbol
     return drv.result;
 }
 
-auto edge_t::is_satisfied(const symbol_table_t& environment) const -> bool {
+auto edge_t::is_satisfied(const expr::symbol_table_t& environment) const -> bool {
     expr::interpreter drv{environment};
     auto res = drv.parse(guardExpression);
     if(res != 0)

@@ -23,7 +23,7 @@ struct component_t {
         current_location = initial_location;
     }
 
-    auto get_enabled_edges(const symbol_table_t&) const -> std::vector<const edge_t*>;
+    auto get_enabled_edges(const expr::symbol_table_t&) const -> std::vector<const edge_t*>;
     auto operator=(const std::string& new_location) -> component_t&;
 };
 
