@@ -1,6 +1,6 @@
 #ifndef AALTITOAD_DFS_H
 #define AALTITOAD_DFS_H
-#include "dep_graph.h"
+#include <graph>
 #include <optional>
 
 struct dfs_decoration {
