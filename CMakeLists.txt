@@ -41,6 +41,7 @@ CPMAddPackage("gh:yalibs/yahashcombine@1.0.0")
 CPMAddPackage("gh:yalibs/yathreadpool@1.0.1")
 CPMAddPackage("gh:yalibs/yagraph@1.0.0")
 CPMAddPackage("gh:yalibs/yatree@1.0.0")
+CPMAddPackage("gh:yalibs/yauuid@1.0.0")
 
 CPMAddPackage("gh:gabime/spdlog@1.8.2")
 CPMAddPackage("gh:nlohmann/json@3.10.5")
@@ -64,9 +65,12 @@ include_directories(
         ${yathreadpool_SOURCE_DIR}/include
         ${yagraph_SOURCE_DIR}/include
         ${yatree_SOURCE_DIR}/include
+        ${yauuid_SOURCE_DIR}/include
         src
 )
 set(${PROJECT_NAME}_SOURCES
+        src/runtime/tta/tta.cpp
+
         src/runtime/ntta.cpp
         src/runtime/component.cpp
         src/runtime/edge.cpp

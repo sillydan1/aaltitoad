@@ -126,3 +126,9 @@ TEST_CASE("givenInvalidUpdateSyntax_whenEvaluatingOneTick_thenFails", "[.]") {
     auto tta = generate_test_main_tta({.u1="not an update"});
     REQUIRE_THROWS_AS(tta.tick(), std::logic_error);
 }
+
+#include <runtime/tta/tta.h>
+TEST_CASE("modularized_tta_test") {
+    //auto tta = aaltitoad::tta_t{};
+
+}
