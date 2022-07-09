@@ -1,0 +1,7 @@
+project(simulator VERSION 1.0.0)
+find_package(argvparse REQUIRED)
+add_executable(${PROJECT_NAME} main.cpp)
+target_link_libraries(${PROJECT_NAME} aaltitoad argvparse)
+if(TARGET default_plugins)
+    add_dependencies(${PROJECT_NAME} default_plugins)
+endif()

@@ -1,0 +1,6 @@
+#ifndef AALTITOAD_GRAPH_ALGORITHMS_H
+#define AALTITOAD_GRAPH_ALGORITHMS_H
+#include <graph>
+#include "tarjan.h"
+#include "dfs.h"
+#endif //AALTITOAD_GRAPH_ALGORITHMS_H

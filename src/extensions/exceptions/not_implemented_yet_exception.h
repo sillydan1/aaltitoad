@@ -16,24 +16,13 @@
     You should have received a copy of the GNU General Public License
     along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef HASH_COMBINE_H
-#define HASH_COMBINE_H
+#ifndef AALTITOAD_NOT_IMPLEMENTED_YET_EXCEPTION_H
+#define AALTITOAD_NOT_IMPLEMENTED_YET_EXCEPTION_H
+#include "aaltitoadpch.h"
 
-template <class T>
-inline void hash_combine(std::size_t& seed, const T& v) {
-    std::hash<T> hasher;
-    seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-}
+class not_implemented_yet_exception : public std::logic_error {
+public:
+    not_implemented_yet_exception () : std::logic_error{"Function not yet implemented."} {}
+};
 
-template<typename... Ts>
-size_t hash_combine(const Ts&... args) {
-    size_t seed = 0;
-    (hash_combine(seed,args) , ... );
-    return seed;
-}
-
-#ifndef COMBINE_MAGIC_NUM
-#define COMBINE_MAGIC_NUM 2654435761
-#endif
-
-#endif // HASH_COMBINE_H
+#endif //AALTITOAD_NOT_IMPLEMENTED_YET_EXCEPTION_H

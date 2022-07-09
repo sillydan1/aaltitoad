@@ -19,8 +19,8 @@
 //// PCH = Precompiled Header.
 //// This speeds up compile time by ~75%.
 //// Dont overdo it though. Only put things here that are being used (included) across the entire codebase
-#ifndef MAVE_MAVEPCH_H
-#define MAVE_MAVEPCH_H
+#ifndef AALTITOAD_AALTITOADPCH_H
+#define AALTITOAD_AALTITOADPCH_H
 
 // General purpose STL things
 #include <iostream>
@@ -32,8 +32,6 @@
 #include <sstream>
 #include <filesystem>
 #include <type_traits>
-
-// Data structures
 #include <map>
 #include <string>
 #include <vector>
@@ -44,13 +42,12 @@
 
 // Extra "big" libraries that are used everywhere
 #include <spdlog/spdlog.h>
-#include <cli/CLIConfig.h>
+
+// Other
+#include <extensions/string_extensions.h>
 
 // Debug files
 #ifndef NDEBUG
-#include <debug/aaltitoad_debug.h>
-
-#include <verifier/trace_output/TTAResugarizer.h>
 #endif // NDEBUG
 
-#endif //MAVE_MAVEPCH_H
+#endif
