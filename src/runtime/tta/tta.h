@@ -4,6 +4,7 @@
 #include <graph>
 #include <drivers/compiler.h>
 #include <drivers/interpreter.h>
+#include <symbol_table.h>
 
 namespace aaltitoad {
     struct location_t {
@@ -17,15 +18,20 @@ namespace aaltitoad {
     };
 
     struct tta_t {
-        // --- syntax --- //
-        // TODO: internal variables
-        // TODO: external variables (includes clocks)
         ya::graph<location_t, edge_t, location_t::graph_key_t> graph;
+        location_t::graph_key_t initial_location;
+        location_t::graph_key_t current_location;
+    };
 
-        // --- state --- //
-        // TODO: initial location
-        // TODO: current location
-        // TODO: current variable valuation (implicitly defined in symboltable_t's)
+    struct ntta_t {
+#ifndef NDEBUG
+        using tta_map_t = std::map<std::string,tta_t>;
+#else
+        using tta_map_t = std::unordered_map<std::string,tta_t>;
+#endif
+        expr::symbol_table_t symbols;
+        std::vector<expr::symbol_table_t::iterator> external_symbols;
+        tta_map_t components;
 
         // --- state manipulation --- //
         // TODO: Tick (non-const) - modify the state
