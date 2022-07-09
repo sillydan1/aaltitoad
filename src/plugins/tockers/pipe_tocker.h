@@ -11,7 +11,7 @@ class pipe_tocker_t : public tocker_t {
 public:
     pipe_tocker_t() = delete;
     pipe_tocker_t(const std::string& input_pipe_filename, const std::string& output_pipe_filename, const ntta_t& tta);
-    [[nodiscard]] symbol_table_t tock(const symbol_table_t& environment) const override;
+    [[nodiscard]] expr::symbol_table_t tock(const expr::symbol_table_t& environment) const override;
 };
 
 extern "C" {

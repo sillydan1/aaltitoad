@@ -1,11 +1,12 @@
-#include <parser/driver.h>
+#include <timer>
+#include <drivers/interpreter.h>
 #include "hawk-parser.h"
 #include "extensions/graph_algorithms"
 #include "hawk-syntax-layers/hawk-layers.h"
 
 ntta_t* hawk_parser_t::parse_folders(const std::vector<std::string>& folder_paths, const std::vector<std::string>& ignore_list) {
     spdlog::debug("==== HAWK ====");
-    Timer<unsigned int> t{}; t.start();
+    ya::timer<unsigned int> t{};
     auto on_apply_call = [](const auto& layer_name){ spdlog::debug("=====<{0}>=====", layer_name); };
     value_layer_stack<template_symbol_collection_t> parser_stack{on_apply_call};
     parser_stack.add_layer<file_parser_layer>(folder_paths, ignore_list);
@@ -21,7 +22,7 @@ ntta_t* hawk_parser_t::parse_folders(const std::vector<std::string>& folder_path
 ntta_t* hawk_parser_t::from_syntax(const template_symbol_collection_t& syntax) {
     spdlog::debug("=====<parse_syntax_as_ntta>=====");
     spdlog::info("Converting syntax into ntta_t");
-    symbol_table_t symbol_table{syntax.symbols};
+    expr::symbol_table_t symbol_table{syntax.symbols};
     component_map_t components{};
     for(auto& component : syntax.map) {
         try {
@@ -51,7 +52,7 @@ component_t hawk_parser_t::parse_component(const nlohmann::json& json) {
     return component_t{std::move(location_list), std::move(edge_list), json[initial_location]["id"]};
 }
 
-symbol_table_t hawk_parser_t::parse_component_declarations(const nlohmann::json& json) {
+expr::symbol_table_t hawk_parser_t::parse_component_declarations(const nlohmann::json& json) {
     using namespace syntax_constants;
     if(!json.contains(declarations))
         return {};

@@ -3,11 +3,11 @@
 #include <extensions/function_layer.h>
 #include <regex>
 #include <extensions/map_extensions.h>
-#include <Timer.hpp>
+#include <timer>
 #include <threadpool>
 #include "../hawk-parser.h"
 #include "extensions/exceptions/ntta_error.h"
-#include <parser/interpreter.h>
+#include <drivers/interpreter.h>
 
 /// Keys to check for in the model file(s)
 namespace syntax_constants {
@@ -45,9 +45,9 @@ public:
      : syntax_layer{"file_parser_layer"}, folder_paths{folder_paths}, ignore_list{ignore_list} {}
     auto on_call(const template_symbol_collection_t& c) -> template_symbol_collection_t override {
         spdlog::info("Loading input files");
-        symbol_table_t symbol_table{};
+        expr::symbol_table_t symbol_table{};
         template_map templates{};
-        Timer<unsigned int> t{}; t.start();
+        ya::timer<unsigned int> t{};
         for(const auto& filepath : folder_paths) {
             for (const auto &entry: std::filesystem::directory_iterator(filepath)) {
                 try {
@@ -93,14 +93,14 @@ private:
         return json.contains(syntax_constants::symbols);
     }
 
-    static auto parse_symbols(const nlohmann::json& json) -> symbol_table_t {
-        symbol_table_t symbol_table{};
+    static auto parse_symbols(const nlohmann::json& json) -> expr::symbol_table_t {
+        expr::symbol_table_t symbol_table{};
         for(auto& symbol : json[syntax_constants::symbols])
             symbol_table[symbol["ID"]] = parse_symbol(symbol);
         return symbol_table;
     }
 
-    static auto parse_symbol(const nlohmann::json& json) -> symbol_value_t {
+    static auto parse_symbol(const nlohmann::json& json) -> expr::symbol_value_t {
         if(json.contains("Value"))
             return parse_literal(json["Value"]);
         // Custom types:
@@ -124,7 +124,7 @@ private:
         throw std::logic_error((string_builder{} << "Unsupported part type: " << type << " :\n" << std::setw(2) << json));
     }
 
-    static auto parse_literal(const nlohmann::json& json) -> symbol_value_t {
+    static auto parse_literal(const nlohmann::json& json) -> expr::symbol_value_t {
         if(json.is_number_float())
             return (float)json;
         if(json.is_number())
@@ -169,10 +169,9 @@ private:
     static void check_for_invalid_subcomponent_composition(const template_map& templates) {
         spdlog::info("Analyzing component template dependencies");
         spdlog::trace("Generating dependency graph");
-        Timer<int> t{};
-        t.start();
+        ya::timer<int> t{};
         auto template_names = get_key_set(templates);
-        dep_graph<std::string> subcomponent_dependency_graph{template_names};
+        ya::graph<std::string> subcomponent_dependency_graph{template_names};
         for(int i = 0; i < template_names.size(); i++) {
             for(auto& j : templates.at(template_names[i])[syntax_constants::sub_components]) {
                 auto& component_name = j["component"];

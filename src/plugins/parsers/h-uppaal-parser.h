@@ -8,11 +8,11 @@ struct h_uppaal_parser_t {
 private:
     static bool is_component(const nlohmann::json& json);
     static component_t parse_component(const nlohmann::json& component);
-    static symbol_table_t parse_component_declarations(const nlohmann::json& component);
+    static expr::symbol_table_t parse_component_declarations(const nlohmann::json& component);
 
     static bool is_symbols(const nlohmann::json& json);
-    static symbol_table_t parse_symbols(const nlohmann::json& symbols);
-    static symbol_value_t parse_symbol(const nlohmann::json& symbol);
+    static expr::symbol_table_t parse_symbols(const nlohmann::json& symbols);
+    static expr::symbol_value_t parse_symbol(const nlohmann::json& symbol);
 };
 
 extern "C" {

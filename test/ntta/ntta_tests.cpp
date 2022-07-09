@@ -1,5 +1,6 @@
 #include <runtime/ntta.h>
 #include <catch2/catch_test_macros.hpp>
+#include <utility>
 
 //// Test Tick Tock Automata - Contains only one component called "Main":
 //// <Main>:
@@ -128,7 +129,57 @@ TEST_CASE("givenInvalidUpdateSyntax_whenEvaluatingOneTick_thenFails", "[.]") {
 }
 
 #include <runtime/tta/tta.h>
-TEST_CASE("modularized_tta_test") {
-    //auto tta = aaltitoad::tta_t{};
+struct n_digit_num_t {
+    std::vector<size_t> max_digits;
+    std::vector<size_t> number;
+    n_digit_num_t(std::vector<size_t>&& m, std::vector<size_t>&& n) : max_digits{std::move(m)}, number{std::move(n)} {}
+    void operator++() {
+        for(size_t i = number.size()-1; i >= 0; i--) {
+            if(number[i] < max_digits[i]) {
+                number[i]++;
+                break;
+            }
+            number[i] = 0;
+        }
+    }
+};
+template<typename T, typename R>
+auto generate_permutations(const std::vector<std::vector<T>>& input, std::function<R(const std::vector<typename std::vector<T>::const_iterator>&)>& combiner) -> std::vector<R> {
+    std::vector<size_t> m{}; m.reserve(input.size());
+    std::vector<size_t> n{}; n.reserve(input.size());
+    for(auto& v : input) {
+        n.push_back(0);
+        if(v.empty()) {
+            m.push_back(0);
+            continue;
+        }
+        m.push_back(v.size()-1);
+    }
+    auto plus_one_mult = [](const size_t& a, const size_t& b){ return a * (b+1); };
+    auto max_num = std::accumulate(m.begin(), m.end(), 1, plus_one_mult);
+    n_digit_num_t tt{std::move(m),std::move(n)};
+    std::vector<R> result{}; result.reserve(max_num);
+    std::vector<typename std::vector<T>::const_iterator> c{}; c.reserve(tt.number.size());
+    for(int i = 0; i < max_num; i++) {
+        c.clear();
+        for(size_t j = 0; j < tt.number.size(); j++)
+            c.push_back(input[j].begin() + tt.number[j]);
+        result.push_back(combiner(c));
+        ++tt;
+    }
+    return result;
+}
 
+#include <sstream>
+TEST_CASE("modularized_tta_test") {
+    std::function<std::string(const std::vector<typename std::vector<int>::const_iterator>&)> f = [](const std::vector<typename std::vector<int>::const_iterator>& n){
+        std::stringstream ss{};
+        for(auto& x : n)
+            ss << *x;
+        return ss.str();
+    };
+    auto result = generate_permutations<int,std::string>({{0,1},{0,1},{0,1},{0,1}}, f);
+    for(auto& r : result)
+        std::cout << r << std::endl;
+    std::cout << "e";
 }

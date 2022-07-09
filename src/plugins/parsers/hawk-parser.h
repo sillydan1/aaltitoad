@@ -5,7 +5,7 @@
 
 using template_map = std::unordered_map<std::string, nlohmann::json>;
 struct template_symbol_collection_t {
-    symbol_table_t symbols;
+    expr::symbol_table_t symbols;
     template_map map;
 };
 
@@ -17,7 +17,7 @@ public:
 private:
     static ntta_t* from_syntax(const template_symbol_collection_t& syntax);
     static component_t parse_component(const nlohmann::json& component);
-    static symbol_table_t parse_component_declarations(const nlohmann::json& component);
+    static expr::symbol_table_t parse_component_declarations(const nlohmann::json& component);
 };
 
 extern "C" {

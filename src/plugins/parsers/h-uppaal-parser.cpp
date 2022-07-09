@@ -1,7 +1,6 @@
 #include "h-uppaal-parser.h"
-#include "parser/driver.h"
+#include <drivers/interpreter.h>
 #include <extensions/string_extensions.h>
-#include <parser/interpreter.h>
 
 /// Keys to check for in the model file(s)
 constexpr const char* initial_location = "initial_location";
@@ -19,7 +18,7 @@ constexpr const char* update = "update";
 constexpr const char* symbols = "parts";
 
 ntta_t* h_uppaal_parser_t::parse_folder(const std::vector<std::string>& filepaths, const std::vector<std::string>& ignore_list) {
-    symbol_table_t symbol_table{};
+    expr::symbol_table_t symbol_table{};
     component_map_t components{};
     for(const auto& filepath: filepaths) {
         for (const auto &entry: std::filesystem::directory_iterator(filepath)) {
@@ -73,7 +72,7 @@ component_t h_uppaal_parser_t::parse_component(const nlohmann::json& json) {
     return component_t{std::move(location_list), std::move(edge_list), json[initial_location]["id"]};
 }
 
-symbol_table_t h_uppaal_parser_t::parse_component_declarations(const nlohmann::json& json) {
+expr::symbol_table_t h_uppaal_parser_t::parse_component_declarations(const nlohmann::json& json) {
     if(!json.contains(declarations))
         return {};
     expr::interpreter drv{{}};
@@ -83,14 +82,14 @@ symbol_table_t h_uppaal_parser_t::parse_component_declarations(const nlohmann::j
     return drv.result;
 }
 
-symbol_table_t h_uppaal_parser_t::parse_symbols(const nlohmann::json& json) {
-    symbol_table_t symbol_table{};
+expr::symbol_table_t h_uppaal_parser_t::parse_symbols(const nlohmann::json& json) {
+    expr::symbol_table_t symbol_table{};
     for(auto& symbol : json[symbols])
         symbol_table[symbol["PartName"]] = parse_symbol((*symbol["GenericType"].begin())["Value"]);
     return symbol_table;
 }
 
-symbol_value_t h_uppaal_parser_t::parse_symbol(const nlohmann::json& json) {
+expr::symbol_value_t h_uppaal_parser_t::parse_symbol(const nlohmann::json& json) {
     if(json.is_number_float())
         return (float)json;
     if(json.is_number())

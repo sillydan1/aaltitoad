@@ -6,6 +6,7 @@
 #include <drivers/interpreter.h>
 #include <symbol_table.h>
 #include <hashcombine>
+#include <utility>
 #include <uuid>
 
 namespace aaltitoad {
@@ -38,13 +39,13 @@ namespace aaltitoad {
         location_t::graph_key_t initial_location;
         graph_node_iterator_t current_location;
 
-        tta_t(const std::shared_ptr<graph_t>& graph, const location_t::graph_key_t& initial_location)
-         : graph{graph}, initial_location{initial_location},
+        tta_t(std::shared_ptr<graph_t> graph, location_t::graph_key_t initial_location)
+         : graph{std::move(graph)}, initial_location{std::move(initial_location)},
            current_location{}
         {
-            auto it = this->graph->nodes.find(initial_location);
+            auto it = this->graph->nodes.find(this->initial_location);
             if(it == this->graph->nodes.end())
-                throw std::out_of_range("No such initial location in provided TTA graph");
+                throw std::out_of_range("no such initial location in provided TTA graph");
             current_location = it;
         }
     };
@@ -59,18 +60,23 @@ namespace aaltitoad {
         std::vector<expr::symbol_table_t::iterator> external_symbols;
         tta_map_t components;
 
+        struct location_change_t {
+            tta_map_t::iterator component;
+            tta_t::graph_node_iterator_t new_location;
+        };
         struct state_change_t {
-            struct location_change_t {
-                tta_map_t::iterator component;
-                tta_t::graph_node_iterator_t new_location;
-            };
             std::vector<location_change_t> location_changes;
             expr::symbol_table_t symbol_changes;
         };
-        auto tick() const -> state_change_t; // TODO: How do we model choices?
-        void tick(const state_change_t& changes);
-        auto tock() const -> expr::symbol_table_t; // TODO: How do we model choices?
-        void tock(const expr::symbol_table_t& symbol_changes);
+        struct choice_t {
+            location_change_t location_change;
+            expr::symbol_table_t symbol_changes;
+        };
+        auto tick() -> std::vector<state_change_t>;
+        auto tock() const -> expr::symbol_table_t; // TODO: How do we model verification choices? - Should the injected tocker handle this?
+
+        void apply(const state_change_t& changes);
+        void apply(const expr::symbol_table_t& symbol_changes);
 
     private:
         // --- management things --- //

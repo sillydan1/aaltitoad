@@ -1,8 +1,9 @@
 #include <aaltitoadpch.h>
 #include <config.h>
 #include "cli_options.h"
-#include <Timer.hpp>
+#include <timer>
 #include <plugin_system/plugin_system.h>
+#include <numeric>
 
 void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_arguments);
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
@@ -40,7 +41,7 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     }
 
     /// Parser related arguments
-    Timer<unsigned int> t{};
+    ya::timer<unsigned int> t{};
     std::vector<std::string> ignore_list{};
     if(cli_arguments["ignore"])
         ignore_list = cli_arguments["ignore"].as_list();

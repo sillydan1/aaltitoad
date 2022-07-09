@@ -10,7 +10,7 @@ pipe_tocker_t::pipe_tocker_t(const std::string& input_pipe_filename, const std::
         throw std::logic_error("Could not open "+output_pipe_filename);
 }
 
-symbol_table_t pipe_tocker_t::tock(const symbol_table_t &environment) const {
+expr::symbol_table_t pipe_tocker_t::tock(const expr::symbol_table_t &environment) const {
     output_pipe << stream_mods::json << associated_tta;;
     std::string line;
     std::getline(input_pipe, line);
