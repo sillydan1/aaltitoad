@@ -34,10 +34,14 @@ add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
 CPMAddPackage("gh:sillydan1/expr#major/compilation")
 CPMAddPackage("gh:sillydan1/argvparse@1.2.2")
 CPMAddPackage("gh:sillydan1/ctlparser@1.0.0")
+
 CPMAddPackage("gh:yalibs/yatimer@1.0.0")
-CPMAddPackage("gh:yalibs/overload@1.0.0")
+CPMAddPackage("gh:yalibs/yaoverload@1.0.0")
+CPMAddPackage("gh:yalibs/yahashcombine@1.0.0")
 CPMAddPackage("gh:yalibs/yathreadpool@1.0.1")
 CPMAddPackage("gh:yalibs/yagraph@1.0.0")
+CPMAddPackage("gh:yalibs/yatree@1.0.0")
+
 CPMAddPackage("gh:gabime/spdlog@1.8.2")
 CPMAddPackage("gh:nlohmann/json@3.10.5")
 
@@ -45,19 +49,21 @@ include_directories(
         ${CMAKE_BINARY_DIR}
         ${argvparse_SOURCE_DIR}/include
         ${argvparse_SOURCE_DIR}/src
-        ${overload_SOURCE_DIR}/include
         ${rapidjson_SOURCE_DIR}/include
         ${ctlparser_SOURCE_DIR}/include
         ${json_SOURCE_DIR}/include
         ${spdlog_SOURCE_DIR}/include
-        ${tinytimer_SOURCE_DIR}
         ${expr_SOURCE_DIR}/include
         ${expr_SOURCE_DIR}/src
         ${expr_BUILD_DIR}
         ${optionparser_SOURCE_DIR}/src
+
+        ${yatimer_SOURCE_DIR}/include
+        ${yaoverload_SOURCE_DIR}/include
+        ${yahashcombine_SOURCE_DIR}/include
         ${yathreadpool_SOURCE_DIR}/include
-        ${yatree_SOURCE_DIR}/include
         ${yagraph_SOURCE_DIR}/include
+        ${yatree_SOURCE_DIR}/include
         src
 )
 set(${PROJECT_NAME}_SOURCES

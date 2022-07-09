@@ -1,4 +1,4 @@
-#include <overload.h>
+#include <overload>
 #include <nlohmann/json.hpp>
 #include <extensions/exceptions/ntta_error.h>
 #include "ntta.h"
@@ -70,7 +70,7 @@ std::ostream& operator<<(std::ostream& os, const ntta_t& tta) {
 
 // Overload for << state_json << symbol_value_t
 std::ostream& operator<<(json_ostream os, const expr::symbol_value_t& v) {
-    std::visit(overload{
+    std::visit(ya::overload{
             [&os](const bool& b) { os << std::boolalpha << b; },
             [&os](const std::string& s) { os << "\"" << s << "\""; },
             [&os](auto&& v) { os << v; }}, static_cast<const expr::underlying_symbol_value_t&>(v));
