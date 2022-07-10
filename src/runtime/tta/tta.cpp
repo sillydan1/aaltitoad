@@ -1,4 +1,5 @@
 #include "tta.h"
+#include <permutation>
 
 namespace aaltitoad {
     auto ntta_t::tick() -> std::vector<state_change_t> {
@@ -21,6 +22,7 @@ namespace aaltitoad {
         }
         // TODO: calculate all permutations of available_choices
 
+        auto changes = ya::generate_permutations(available_choices, );
         return choices;
     }
     auto ntta_t::tock() const -> expr::symbol_table_t {

@@ -171,20 +171,21 @@ private:
         spdlog::trace("Generating dependency graph");
         ya::timer<int> t{};
         auto template_names = get_key_set(templates);
-        ya::graph<std::string> subcomponent_dependency_graph{template_names};
+        ya::graph_builder<std::string, std::string> subcomponent_dependency_graph{};
         for(int i = 0; i < template_names.size(); i++) {
+            subcomponent_dependency_graph.add_node({template_names[i]});
             for(auto& j : templates.at(template_names[i])[syntax_constants::sub_components]) {
                 auto& component_name = j["component"];
                 auto tmp = std::find(template_names.begin(), template_names.end(), component_name);
                 if(tmp == template_names.end())
                     throw std::logic_error(to_string(component_name) + ": No such component template");
-                subcomponent_dependency_graph.insert_edge(i, tmp-template_names.begin());
+                subcomponent_dependency_graph.add_edge(i, tmp-template_names.begin());
             }
         }
         spdlog::trace("Dependency graph generation took {0}ms", t.milliseconds_elapsed());
         spdlog::trace("Searching for strongly connected components");
         t.start();
-        auto sccs = tarjan(subcomponent_dependency_graph);
+        auto sccs = tarjan(subcomponent_dependency_graph.build());
         spdlog::trace("SCC generation took {0}ms", t.milliseconds_elapsed());
         spdlog::trace("Looking for cycles in {0} strongly connected components", sccs.size());
         t.start();
