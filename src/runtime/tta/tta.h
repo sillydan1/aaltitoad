@@ -8,6 +8,7 @@
 #include <hashcombine>
 #include <utility>
 #include <uuid>
+#include <permutation>
 
 namespace aaltitoad {
     struct location_t {
@@ -79,6 +80,7 @@ namespace aaltitoad {
         void apply(const expr::symbol_table_t& symbol_changes);
 
     private:
+        auto turbo_hest(const ya::combiner_iterator_list_t<choice_t>& iterator_list) -> std::optional<std::string>;
         // --- management things --- //
         expr::interpreter interpreter;
     };

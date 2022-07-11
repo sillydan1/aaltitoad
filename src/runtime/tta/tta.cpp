@@ -1,7 +1,11 @@
 #include "tta.h"
-#include <permutation>
 
 namespace aaltitoad {
+
+    auto ntta_t::turbo_hest(const ya::combiner_iterator_list_t<choice_t>& iterator_list) -> std::optional<std::string> {
+
+    }
+
     auto ntta_t::tick() -> std::vector<state_change_t> {
         std::vector<state_change_t> choices{};
         expr::interpreter i{symbols};
@@ -21,8 +25,8 @@ namespace aaltitoad {
                 available_choices.push_back(component_choices);
         }
         // TODO: calculate all permutations of available_choices
-
-        auto changes = ya::generate_permutations(available_choices, );
+        auto hh = [this](const ya::combiner_iterator_list_t<choice_t>& iterator_list){ return this->turbo_hest(iterator_list); };
+        auto changes = ya::generate_permutations(available_choices, hh);
         return choices;
     }
     auto ntta_t::tock() const -> expr::symbol_table_t {

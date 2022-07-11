@@ -42,7 +42,7 @@ CPMAddPackage("gh:yalibs/yathreadpool@1.0.1")
 CPMAddPackage("gh:yalibs/yagraph@1.0.0")
 CPMAddPackage("gh:yalibs/yatree@1.0.0")
 CPMAddPackage("gh:yalibs/yauuid@1.0.0")
-CPMAddPackage("gh:yalibs/yapermutation@1.0.0")
+CPMAddPackage("gh:yalibs/yapermutation@1.1.0")
 
 CPMAddPackage("gh:gabime/spdlog@1.8.2")
 CPMAddPackage("gh:nlohmann/json@3.10.5")
