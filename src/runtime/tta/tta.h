@@ -95,6 +95,8 @@ namespace aaltitoad {
     };
 }
 
+auto operator<<(std::ostream& os, const aaltitoad::ntta_t& state) -> std::ostream&;
+
 namespace std {
     template<>
     struct hash<aaltitoad::tta_t> {

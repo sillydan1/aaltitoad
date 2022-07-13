@@ -55,3 +55,9 @@ namespace aaltitoad {
         symbols += symbol_changes;
     }
 }
+
+auto operator<<(std::ostream& os, const aaltitoad::ntta_t& state) -> std::ostream& {
+    for (auto &component: state.components)
+        os << component.first << ": " << component.second.current_location->first << "\n";
+    return os << state.symbols;
+}
