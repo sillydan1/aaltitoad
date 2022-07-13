@@ -39,7 +39,7 @@ CPMAddPackage("gh:yalibs/yatimer@1.0.0")
 CPMAddPackage("gh:yalibs/yaoverload@1.0.0")
 CPMAddPackage("gh:yalibs/yahashcombine@1.0.0")
 CPMAddPackage("gh:yalibs/yathreadpool@1.0.1")
-CPMAddPackage("gh:yalibs/yagraph@1.0.0")
+CPMAddPackage("gh:yalibs/yagraph@1.0.1")
 CPMAddPackage("gh:yalibs/yatree@1.0.0")
 CPMAddPackage("gh:yalibs/yauuid@1.0.0")
 CPMAddPackage("gh:yalibs/yapermutation@1.1.0")
@@ -71,13 +71,16 @@ include_directories(
         src
 )
 set(${PROJECT_NAME}_SOURCES
-        src/runtime/tta/tta.cpp
-
         src/runtime/ntta.cpp
         src/runtime/component.cpp
         src/runtime/edge.cpp
         src/plugin_system/plugin_system.cpp
         src/extensions/string_extensions.cpp)
+
+add_library(yatta
+        src/runtime/tta/tta.cpp
+)
+target_link_libraries(yatta )
 
 if(NOT DEFINED TEST_COVERAGE)
     add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES})
