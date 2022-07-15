@@ -5,7 +5,7 @@ namespace aaltitoad {
     auto ntta_t::collect_choices(const ya::combiner_iterator_list_t<choice_t>& iterator_list) -> std::optional<state_change_t> {
         state_change_t result{};
         for(auto& it : iterator_list) {
-            if(result.symbol_changes.is_overlapping(it->symbol_changes)) {
+            if(result.symbol_changes.is_overlapping_and_not_idempotent(it->symbol_changes)) {
                 spdlog::debug("overlapping updates in edge '{0}'", it->edge_identifier);
                 if(spdlog::should_log(spdlog::level::debug)) {
                     std::stringstream ss{};
