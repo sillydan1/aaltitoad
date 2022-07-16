@@ -79,7 +79,7 @@ namespace aaltitoad {
             expr::symbol_table_t symbol_changes;
         };
         struct choice_t {
-            std::string edge_identifier;
+            tta_t::graph_edge_iterator_t edge;
             location_change_t location_change;
             expr::symbol_table_t symbol_changes;
         };
@@ -122,6 +122,13 @@ namespace std {
     struct hash<aaltitoad::ntta_t> {
         inline auto operator()(const aaltitoad::ntta_t& v) const -> size_t {
             return ya::hash_combine(v.symbols, v.components);
+        }
+    };
+
+    template<>
+    struct hash<aaltitoad::tta_t::graph_edge_iterator_t> {
+        inline auto operator()(const aaltitoad::tta_t::graph_edge_iterator_t& v) const -> size_t {
+            return hash<std::string>{}(v->second.data.identifier);
         }
     };
 }
