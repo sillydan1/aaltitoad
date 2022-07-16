@@ -40,6 +40,7 @@ namespace aaltitoad {
         using graph_builder = ya::graph_builder<location_t, edge_t, location_t::graph_key_t>;
         using graph_t = ya::graph<location_t, edge_t, location_t::graph_key_t>;
         using graph_node_iterator_t = ya::node_refference<location_t, edge_t, location_t::graph_key_t>;
+        using graph_edge_iterator_t = ya::edge_refference<location_t, edge_t, location_t::graph_key_t>;
         std::shared_ptr<graph_t> graph;
         location_t::graph_key_t initial_location;
         graph_node_iterator_t current_location;
@@ -67,8 +68,8 @@ namespace aaltitoad {
         tta_map_t components;
 
         ntta_t() : symbols{}, external_symbols{}, components{}, interpreter{symbols} {}
-        ntta_t(const expr::symbol_table_t& symbols, const tta_map_t& components)
-         : symbols{symbols}, external_symbols{}, components{std::move(components)}, interpreter{symbols} {}
+        ntta_t(expr::symbol_table_t symbols, tta_map_t components) : symbols{std::move(symbols)}, external_symbols{}, components{std::move(components)}, interpreter{symbols} {}
+
         struct location_change_t {
             tta_map_t::iterator component;
             tta_t::graph_node_iterator_t new_location;

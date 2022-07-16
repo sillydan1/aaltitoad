@@ -27,7 +27,7 @@ namespace aaltitoad {
         auto eval_guard = [&i](const expr::compiler::compiled_expr_t& t){return expr::interpreter::evaluate(t,i,i,i);};
 
         std::vector<std::vector<choice_t>> available_choices{};
-        // ya::graph_builder<> builder{};
+        ya::graph_builder<tta_t::graph_edge_iterator_t, std::string> edge_dependency_graph_builder{};
         // For each component
         //    For each enabled edge e
         //        add node 'e' to the graph
