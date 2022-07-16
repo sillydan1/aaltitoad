@@ -27,8 +27,16 @@ namespace aaltitoad {
         auto eval_guard = [&i](const expr::compiler::compiled_expr_t& t){return expr::interpreter::evaluate(t,i,i,i);};
 
         std::vector<std::vector<choice_t>> available_choices{};
+        // ya::graph_builder<> builder{};
+        // For each component
+        //    For each enabled edge e
+        //        add node 'e' to the graph
+        //    connect all enabled edge nodes in this component
+        // For each edge e1 added
+        //     For each edge e2 added
+        //          if e1.updates.is_overlapping_and_not_idempotent(e2.updates)
+        //              connect e1 and e2 in the graph
         for(auto it = components.begin(); it != components.end(); ++it) {
-            // TODO: This could be thread-pooled
             std::vector<choice_t> component_choices{};
             for(auto& edge : it->second.current_location->second.outgoing_edges) {
                 if(!std::get<bool>(eval_guard(edge->second.data.guard)))
