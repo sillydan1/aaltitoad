@@ -36,6 +36,25 @@ namespace aaltitoad {
         //     For each edge e2 added
         //          if e1.updates.is_overlapping_and_not_idempotent(e2.updates)
         //              connect e1 and e2 in the graph
+
+        // x = "" // satisfiability query
+        // m = "" // environment
+        // For each node n in the graph
+        //    if n.ingoing.empty() && n.outgoing.empty()
+        //        x += " && " + n;
+        //    m += n " := false;"
+        // For each edge e in the graph
+        //    x += " && (" + e.source + " xor " + e.target + ")"
+
+        // solutions = []
+        // solution = z3(m,x)
+        // While(!solution.empty())
+        //     solutions += solution
+        //     x += " && !(" + solution + ")"
+        //     solution = z3(m,x)
+
+        // Convert the list of edge-solutions to state_change_t's
+        // return that
         for(auto it = components.begin(); it != components.end(); ++it) {
             std::vector<choice_t> component_choices{};
             for(auto& edge : it->second.current_location->second.outgoing_edges) {
