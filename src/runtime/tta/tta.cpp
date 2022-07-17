@@ -2,6 +2,42 @@
 #include "drivers/z3_driver.h"
 
 namespace aaltitoad {
+    struct query_stream {
+        std::stringstream ss = {};
+        int sub_expression_count = 0;
+        auto str() const -> std::string {
+            return ss.str();
+        }
+    };
+    struct xor_q {
+        std::string left, right;
+    };
+    auto operator<<(query_stream& s, const std::string& identifier) -> query_stream& {
+        if(s.sub_expression_count++ > 0)
+            s.ss << " && ";
+        s.ss << "(" << identifier << ")";
+        return s;
+    }
+    auto operator<<(query_stream& s, const xor_q& sub_expr) -> query_stream& {
+        if(s.sub_expression_count++)
+            s.ss << " && ";
+        s.ss << "(" << sub_expr.left << " ^^ " << sub_expr.right << ")";
+        return s;
+    }
+    auto operator<<(query_stream& s, const expr::symbol_table_t& solution) -> query_stream& {
+        if(s.sub_expression_count++)
+            s.ss << " && ";
+        s.ss << "!(";
+        std::string sep{};
+        for(auto& el : solution) {
+            auto val = std::get<bool>(el.second);
+            s.ss << sep << (val ? "" : "!") << el.first;
+            sep = " && ";
+        }
+        s.ss << ")";
+        return s;
+    }
+
     auto ntta_t::tick() -> std::vector<state_change_t> {
         expr::interpreter i{symbols};
         auto eval_updates = [&i](const expr::compiler::compiled_expr_collection_t& t){return expr::interpreter::evaluate(t,i,i,i);};
@@ -22,10 +58,10 @@ namespace aaltitoad {
             }
             for(auto it1 = enabled_edges.begin(); it1 != enabled_edges.end(); it1++) {
                 edge_dependency_graph_builder.add_node({*it1});
-                auto& e = *it1;
-                all_enabled_choices.emplace_back(choice_t{e, {component_it, e->second.target}, eval_updates(e->second.data.updates)});
-                for(auto it2 = it1; it2 != enabled_edges.end(); it2++)
-                    edge_dependency_graph_builder.add_edge(*it1, *it2, component_it->first);
+                all_enabled_choices.emplace_back(choice_t{*it1, {component_it, (*it1)->second.target}, eval_updates((*it1)->second.data.updates)});
+                const auto& itt = it1; // Force iterator copying
+                for(auto it2 = itt; it2 != enabled_edges.end(); it2++)
+                    edge_dependency_graph_builder.add_edge(*itt, *it2, component_it->first);
             }
         }
         // For each edge e1 added
@@ -45,7 +81,7 @@ namespace aaltitoad {
         //    m += n " := false;"
         // For each edge e in the graph
         //    x += " && (" + e.source + " xor " + e.target + ")"
-        std::stringstream satisfiability_query{}; // TODO: Implement your own query stringstream with seperated &&'s
+        query_stream satisfiability_query{};
         expr::symbol_table_t environment{};
         auto graph = edge_dependency_graph_builder.build();
         for(auto& n : graph.nodes) {
@@ -54,10 +90,8 @@ namespace aaltitoad {
             environment[n.second.data->second.data.identifier] = false; // TODO: uuid's are not valid identifiers
         }
         for(auto& e : graph.edges)
-            satisfiability_query << "(" << e.second.source->second.data->second.data.identifier //TODO: uuid's are not valid identifiers
-                                        << " ^^ "
-                                        << e.second.target->second.data->second.data.identifier //TODO: uuid's are not valid identifiers
-                                        << ")";
+            satisfiability_query << xor_q{e.second.source->second.data->second.data.identifier,
+                                          e.second.target->second.data->second.data.identifier}; //TODO: uuid's are not valid identifiers
 
         // solution = z3(m,x)
         // While(!solution.empty())
@@ -71,7 +105,7 @@ namespace aaltitoad {
         auto solution = sat_solver.result;
         while(!solution.empty()) {
             solutions.push_back(solution);
-            satisfiability_query << "!(" << solution << ")"; // TODO: implement << overload for expr::symbol_table_t's
+            satisfiability_query << solution;
             if(sat_solver.parse(satisfiability_query.str()) != 0)
                 throw std::logic_error(sat_solver.error);
             solution = sat_solver.result;
