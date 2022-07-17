@@ -16,15 +16,15 @@ TEST_CASE("testing_new_tta_stuff") {
     factory.add_edge("L0", "L1", {.guard=guard,.updates=updates});
     factory.add_edge("L1", "L0", {.guard=guard,.updates=updates});
 
-    std::shared_ptr<aaltitoad::tta_t::graph_t> graph = std::move(factory.build_heap());
-    auto tta = aaltitoad::tta_t{graph, "L0"};
+    aaltitoad::tta_t tta{std::move(factory.build_heap()), "L0"};
 
     component_map["Main"] = tta;
     auto n = aaltitoad::ntta_t{{}, component_map};
     std::cout << n << std::endl;
-    for(int i = 0; i < 100; i++) {
+    for(int i = 0; i < 2; i++) {
         auto changes = n.tick();
-        n.apply(changes[0]);
+        if(!changes.empty())
+            n.apply(changes[0]);
         std::cout << n << std::endl;
     }
 }

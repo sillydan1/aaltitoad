@@ -13,11 +13,11 @@
 namespace aaltitoad {
     struct location_t {
         using graph_key_t = std::string;
-        std::string identifier{ya::uuid_v4()};
+        std::string identifier{ya::uuid_v4_custom("L", "")};
     };
 
     struct edge_t {
-        std::string identifier{ya::uuid_v4()};
+        std::string identifier{ya::uuid_v4_custom("E", "")};
         expr::compiler::compiled_expr_t guard{};
         expr::compiler::compiled_expr_collection_t updates{};
         auto operator==(const edge_t& other) const -> bool {
@@ -74,14 +74,15 @@ namespace aaltitoad {
             tta_map_t::iterator component;
             tta_t::graph_node_iterator_t new_location;
         };
-        struct state_change_t {
-            std::vector<location_change_t> location_changes;
-            expr::symbol_table_t symbol_changes;
-        };
         struct choice_t {
             tta_t::graph_edge_iterator_t edge;
             location_change_t location_change;
             expr::symbol_table_t symbol_changes;
+        };
+        struct state_change_t {
+            std::vector<location_change_t> location_changes;
+            expr::symbol_table_t symbol_changes;
+            auto operator+=(const choice_t&) -> state_change_t&;
         };
         auto tick() -> std::vector<state_change_t>;
         auto tock() const -> expr::symbol_table_t; // TODO: How do we model verification choices? - Should the injected tocker handle this?

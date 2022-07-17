@@ -38,6 +38,12 @@ namespace aaltitoad {
         return s;
     }
 
+    auto ntta_t::state_change_t::operator+=(const choice_t& v) -> state_change_t & {
+        location_changes.push_back(v.location_change);
+        symbol_changes += v.symbol_changes;
+        return *this;
+    }
+
     auto ntta_t::tick() -> std::vector<state_change_t> {
         expr::interpreter i{symbols};
         auto eval_updates = [&i](const expr::compiler::compiled_expr_collection_t& t){return expr::interpreter::evaluate(t,i,i,i);};
@@ -45,53 +51,58 @@ namespace aaltitoad {
 
         // For each component
         //    For each enabled edge e
-        //        add node 'e' to the graph
+        //        add node 'e' to the sat_graph
         //    connect all enabled edge nodes in this component
         ya::graph_builder<tta_t::graph_edge_iterator_t, std::string> edge_dependency_graph_builder{};
-        std::vector<choice_t> all_enabled_choices{};
+        std::unordered_map<std::string, choice_t> all_enabled_choices{};
         for(auto component_it = components.begin(); component_it != components.end(); component_it++) {
             std::vector<tta_t::graph_edge_iterator_t> enabled_edges{};
-            for(auto& edge : component_it->second.current_location->second.outgoing_edges) {
+            for(auto edge : component_it->second.current_location->second.outgoing_edges) {
                 if(!std::get<bool>(eval_guard(edge->second.data.guard)))
                     continue;
                 enabled_edges.push_back(edge);
+                edge_dependency_graph_builder.add_node({edge});
+                auto x = edge->second.target;
+                all_enabled_choices[edge->first.identifier] = choice_t{edge, {component_it, x}, eval_updates(edge->second.data.updates)};
             }
-            for(auto it1 = enabled_edges.begin(); it1 != enabled_edges.end(); it1++) {
-                edge_dependency_graph_builder.add_node({*it1});
-                all_enabled_choices.emplace_back(choice_t{*it1, {component_it, (*it1)->second.target}, eval_updates((*it1)->second.data.updates)});
+            for(auto it1 = enabled_edges.begin(); it1 != enabled_edges.end()-1; it1++) {
                 const auto& itt = it1; // Force iterator copying
-                for(auto it2 = itt; it2 != enabled_edges.end(); it2++)
-                    edge_dependency_graph_builder.add_edge(*itt, *it2, component_it->first);
-            }
-        }
-        // For each edge e1 added
-        //     For each edge e2 added
-        //          if e1.updates.is_overlapping_and_not_idempotent(e2.updates)
-        //              connect e1 and e2 in the graph
-        for(auto it1 = all_enabled_choices.begin(); it1 != all_enabled_choices.end(); it1++) {
-            for(auto it2 = it1; it2 != all_enabled_choices.end(); it2++) {
-                if(it1->symbol_changes.is_overlapping_and_not_idempotent(it2->symbol_changes))
-                    edge_dependency_graph_builder.add_edge(it1->edge, it2->edge, "");
+                for(auto it2 = itt+1; it2 != enabled_edges.end(); it2++)
+                    edge_dependency_graph_builder.add_edge(*itt, *it2, component_it->first); // TODO: Sat edge value is not necessarily meaningful
             }
         }
 
-        // For each node n in the graph
+        // For each edge e1 added
+        //     For each edge e2 added
+        //          if e1.updates.is_overlapping_and_not_idempotent(e2.updates)
+        //              connect e1 and e2 in the sat_graph
+        if(all_enabled_choices.size() > 1) {
+            // TODO: Dont connect it1 with it1
+            for (auto it1 = all_enabled_choices.begin(); it1 != all_enabled_choices.end(); it1++) {
+                for (auto it2 = it1; it2 != all_enabled_choices.end(); it2++) {
+                    if (it1->second.symbol_changes.is_overlapping_and_not_idempotent(it2->second.symbol_changes))
+                        edge_dependency_graph_builder.add_edge(it1->second.edge, it2->second.edge, "");
+                }
+            }
+        }
+
+        // For each node n in the sat_graph
         //    if n.ingoing.empty() && n.outgoing.empty()
         //        x += " && " + n;
         //    m += n " := false;"
-        // For each edge e in the graph
+        // For each edge e in the sat_graph
         //    x += " && (" + e.source + " xor " + e.target + ")"
         query_stream satisfiability_query{};
         expr::symbol_table_t environment{};
-        auto graph = edge_dependency_graph_builder.build();
-        for(auto& n : graph.nodes) {
+        auto sat_graph = edge_dependency_graph_builder.build();
+        for(auto& n : sat_graph.nodes) {
             if(n.second.outgoing_edges.empty() && n.second.ingoing_edges.empty())
-                satisfiability_query << n.second.data->second.data.identifier; // TODO: uuid's are not valid identifiers
-            environment[n.second.data->second.data.identifier] = false; // TODO: uuid's are not valid identifiers
+                satisfiability_query << n.second.data->second.data.identifier;
+            environment[n.second.data->second.data.identifier] = false;
         }
-        for(auto& e : graph.edges)
+        for(auto& e : sat_graph.edges)
             satisfiability_query << xor_q{e.second.source->second.data->second.data.identifier,
-                                          e.second.target->second.data->second.data.identifier}; //TODO: uuid's are not valid identifiers
+                                          e.second.target->second.data->second.data.identifier};
 
         // solution = z3(m,x)
         // While(!solution.empty())
@@ -105,6 +116,7 @@ namespace aaltitoad {
         auto solution = sat_solver.result;
         while(!solution.empty()) {
             solutions.push_back(solution);
+            sat_solver.result = {};
             satisfiability_query << solution;
             if(sat_solver.parse(satisfiability_query.str()) != 0)
                 throw std::logic_error(sat_solver.error);
@@ -112,8 +124,16 @@ namespace aaltitoad {
         }
 
         // Convert the list of edge-solutions to state_change_t's
-        // return that
-        return {};
+        std::vector<state_change_t> result{}; result.reserve(solutions.size());
+        for(auto& sol : solutions) {
+            state_change_t choice{};
+            for(auto& el : sol) {
+                if(std::get<bool>(el.second))
+                    choice += all_enabled_choices.at(el.first);
+            }
+            result.push_back(choice);
+        }
+        return result;
     }
 
     auto ntta_t::tock() const -> expr::symbol_table_t {
