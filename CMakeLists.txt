@@ -30,10 +30,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
-#CPMAddPackage("gh:sillydan1/expr@1.3.0")
-CPMAddPackage("gh:sillydan1/expr#major/compilation")
-CPMAddPackage("gh:sillydan1/argvparse@1.2.2")
-CPMAddPackage("gh:sillydan1/ctlparser@1.0.0")
+CPMAddPackage(NAME expr      VERSION 1.4.1 GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
+CPMAddPackage(NAME argvparse VERSION 1.2.3 GITHUB_REPOSITORY sillydan1/argvparse)
+CPMAddPackage(NAME ctlparser VERSION 1.0.0 GITHUB_REPOSITORY sillydan1/ctlparser)
 
 CPMAddPackage("gh:yalibs/yatimer@1.0.0")
 CPMAddPackage("gh:yalibs/yaoverload@1.0.0")
@@ -76,11 +75,9 @@ set(${PROJECT_NAME}_SOURCES
         src/runtime/edge.cpp
         src/plugin_system/plugin_system.cpp
         src/extensions/string_extensions.cpp)
-
 add_library(yatta
-        src/runtime/tta/tta.cpp
-)
-target_link_libraries(yatta )
+        src/runtime/tta/tta.cpp)
+target_link_libraries(yatta)
 
 if(NOT DEFINED TEST_COVERAGE)
     add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES})
@@ -89,6 +86,7 @@ else()
     add_library(${PROJECT_NAME} ${${PROJECT_NAME}_SOURCES})
 endif()
 target_link_libraries(${PROJECT_NAME} expr dl pthread)
+add_compile_definitions(ENABLE_Z3)
 
 add_subdirectory(src/plugins)
 add_subdirectory(src/cli/simulator)
