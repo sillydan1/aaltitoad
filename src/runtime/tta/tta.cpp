@@ -21,7 +21,8 @@ namespace aaltitoad {
     auto operator<<(query_stream& s, const xor_q& sub_expr) -> query_stream& {
         if(s.sub_expression_count++)
             s.ss << " && ";
-        s.ss << "(" << sub_expr.left << " ^^ " << sub_expr.right << ")";
+        s.ss << "(" << sub_expr.left << " => !" << sub_expr.right << " && "
+                    << sub_expr.right << " => !" << sub_expr.left << ")";
         return s;
     }
     auto operator<<(query_stream& s, const expr::symbol_table_t& solution) -> query_stream& {
@@ -111,6 +112,7 @@ namespace aaltitoad {
         //     solution = z3(m,x)
         std::vector<expr::symbol_table_t> solutions{};
         expr::z3_driver sat_solver{environment};
+        std::cout << satisfiability_query.str() << "\n";
         if(sat_solver.parse(satisfiability_query.str()) != 0)
             throw std::logic_error(sat_solver.error);
         auto solution = sat_solver.result;
@@ -118,6 +120,7 @@ namespace aaltitoad {
             solutions.push_back(solution);
             sat_solver.result = {};
             satisfiability_query << solution;
+            std::cout << satisfiability_query.str() << "\n";
             if(sat_solver.parse(satisfiability_query.str()) != 0)
                 throw std::logic_error(sat_solver.error);
             solution = sat_solver.result;
@@ -133,6 +136,7 @@ namespace aaltitoad {
             }
             result.push_back(choice);
         }
+        std::cout << "found " << result.size() << " solutions" << std::endl;
         return result;
     }
 

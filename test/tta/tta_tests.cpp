@@ -28,3 +28,55 @@ TEST_CASE("testing_new_tta_stuff") {
         std::cout << n << std::endl;
     }
 }
+
+TEST_CASE("Bigger_test") {
+    aaltitoad::ntta_t::tta_map_t component_map{};
+    expr::symbol_table_t declared_variables = {};
+    expr::compiler compiler{declared_variables};
+    compiler.parse("");
+    auto empty_guard = compiler.trees["expression_result"];
+    auto compile_update = [&compiler](const std::string& updates) {
+        compiler.trees = {};
+        compiler.parse(updates);
+        return compiler.trees;
+    };
+
+    { // A
+        auto factory = aaltitoad::tta_t::graph_builder{};
+        factory.add_node({"L0"});
+        factory.add_node({"L1"});
+        factory.add_edge("L0", "L1", {.identifier="a", .guard=empty_guard, .updates=compile_update("x:=1")});
+        factory.add_edge("L0", "L1", {.identifier="d", .guard=empty_guard, .updates={}});
+        factory.add_edge("L0", "L1", {.identifier="e", .guard=empty_guard, .updates=compile_update("y:=1")});
+        component_map["A"] = {std::move(factory.build_heap()), "L0"};
+    }
+    { // B
+        auto factory = aaltitoad::tta_t::graph_builder{};
+        factory.add_node({"L0"});
+        factory.add_node({"L1"});
+        factory.add_edge("L0", "L1", {.identifier="b", .guard=empty_guard, .updates=compile_update("x:=2")});
+        factory.add_edge("L0", "L1", {.identifier="c", .guard=empty_guard, .updates={}});
+        factory.add_edge("L0", "L1", {.identifier="f", .guard=empty_guard, .updates=compile_update("z:=1")});
+        component_map["B"] = {std::move(factory.build_heap()), "L0"};
+    }
+    { // C
+        auto factory = aaltitoad::tta_t::graph_builder{};
+        factory.add_node({"L0"});
+        factory.add_node({"L1"});
+        factory.add_edge("L0", "L1", {.identifier="g", .guard=empty_guard, .updates={}});
+        factory.add_edge("L0", "L1", {.identifier="h", .guard=empty_guard, .updates=compile_update("y:=2;z:=2")});
+        component_map["C"] = {std::move(factory.build_heap()), "L0"};
+    }
+    { // D
+        auto factory = aaltitoad::tta_t::graph_builder{};
+        factory.add_node({"L0"});
+        factory.add_node({"L1"});
+        factory.add_edge("L0", "L1", {.identifier="i", .guard=empty_guard, .updates=compile_update("z:=3")});
+        component_map["D"] = {std::move(factory.build_heap()), "L0"};
+    }
+
+    auto n = aaltitoad::ntta_t{{}, component_map};
+    std::cout << n << std::endl;
+    auto changes = n.tick();
+    std::cout << "found " << changes.size() << " possible changes" << std::endl;
+}

@@ -30,7 +30,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
-CPMAddPackage(NAME expr      VERSION 1.4.1 GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
+CPMAddPackage(NAME expr      VERSION 1.5.0 GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
 CPMAddPackage(NAME argvparse VERSION 1.2.3 GITHUB_REPOSITORY sillydan1/argvparse)
 CPMAddPackage(NAME ctlparser VERSION 1.0.0 GITHUB_REPOSITORY sillydan1/ctlparser)
 
@@ -45,6 +45,9 @@ CPMAddPackage("gh:yalibs/yapermutation@1.1.0")
 
 CPMAddPackage("gh:gabime/spdlog@1.8.2")
 CPMAddPackage("gh:nlohmann/json@3.10.5")
+
+CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.5")
+cpm_licenses_create_disclaimer_target(write-licenses "${CMAKE_CURRENT_BINARY_DIR}/third_party.txt" "${CPM_PACKAGES}")
 
 include_directories(
         ${CMAKE_BINARY_DIR}
