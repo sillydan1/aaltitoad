@@ -12,10 +12,10 @@ namespace aaltitoad {
     struct xor_q {
         std::string left, right;
     };
-    auto operator<<(query_stream& s, const std::string& identifier) -> query_stream& {
+    auto operator<<(query_stream& s, const std::string& expression) -> query_stream& {
         if(s.sub_expression_count++ > 0)
             s.ss << " && ";
-        s.ss << "(" << identifier << ")";
+        s.ss << "(" << expression << ")";
         return s;
     }
     auto operator<<(query_stream& s, const xor_q& sub_expr) -> query_stream& {
@@ -31,8 +31,9 @@ namespace aaltitoad {
         s.ss << "!(";
         std::string sep{};
         for(auto& el : solution) {
-            auto val = std::get<bool>(el.second);
-            s.ss << sep << (val ? "" : "!") << el.first;
+            if(!std::get<bool>(el.second))
+                continue;
+            s.ss << sep << el.first;
             sep = " && ";
         }
         s.ss << ")";
@@ -56,8 +57,11 @@ namespace aaltitoad {
         //    connect all enabled edge nodes in this component
         ya::graph_builder<tta_t::graph_edge_iterator_t, std::string> edge_dependency_graph_builder{};
         std::unordered_map<std::string, choice_t> all_enabled_choices{};
+        query_stream satisfiability_query{};
         for(auto component_it = components.begin(); component_it != components.end(); component_it++) {
             std::vector<tta_t::graph_edge_iterator_t> enabled_edges{};
+            std::stringstream ss{};
+            std::string sep = "";
             for(auto edge : component_it->second.current_location->second.outgoing_edges) {
                 if(!std::get<bool>(eval_guard(edge->second.data.guard)))
                     continue;
@@ -65,24 +69,36 @@ namespace aaltitoad {
                 edge_dependency_graph_builder.add_node({edge});
                 auto x = edge->second.target;
                 all_enabled_choices[edge->first.identifier] = choice_t{edge, {component_it, x}, eval_updates(edge->second.data.updates)};
+                ss << sep << edge->first.identifier;
+                sep = "||";
             }
             for(auto it1 = enabled_edges.begin(); it1 != enabled_edges.end()-1; it1++) {
                 const auto& itt = it1; // Force iterator copying
-                for(auto it2 = itt+1; it2 != enabled_edges.end(); it2++)
-                    edge_dependency_graph_builder.add_edge(*itt, *it2, component_it->first); // TODO: Sat edge value is not necessarily meaningful
+                for(auto it2 = itt+1; it2 != enabled_edges.end(); it2++) {
+                    edge_dependency_graph_builder.add_edge(*itt, *it2, component_it->first);
+                    satisfiability_query << xor_q{(*it1)->second.data.identifier,
+                                                (*it2)->second.data.identifier};
+                }
             }
+            if(!ss.str().empty() && enabled_edges.size() > 1)
+                satisfiability_query << ss.str();
         }
 
         // For each edge e1 added
         //     For each edge e2 added
         //          if e1.updates.is_overlapping_and_not_idempotent(e2.updates)
         //              connect e1 and e2 in the sat_graph
-        if(all_enabled_choices.size() > 1) {
-            // TODO: Dont connect it1 with it1
-            for (auto it1 = all_enabled_choices.begin(); it1 != all_enabled_choices.end(); it1++) {
-                for (auto it2 = it1; it2 != all_enabled_choices.end(); it2++) {
-                    if (it1->second.symbol_changes.is_overlapping_and_not_idempotent(it2->second.symbol_changes))
-                        edge_dependency_graph_builder.add_edge(it1->second.edge, it2->second.edge, "");
+        for (auto it1 = all_enabled_choices.begin(); it1 != all_enabled_choices.end(); it1++) {
+            for (auto it2 = it1; it2 != all_enabled_choices.end(); it2++) {
+                if(it1 == it2)
+                    continue;
+                if (it1->second.symbol_changes.is_overlapping_and_not_idempotent(it2->second.symbol_changes)) {
+                    std::cout << it1->second.edge->second.data.identifier << " and "
+                              << it2->second.edge->second.data.identifier
+                              << " are overlapping and not idempotent\n";
+                    edge_dependency_graph_builder.add_edge(it1->second.edge, it2->second.edge, ya::uuid_v4());
+                    satisfiability_query << xor_q{it1->second.edge->second.data.identifier,
+                                                  it2->second.edge->second.data.identifier};
                 }
             }
         }
@@ -93,7 +109,6 @@ namespace aaltitoad {
         //    m += n " := false;"
         // For each edge e in the sat_graph
         //    x += " && (" + e.source + " xor " + e.target + ")"
-        query_stream satisfiability_query{};
         expr::symbol_table_t environment{};
         auto sat_graph = edge_dependency_graph_builder.build();
         for(auto& n : sat_graph.nodes) {
@@ -101,9 +116,6 @@ namespace aaltitoad {
                 satisfiability_query << n.second.data->second.data.identifier;
             environment[n.second.data->second.data.identifier] = false;
         }
-        for(auto& e : sat_graph.edges)
-            satisfiability_query << xor_q{e.second.source->second.data->second.data.identifier,
-                                          e.second.target->second.data->second.data.identifier};
 
         // solution = z3(m,x)
         // While(!solution.empty())
@@ -120,7 +132,6 @@ namespace aaltitoad {
             solutions.push_back(solution);
             sat_solver.result = {};
             satisfiability_query << solution;
-            std::cout << satisfiability_query.str() << "\n";
             if(sat_solver.parse(satisfiability_query.str()) != 0)
                 throw std::logic_error(sat_solver.error);
             solution = sat_solver.result;
