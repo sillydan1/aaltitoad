@@ -1,5 +1,6 @@
 #include "tta.h"
 #include "drivers/z3_driver.h"
+#include <aaltitoadpch.h>
 
 namespace aaltitoad {
     struct query_stream {
@@ -61,7 +62,7 @@ namespace aaltitoad {
         for(auto component_it = components.begin(); component_it != components.end(); component_it++) {
             std::vector<tta_t::graph_edge_iterator_t> enabled_edges{};
             std::stringstream ss{};
-            std::string sep = "";
+            std::string sep{};
             for(auto edge : component_it->second.current_location->second.outgoing_edges) {
                 if(!std::get<bool>(eval_guard(edge->second.data.guard)))
                     continue;
@@ -93,9 +94,9 @@ namespace aaltitoad {
                 if(it1 == it2)
                     continue;
                 if (it1->second.symbol_changes.is_overlapping_and_not_idempotent(it2->second.symbol_changes)) {
-                    std::cout << it1->second.edge->second.data.identifier << " and "
-                              << it2->second.edge->second.data.identifier
-                              << " are overlapping and not idempotent\n";
+                    spdlog::trace("{0} and {1} are overlapping and not idempotent",
+                                  it1->second.edge->second.data.identifier,
+                                  it2->second.edge->second.data.identifier);
                     edge_dependency_graph_builder.add_edge(it1->second.edge, it2->second.edge, ya::uuid_v4());
                     satisfiability_query << xor_q{it1->second.edge->second.data.identifier,
                                                   it2->second.edge->second.data.identifier};
@@ -124,7 +125,7 @@ namespace aaltitoad {
         //     solution = z3(m,x)
         std::vector<expr::symbol_table_t> solutions{};
         expr::z3_driver sat_solver{environment};
-        std::cout << satisfiability_query.str() << "\n";
+        spdlog::debug("SAT query: {0}", satisfiability_query.str());
         if(sat_solver.parse(satisfiability_query.str()) != 0)
             throw std::logic_error(sat_solver.error);
         auto solution = sat_solver.result;
@@ -147,7 +148,7 @@ namespace aaltitoad {
             }
             result.push_back(choice);
         }
-        std::cout << "found " << result.size() << " solutions" << std::endl;
+        spdlog::debug("{0} possible solutions to this tick", result.size());
         return result;
     }
 

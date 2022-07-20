@@ -3,6 +3,7 @@
 #include <utility>
 
 TEST_CASE("testing_new_tta_stuff") {
+    spdlog::set_level(spdlog::level::trace);
     aaltitoad::ntta_t::tta_map_t component_map{};
     expr::symbol_table_t declared_variables = {};
     expr::compiler compiler{declared_variables};
@@ -20,16 +21,15 @@ TEST_CASE("testing_new_tta_stuff") {
 
     component_map["Main"] = tta;
     auto n = aaltitoad::ntta_t{{}, component_map};
-    std::cout << n << std::endl;
     for(int i = 0; i < 2; i++) {
         auto changes = n.tick();
         if(!changes.empty())
             n.apply(changes[0]);
-        std::cout << n << std::endl;
     }
 }
 
 TEST_CASE("Bigger_test") {
+    spdlog::set_level(spdlog::level::debug);
     aaltitoad::ntta_t::tta_map_t component_map{};
     expr::symbol_table_t declared_variables = {};
     expr::compiler compiler{declared_variables};
@@ -76,7 +76,6 @@ TEST_CASE("Bigger_test") {
     }
 
     auto n = aaltitoad::ntta_t{{}, component_map};
-    std::cout << n << std::endl;
     auto changes = n.tick();
-    std::cout << "found " << changes.size() << " possible changes" << std::endl;
+    REQUIRE(11 == changes.size());
 }
