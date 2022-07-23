@@ -32,9 +32,10 @@ namespace aaltitoad {
         s.ss << "!(";
         std::string sep{};
         for(auto& el : solution) {
+            s.ss << sep;
             if(!std::get<bool>(el.second))
-                continue;
-            s.ss << sep << el.first;
+                s.ss << "!";
+            s.ss << el.first;
             sep = " && ";
         }
         s.ss << ")";

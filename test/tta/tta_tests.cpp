@@ -74,8 +74,50 @@ TEST_CASE("Bigger_test") {
         factory.add_edge("L0", "L1", {.identifier="i", .guard=empty_guard, .updates=compile_update("z:=3")});
         component_map["D"] = {std::move(factory.build_heap()), "L0"};
     }
+    /*
+     * (a => !d && d => !a) && (a => !e && e => !a) && (d => !e && e => !d) && (a||d||e) &&
+     * (b => !c && c => !b) && (b => !f && f => !b) && (c => !f && f => !c) && (b||c||f) &&
+     * (g => !h && h => !g) && (g||h) &&
+     * (h => !f && f => !h) &&
+     * (h => !e && e => !h) &&
+     * (h => !i && i => !h) &&
+     * (b => !a && a => !b) &&
+     * (f => !i && i => !f)
+     * */
 
     auto n = aaltitoad::ntta_t{{}, component_map};
     auto changes = n.tick();
     REQUIRE(11 == changes.size());
+}
+
+TEST_CASE("edge_case_test") {
+    spdlog::set_level(spdlog::level::debug);
+    aaltitoad::ntta_t::tta_map_t component_map{};
+    expr::symbol_table_t declared_variables = {};
+    expr::compiler compiler{declared_variables};
+    compiler.parse("");
+    auto empty_guard = compiler.trees["expression_result"];
+    auto compile_update = [&compiler](const std::string& updates) {
+        compiler.trees = {};
+        compiler.parse(updates);
+        return compiler.trees;
+    };
+
+    { // A
+        auto factory = aaltitoad::tta_t::graph_builder{};
+        factory.add_node({"L0"});
+        factory.add_node({"L1"});
+        factory.add_edge("L0", "L1", {.identifier="a", .guard=empty_guard, .updates=compile_update("x:=1")});
+        component_map["A"] = {std::move(factory.build_heap()), "L0"};
+    }
+    { // B
+        auto factory = aaltitoad::tta_t::graph_builder{};
+        factory.add_node({"L0"});
+        factory.add_node({"L1"});
+        factory.add_edge("L0", "L1", {.identifier="b", .guard=empty_guard, .updates=compile_update("x:=2")});
+        component_map["B"] = {std::move(factory.build_heap()), "L0"};
+    }
+
+    auto n = aaltitoad::ntta_t{{}, component_map};
+    auto changes = n.tick();
 }
