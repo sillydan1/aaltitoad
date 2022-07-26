@@ -9,18 +9,23 @@ THING(S)
     if s ∈ A
 
 
-
+// 
 FUNC(S,n,a)
-    if a is a subset of any solution in S
-      return Ø
-    k = { x | x ∈ N, x ∉ n⋅, x ∉ a }
-    s = Ø
-    for m ∈ k
-      b = a ∪ {n}
-      s = s ∪ ( FUNC(m,b) ∪ {n} )
-    return s
+  if a is a subset of any solution in S
+    return Ø
+  p = { x | x ∈ } // all postsets of 
+  k = { x | x ∈ N, x ∉ n⋅, x ∉ a }
+  if |k| = 0
+    return a
+  s = Ø
+  for m ∈ k
+    b = a ∪ {m}
+    s = s ∪ { FUNC(S,m,b) ∪ {n} }
+  return s
 
-S = Ø
-for n ∈ N
-  S = S ∪ FUNC(S,n,Ø)
-return S
+//
+MAIN()
+  S = Ø
+  for n ∈ N
+    S = S ∪ FUNC(S,n,{n})
+  return S
