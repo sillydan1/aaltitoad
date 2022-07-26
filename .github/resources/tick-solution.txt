@@ -1,0 +1,26 @@
+// NOTES
+// x⋅ is the postset i.e: { d | <o,d> ∈ x.edges }
+
+FindAllSolutionsForChoiceGraph(g)
+  S = Ø                                // All solution combinations
+  C = tarjan(g)                        // Find strongly connected components in the graph
+  X = Ø                                // Grouped solutions for each scc
+  for c∈C                              // 
+    X = X ∪ FindAllSolutionsForSCC(c)  // Find the solutions for the scc
+  return AllPermutationsOf(X)          // All combinations of solutions for all the sccs
+
+FindAllSolutionsForSCC(c)              //
+  S = Ø                                //
+  for n∈c                              //
+  	S = S ∪ FindSolution(n,Ø)          //
+  return S                             //
+
+FindSolution(n,S)                      //
+  n.visited = true                     //
+  if |{ x | x ∈ n⋅ ∧ x ∈ S }| = 0      //
+    S = S ∪ {n}                        //
+  for x∈n⋅                             //
+    if x.visited = true                //
+      continue                         //
+    FindSolution(x,S)                  //
+  return S                             //
