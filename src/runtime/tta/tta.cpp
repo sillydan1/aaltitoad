@@ -116,11 +116,10 @@ namespace aaltitoad {
             }
         }
 
-        auto g = edge_dependency_graph_builder.build(); // TODO: Make this doubly-linked
-        tick_resolver solver{g};
-        auto solutions = solver.solve();
-        spdlog::debug("{0} possible solutions to this tick", solutions.size());
+        // TODO: Make a "build_doubly_linked" or something to avoid the extra construction code above
+        auto solutions = tick_resolver{edge_dependency_graph_builder.build()}.solve();
 
+        spdlog::debug("{0} possible solutions to this tick", solutions.size());
         std::vector<state_change_t> result{}; result.reserve(solutions.size());
         for(auto& solution : solutions) {
             std::stringstream debug_stream{};
