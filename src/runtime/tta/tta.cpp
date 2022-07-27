@@ -1,8 +1,8 @@
 #include "tta.h"
 #include "drivers/z3_driver.h"
-#include <aaltitoadpch.h>
 #include <set>
 #include <algorithm>
+#include <spdlog/spdlog.h>
 
 namespace aaltitoad {
     auto ntta_t::state_change_t::operator+=(const choice_t& v) -> state_change_t & {
@@ -73,45 +73,33 @@ namespace aaltitoad {
         auto eval_updates = [&i](const expr::compiler::compiled_expr_collection_t& t){return expr::interpreter::evaluate(t,i,i,i);};
         auto eval_guard = [&i](const expr::compiler::compiled_expr_t& t){return expr::interpreter::evaluate(t,i,i,i);};
 
+        // Build dependency graph and collect choices
         ya::graph_builder<tta_t::graph_edge_iterator_t, std::string, std::string> edge_dependency_graph_builder{};
         std::unordered_map<std::string, choice_t> all_enabled_choices{};
         for(auto component_it = components.begin(); component_it != components.end(); component_it++) {
-            std::vector<tta_t::graph_edge_iterator_t> enabled_edges{};
+            std::vector<std::string_view> enabled_edges{};
             for(auto edge : component_it->second.current_location->second.outgoing_edges) {
                 if(!std::get<bool>(eval_guard(edge->second.data.guard)))
                     continue;
-                enabled_edges.push_back(edge);
                 edge_dependency_graph_builder.add_node({edge->first.identifier, edge});
-                auto x = edge->second.target;
-                all_enabled_choices[edge->first.identifier] = choice_t{edge, {component_it, x}, eval_updates(edge->second.data.updates)};
-            }
-            for(auto it1 = enabled_edges.begin(); it1 != enabled_edges.end()-1; it1++) {
-                const auto& itt = it1; // Force iterator copying
-                for(auto it2 = itt+1; it2 != enabled_edges.end(); it2++) {
-                    edge_dependency_graph_builder.add_edge((*itt)->first.identifier,
-                                                           (*it2)->first.identifier,
-                                                           ya::uuid_v4());
-                    edge_dependency_graph_builder.add_edge((*it2)->first.identifier,
-                                                           (*itt)->first.identifier,
-                                                           ya::uuid_v4());
+                for(auto& choice : enabled_edges) {
+                    edge_dependency_graph_builder.add_edge(edge->first.identifier,std::string{choice},ya::uuid_v4());
+                    edge_dependency_graph_builder.add_edge(std::string{choice},edge->first.identifier,ya::uuid_v4());
                 }
+                enabled_edges.push_back(edge->first.identifier);
+                all_enabled_choices[edge->first.identifier] = choice_t{edge,
+                                 {component_it, edge->second.target},
+                                 eval_updates(edge->second.data.updates)};
             }
         }
-
+        // Add overlapping non-idempotent edges to the dependency graph
         for (auto it1 = all_enabled_choices.begin(); it1 != all_enabled_choices.end(); it1++) {
             for (auto it2 = it1; it2 != all_enabled_choices.end(); it2++) {
                 if(it1 == it2)
                     continue;
                 if (it1->second.symbol_changes.is_overlapping_and_not_idempotent(it2->second.symbol_changes)) {
-                    spdlog::trace("{0} and {1} are overlapping and not idempotent",
-                                  it1->second.edge->second.data.identifier,
-                                  it2->second.edge->second.data.identifier);
-                    edge_dependency_graph_builder.add_edge(it1->second.edge->first.identifier,
-                                                           it2->second.edge->first.identifier,
-                                                           ya::uuid_v4());
-                    edge_dependency_graph_builder.add_edge(it2->second.edge->first.identifier,
-                                                           it1->second.edge->first.identifier,
-                                                           ya::uuid_v4());
+                    edge_dependency_graph_builder.add_edge(it1->first,it2->first,ya::uuid_v4());
+                    edge_dependency_graph_builder.add_edge(it2->first,it1->first,ya::uuid_v4());
                 }
             }
         }
@@ -119,18 +107,13 @@ namespace aaltitoad {
         // TODO: Make a "build_doubly_linked" or something to avoid the extra construction code above
         auto solutions = tick_resolver{edge_dependency_graph_builder.build()}.solve();
 
-        spdlog::debug("{0} possible solutions to this tick", solutions.size());
-        std::vector<state_change_t> result{}; result.reserve(solutions.size());
+        std::vector<state_change_t> result{};
+        result.reserve(solutions.size());
         for(auto& solution : solutions) {
-            std::stringstream debug_stream{};
-            debug_stream << "solution: ";
             state_change_t res{};
-            for(auto& choice : solution) {
-                debug_stream << choice << " ";
+            for(auto& choice : solution)
                 res += all_enabled_choices.at(choice);
-            }
             result.push_back(res);
-            spdlog::debug(debug_stream.str());
         }
         return result;
     }
