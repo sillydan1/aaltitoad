@@ -1,26 +1,32 @@
-// NOTES
-// x⋅ is the postset i.e: { d | <o,d> ∈ x.edges }
+\algdef{SE}{PreLoop}{EndPreLoop}[1]{\textbf{pick} \(\mbox{#1}\) \textbf{do}}{\textbf{end}}
+\algrenewcommand\algorithmicindent{1.0em} % Indentation (.5 is ~1 character)
+\algtext*{EndIf}% Remove "end if" text
+\begin{algorithm}[h]
+  \caption{Given a doubly-linked dependency graph $G=\langle N,E \rangle$ this algorithm finds all maximal combinations of nodes that are not directly connected via a dependency edge}\label{pseudo:something}
+  \begin{algorithmic}[1]
+  \Procedure{FindAllSolutions}{$G$}
+    \State $S = \emptyset$
+    \ForAll{$n\in N$}
+    \State $\textsc{SubSolutions}(S,\{n\})$
+    \EndFor
+    \State
+    \Return $S$
+    \EndProcedure
 
-FindAllSolutionsForChoiceGraph(g)
-  S = Ø                                // All solution combinations
-  C = tarjan(g)                        // Find strongly connected components in the graph
-  X = Ø                                // Grouped solutions for each scc
-  for c∈C                              // 
-    X = X ∪ FindAllSolutionsForSCC(c)  // Find the solutions for the scc
-  return AllPermutationsOf(X)          // All combinations of solutions for all the sccs
+    \State
 
-FindAllSolutionsForSCC(c)              //
-  S = Ø                                //
-  for n∈c                              //
-  	S = S ∪ FindSolution(n,Ø)          //
-  return S                             //
-
-FindSolution(n,S)                      //
-  n.visited = true                     //
-  if |{ x | x ∈ n⋅ ∧ x ∈ S }| = 0      //
-    S = S ∪ {n}                        //
-  for x∈n⋅                             //
-    if x.visited = true                //
-      continue                         //
-    FindSolution(x,S)                  //
-  return S                             //
+    \Procedure{SubSolutions}{$S,a$}
+    \If{$\exists x\in S$ \textbf{where} $a\subseteq x$}
+    \Return
+    \EndIf
+    \State $k = N \setminus a \cup (\bigcup\limits_{n\in a} n\bullet)$
+    \If{$|k|=0$}
+    \State $S = S \cup \{a\}$
+    \EndIf
+    \ForAll{$m\in k$}
+    \State $\textsc{SubSolutions}(S,a \cup \{m\})$
+    \EndFor
+    \State
+    \EndProcedure
+  \end{algorithmic}
+\end{algorithm}
