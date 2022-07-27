@@ -14,7 +14,7 @@ namespace aaltitoad {
     struct tick_resolver {
         using set = std::set<std::string>;
         using solution_keys = std::vector<std::set<std::string>>;
-        using graph_type = ya::graph<tta_t::graph_edge_iterator_t, std::string, std::string>;
+        using graph_type = ya::graph<tta_t::graph_edge_iterator_t, uint32_t, std::string>;
 
         explicit tick_resolver(const graph_type& G) : G{G} {
             for(auto& n : G.nodes)
@@ -84,8 +84,9 @@ namespace aaltitoad {
         expr::interpreter i{symbols};
 
         // Build dependency graph and collect choices
-        ya::graph_builder<tta_t::graph_edge_iterator_t, std::string, std::string> edge_dependency_graph_builder{};
+        ya::graph_builder<tta_t::graph_edge_iterator_t, uint32_t, std::string> edge_dependency_graph_builder{};
         std::unordered_map<std::string, choice_t> all_enabled_choices{};
+        uint32_t uniqueness_counter = 0;
         for(auto component_it = components.begin(); component_it != components.end(); component_it++) {
             std::vector<std::string_view> enabled_edges{};
             for(auto edge : component_it->second.current_location->second.outgoing_edges) {
@@ -93,8 +94,8 @@ namespace aaltitoad {
                     continue;
                 edge_dependency_graph_builder.add_node({edge->first.identifier, edge});
                 for(auto& choice : enabled_edges) {
-                    edge_dependency_graph_builder.add_edge(edge->first.identifier,std::string{choice},ya::uuid_v4());
-                    edge_dependency_graph_builder.add_edge(std::string{choice},edge->first.identifier,ya::uuid_v4());
+                    edge_dependency_graph_builder.add_edge(edge->first.identifier, std::string{choice}, uniqueness_counter++);
+                    edge_dependency_graph_builder.add_edge(std::string{choice}, edge->first.identifier, uniqueness_counter++);
                 }
                 enabled_edges.push_back(edge->first.identifier);
                 all_enabled_choices[edge->first.identifier] = choice_t{edge,
@@ -108,8 +109,8 @@ namespace aaltitoad {
                 if(it1 == it2)
                     continue;
                 if (it1->second.symbol_changes.is_overlapping_and_not_idempotent(it2->second.symbol_changes)) {
-                    edge_dependency_graph_builder.add_edge(it1->first,it2->first,ya::uuid_v4());
-                    edge_dependency_graph_builder.add_edge(it2->first,it1->first,ya::uuid_v4());
+                    edge_dependency_graph_builder.add_edge(it1->first, it2->first, uniqueness_counter++);
+                    edge_dependency_graph_builder.add_edge(it2->first, it1->first, uniqueness_counter++);
                 }
             }
         }
