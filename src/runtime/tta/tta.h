@@ -91,7 +91,8 @@ namespace aaltitoad {
         void apply(const expr::symbol_table_t& symbol_changes);
 
     private:
-        static auto collect_choices(const ya::combiner_iterator_list_t<choice_t>& iterator_list) -> std::optional<state_change_t>;
+        static auto eval_updates(expr::interpreter& i, const expr::compiler::compiled_expr_collection_t& t) -> expr::symbol_table_t;
+        static auto eval_guard(expr::interpreter& i, const expr::compiler::compiled_expr_t& e) -> expr::symbol_value_t;
         // --- management things --- //
         expr::interpreter interpreter;
     };

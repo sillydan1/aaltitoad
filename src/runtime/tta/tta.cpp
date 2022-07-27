@@ -24,28 +24,20 @@ namespace aaltitoad {
         solution_keys solve() {
             solution_keys S{};
             for(auto& n : N)
-                subsolve(S, {n});
+                solve_recursive(S, {n});
             return S;
         }
     private:
-        void subsolve(solution_keys& S, const set& a) {
+        void solve_recursive(solution_keys& S, const set& a) {
             for(auto& s : S) {
                 if(std::includes(s.begin(),s.end(),a.begin(),a.end()))
                     return;
             }
-            std::set<std::string> e{};
-            auto p = get_postsets(a);
-            std::set_union(a.begin(), a.end(), p.begin(), p.end(), std::inserter(e, e.begin()));
-            std::set<std::string> k{};
-            std::set_difference(N.begin(), N.end(), e.begin(), e.end(), std::inserter(k, k.begin()));
+            auto k = _difference(N, _union(a, get_postsets(a)));
             if(k.empty())
                 S.push_back(a);
-            for(auto& m : k) {
-                std::set<std::string> ms = {m};
-                std::set<std::string> r{};
-                std::set_union(a.begin(), a.end(), ms.begin(), ms.end(), std::inserter(r,r.begin()));
-                subsolve(S,r);
-            }
+            for(auto& m : k)
+                solve_recursive(S,_union(a,{m}));
         }
 
         set get_postset(const std::string& node_key) {
@@ -64,14 +56,32 @@ namespace aaltitoad {
             return value;
         }
 
+        static auto _union(const set& a, const set& b)-> set {
+            set r{};
+            std::set_union(a.begin(),a.end(),b.begin(),b.end(),std::inserter(r,r.begin()));
+            return r;
+        }
+
+        static auto _difference(const set& a, const set& b) -> set {
+            set r{};
+            std::set_difference(a.begin(),a.end(),b.begin(),b.end(),std::inserter(r,r.begin()));
+            return r;
+        }
+
         const graph_type& G;
         set N;
     };
 
+    auto ntta_t::eval_updates(expr::interpreter &i, const expr::compiler::compiled_expr_collection_t &t) -> expr::symbol_table_t {
+        return expr::interpreter::evaluate(t,i,i,i);
+    }
+
+    auto ntta_t::eval_guard(expr::interpreter &i, const expr::compiler::compiled_expr_t &e) -> expr::symbol_value_t {
+        return expr::interpreter::evaluate(e,i,i,i);
+    }
+
     auto ntta_t::tick() -> std::vector<state_change_t> {
         expr::interpreter i{symbols};
-        auto eval_updates = [&i](const expr::compiler::compiled_expr_collection_t& t){return expr::interpreter::evaluate(t,i,i,i);};
-        auto eval_guard = [&i](const expr::compiler::compiled_expr_t& t){return expr::interpreter::evaluate(t,i,i,i);};
 
         // Build dependency graph and collect choices
         ya::graph_builder<tta_t::graph_edge_iterator_t, std::string, std::string> edge_dependency_graph_builder{};
@@ -79,7 +89,7 @@ namespace aaltitoad {
         for(auto component_it = components.begin(); component_it != components.end(); component_it++) {
             std::vector<std::string_view> enabled_edges{};
             for(auto edge : component_it->second.current_location->second.outgoing_edges) {
-                if(!std::get<bool>(eval_guard(edge->second.data.guard)))
+                if(!std::get<bool>(eval_guard(i,edge->second.data.guard)))
                     continue;
                 edge_dependency_graph_builder.add_node({edge->first.identifier, edge});
                 for(auto& choice : enabled_edges) {
@@ -89,7 +99,7 @@ namespace aaltitoad {
                 enabled_edges.push_back(edge->first.identifier);
                 all_enabled_choices[edge->first.identifier] = choice_t{edge,
                                  {component_it, edge->second.target},
-                                 eval_updates(edge->second.data.updates)};
+                                 eval_updates(i,edge->second.data.updates)};
             }
         }
         // Add overlapping non-idempotent edges to the dependency graph
