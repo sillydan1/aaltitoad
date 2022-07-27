@@ -74,20 +74,10 @@ TEST_CASE("Bigger_test") {
         factory.add_edge("L0", "L1", {.identifier="i", .guard=empty_guard, .updates=compile_update("z:=3")});
         component_map["D"] = {std::move(factory.build_heap()), "L0"};
     }
-    /*
-     * (a => !d && d => !a) && (a => !e && e => !a) && (d => !e && e => !d) && (a||d||e) &&
-     * (b => !c && c => !b) && (b => !f && f => !b) && (c => !f && f => !c) && (b||c||f) &&
-     * (g => !h && h => !g) && (g||h) &&
-     * (h => !f && f => !h) &&
-     * (h => !e && e => !h) &&
-     * (h => !i && i => !h) &&
-     * (b => !a && a => !b) &&
-     * (f => !i && i => !f)
-     * */
 
     auto n = aaltitoad::ntta_t{{}, component_map};
     auto changes = n.tick();
-    REQUIRE(11 == changes.size());
+    REQUIRE(6 == changes.size());
 }
 
 TEST_CASE("edge_case_test") {
@@ -120,4 +110,5 @@ TEST_CASE("edge_case_test") {
 
     auto n = aaltitoad::ntta_t{{}, component_map};
     auto changes = n.tick();
+    REQUIRE(2 == changes.size());
 }

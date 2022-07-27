@@ -1,95 +1,103 @@
 #include "tta.h"
 #include "drivers/z3_driver.h"
 #include <aaltitoadpch.h>
+#include <set>
+#include <algorithm>
 
 namespace aaltitoad {
-    struct query_stream {
-        std::stringstream ss = {};
-        int sub_expression_count = 0;
-        auto str() const -> std::string {
-            return ss.str();
-        }
-    };
-    struct xor_q {
-        std::string left, right;
-    };
-    auto operator<<(query_stream& s, const std::string& expression) -> query_stream& {
-        if(s.sub_expression_count++ > 0)
-            s.ss << " && ";
-        s.ss << "(" << expression << ")";
-        return s;
-    }
-    auto operator<<(query_stream& s, const xor_q& sub_expr) -> query_stream& {
-        if(s.sub_expression_count++)
-            s.ss << " && ";
-        s.ss << "(" << sub_expr.left << " => !" << sub_expr.right << " && "
-                    << sub_expr.right << " => !" << sub_expr.left << ")";
-        return s;
-    }
-    auto operator<<(query_stream& s, const expr::symbol_table_t& solution) -> query_stream& {
-        if(s.sub_expression_count++)
-            s.ss << " && ";
-        s.ss << "!(";
-        std::string sep{};
-        for(auto& el : solution) {
-            s.ss << sep;
-            if(!std::get<bool>(el.second))
-                s.ss << "!";
-            s.ss << el.first;
-            sep = " && ";
-        }
-        s.ss << ")";
-        return s;
-    }
-
     auto ntta_t::state_change_t::operator+=(const choice_t& v) -> state_change_t & {
         location_changes.push_back(v.location_change);
         symbol_changes += v.symbol_changes;
         return *this;
     }
 
+    struct tick_resolver {
+        using set = std::set<std::string>;
+        using solution_keys = std::vector<std::set<std::string>>;
+        using graph_type = ya::graph<tta_t::graph_edge_iterator_t, std::string, std::string>;
+
+        explicit tick_resolver(const graph_type& G) : G{G} {
+            for(auto& n : G.nodes)
+                N.insert(n.first);
+        }
+
+        solution_keys solve() {
+            solution_keys S{};
+            for(auto& n : N)
+                subsolve(S, {n});
+            return S;
+        }
+    private:
+        void subsolve(solution_keys& S, const set& a) {
+            for(auto& s : S) {
+                if(std::includes(s.begin(),s.end(),a.begin(),a.end()))
+                    return;
+            }
+            std::set<std::string> e{};
+            auto p = get_postsets(a);
+            std::set_union(a.begin(), a.end(), p.begin(), p.end(), std::inserter(e, e.begin()));
+            std::set<std::string> k{};
+            std::set_difference(N.begin(), N.end(), e.begin(), e.end(), std::inserter(k, k.begin()));
+            if(k.empty())
+                S.push_back(a);
+            for(auto& m : k) {
+                std::set<std::string> ms = {m};
+                std::set<std::string> r{};
+                std::set_union(a.begin(), a.end(), ms.begin(), ms.end(), std::inserter(r,r.begin()));
+                subsolve(S,r);
+            }
+        }
+
+        set get_postset(const std::string& node_key) {
+            set value{};
+            for(auto& e : G.nodes.at(node_key).outgoing_edges)
+                value.insert(e->second.target->first);
+            return value;
+        }
+
+        set get_postsets(const set& node_keys) {
+            set value{};
+            for(auto& key : node_keys) {
+                auto s = get_postset(key);
+                std::set_union(value.begin(), value.end(), s.begin(), s.end(), std::inserter(value, value.begin()));
+            }
+            return value;
+        }
+
+        const graph_type& G;
+        set N;
+    };
+
     auto ntta_t::tick() -> std::vector<state_change_t> {
         expr::interpreter i{symbols};
         auto eval_updates = [&i](const expr::compiler::compiled_expr_collection_t& t){return expr::interpreter::evaluate(t,i,i,i);};
         auto eval_guard = [&i](const expr::compiler::compiled_expr_t& t){return expr::interpreter::evaluate(t,i,i,i);};
 
-        // For each component
-        //    For each enabled edge e
-        //        add node 'e' to the sat_graph
-        //    connect all enabled edge nodes in this component
-        ya::graph_builder<tta_t::graph_edge_iterator_t, std::string> edge_dependency_graph_builder{};
+        ya::graph_builder<tta_t::graph_edge_iterator_t, std::string, std::string> edge_dependency_graph_builder{};
         std::unordered_map<std::string, choice_t> all_enabled_choices{};
-        query_stream satisfiability_query{};
         for(auto component_it = components.begin(); component_it != components.end(); component_it++) {
             std::vector<tta_t::graph_edge_iterator_t> enabled_edges{};
-            std::stringstream ss{};
-            std::string sep{};
             for(auto edge : component_it->second.current_location->second.outgoing_edges) {
                 if(!std::get<bool>(eval_guard(edge->second.data.guard)))
                     continue;
                 enabled_edges.push_back(edge);
-                edge_dependency_graph_builder.add_node({edge});
+                edge_dependency_graph_builder.add_node({edge->first.identifier, edge});
                 auto x = edge->second.target;
                 all_enabled_choices[edge->first.identifier] = choice_t{edge, {component_it, x}, eval_updates(edge->second.data.updates)};
-                ss << sep << edge->first.identifier;
-                sep = "||";
             }
             for(auto it1 = enabled_edges.begin(); it1 != enabled_edges.end()-1; it1++) {
                 const auto& itt = it1; // Force iterator copying
                 for(auto it2 = itt+1; it2 != enabled_edges.end(); it2++) {
-                    edge_dependency_graph_builder.add_edge(*itt, *it2, component_it->first);
-                    satisfiability_query << xor_q{(*it1)->second.data.identifier,
-                                                (*it2)->second.data.identifier};
+                    edge_dependency_graph_builder.add_edge((*itt)->first.identifier,
+                                                           (*it2)->first.identifier,
+                                                           ya::uuid_v4());
+                    edge_dependency_graph_builder.add_edge((*it2)->first.identifier,
+                                                           (*itt)->first.identifier,
+                                                           ya::uuid_v4());
                 }
             }
-            if(!ss.str().empty() && enabled_edges.size() > 1)
-                satisfiability_query << ss.str();
         }
 
-        // For each edge e1 added
-        //     For each edge e2 added
-        //          if e1.updates.is_overlapping_and_not_idempotent(e2.updates)
-        //              connect e1 and e2 in the sat_graph
         for (auto it1 = all_enabled_choices.begin(); it1 != all_enabled_choices.end(); it1++) {
             for (auto it2 = it1; it2 != all_enabled_choices.end(); it2++) {
                 if(it1 == it2)
@@ -98,58 +106,33 @@ namespace aaltitoad {
                     spdlog::trace("{0} and {1} are overlapping and not idempotent",
                                   it1->second.edge->second.data.identifier,
                                   it2->second.edge->second.data.identifier);
-                    edge_dependency_graph_builder.add_edge(it1->second.edge, it2->second.edge, ya::uuid_v4());
-                    satisfiability_query << xor_q{it1->second.edge->second.data.identifier,
-                                                  it2->second.edge->second.data.identifier};
+                    edge_dependency_graph_builder.add_edge(it1->second.edge->first.identifier,
+                                                           it2->second.edge->first.identifier,
+                                                           ya::uuid_v4());
+                    edge_dependency_graph_builder.add_edge(it2->second.edge->first.identifier,
+                                                           it1->second.edge->first.identifier,
+                                                           ya::uuid_v4());
                 }
             }
         }
 
-        // For each node n in the sat_graph
-        //    if n.ingoing.empty() && n.outgoing.empty()
-        //        x += " && " + n;
-        //    m += n " := false;"
-        // For each edge e in the sat_graph
-        //    x += " && (" + e.source + " xor " + e.target + ")"
-        expr::symbol_table_t environment{};
-        auto sat_graph = edge_dependency_graph_builder.build();
-        for(auto& n : sat_graph.nodes) {
-            if(n.second.outgoing_edges.empty() && n.second.ingoing_edges.empty())
-                satisfiability_query << n.second.data->second.data.identifier;
-            environment[n.second.data->second.data.identifier] = false;
-        }
+        auto g = edge_dependency_graph_builder.build(); // TODO: Make this doubly-linked
+        tick_resolver solver{g};
+        auto solutions = solver.solve();
+        spdlog::debug("{0} possible solutions to this tick", solutions.size());
 
-        // solution = z3(m,x)
-        // While(!solution.empty())
-        //     solutions += solution
-        //     x += " && !(" + solution + ")"
-        //     solution = z3(m,x)
-        std::vector<expr::symbol_table_t> solutions{};
-        expr::z3_driver sat_solver{environment};
-        spdlog::debug("SAT query: {0}", satisfiability_query.str());
-        if(sat_solver.parse(satisfiability_query.str()) != 0)
-            throw std::logic_error(sat_solver.error);
-        auto solution = sat_solver.result;
-        while(!solution.empty()) {
-            solutions.push_back(solution);
-            sat_solver.result = {};
-            satisfiability_query << solution;
-            if(sat_solver.parse(satisfiability_query.str()) != 0)
-                throw std::logic_error(sat_solver.error);
-            solution = sat_solver.result;
-        }
-
-        // Convert the list of edge-solutions to state_change_t's
         std::vector<state_change_t> result{}; result.reserve(solutions.size());
-        for(auto& sol : solutions) {
-            state_change_t choice{};
-            for(auto& el : sol) {
-                if(std::get<bool>(el.second))
-                    choice += all_enabled_choices.at(el.first);
+        for(auto& solution : solutions) {
+            std::stringstream debug_stream{};
+            debug_stream << "solution: ";
+            state_change_t res{};
+            for(auto& choice : solution) {
+                debug_stream << choice << " ";
+                res += all_enabled_choices.at(choice);
             }
-            result.push_back(choice);
+            result.push_back(res);
+            spdlog::debug(debug_stream.str());
         }
-        spdlog::debug("{0} possible solutions to this tick", result.size());
         return result;
     }
 
