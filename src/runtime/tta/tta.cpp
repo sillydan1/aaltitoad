@@ -32,8 +32,14 @@ namespace aaltitoad {
         return result;
     }
 
-    auto ntta_t::tock() const -> expr::symbol_table_t {
-        return {}; // TODO: Implement injectable tockers
+    auto ntta_t::tock() const -> std::vector<expr::symbol_table_t> {
+        // TODO: What to do if two tockers generate overlapping & non-idempotent symbol changes?
+        std::vector<expr::symbol_table_t> result{};
+        for(auto& tocker : tockers) {
+            auto changes = tocker->tock(*this);
+            result.insert(result.end(), changes.begin(), changes.end());
+        }
+        return result;
     }
 
     void ntta_t::apply(const state_change_t &changes)  {

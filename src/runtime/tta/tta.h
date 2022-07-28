@@ -10,6 +10,7 @@
 #include <uuid>
 #include <permutation>
 #include <set>
+#include <future>
 
 namespace aaltitoad {
     struct location_t {
@@ -58,6 +59,8 @@ namespace aaltitoad {
         }
     };
 
+    struct tocker_t;
+
     struct ntta_t {
 #ifndef NDEBUG
         using tta_map_t = std::map<std::string,tta_t>;
@@ -79,15 +82,16 @@ namespace aaltitoad {
             auto operator+=(const choice_t&) -> state_change_t&;
         };
 
-        expr::symbol_table_t symbols;
         std::vector<expr::symbol_table_t::iterator> external_symbols;
+        std::vector<std::unique_ptr<tocker_t>> tockers;
+        expr::symbol_table_t symbols;
         tta_map_t components;
 
         ntta_t() : symbols{}, external_symbols{}, components{} {}
         ntta_t(expr::symbol_table_t symbols, tta_map_t components) : symbols{std::move(symbols)}, external_symbols{}, components{std::move(components)} {}
 
         auto tick() -> std::vector<state_change_t>;
-        auto tock() const -> expr::symbol_table_t; // TODO: How do we model verification choices? - Should the injected tocker handle this?
+        auto tock() const -> std::vector<expr::symbol_table_t>;
         void apply(const state_change_t& changes);
         void apply(const expr::symbol_table_t& symbol_changes);
     private:
@@ -118,6 +122,33 @@ namespace aaltitoad {
         static auto eval_updates(expr::interpreter& i, const expr::compiler::compiled_expr_collection_t& t) -> expr::symbol_table_t;
         static auto eval_guard(expr::interpreter& i, const expr::compiler::compiled_expr_t& e) -> expr::symbol_value_t;
     };
+
+    struct tocker_t {
+        [[nodiscard]] virtual auto tock(const ntta_t& state) const -> std::vector<expr::symbol_table_t> = 0;
+        virtual ~tocker_t() = default;
+    };
+
+    class async_tocker_t : public tocker_t {
+    protected:
+        mutable std::future<expr::symbol_table_t> job{};
+        virtual expr::symbol_table_t get_tock_values(const expr::symbol_table_t& invocation_environment) const = 0;
+        virtual void tock_async(const expr::symbol_table_t& environment) const {
+            job = std::async([this, &environment](){
+                return get_tock_values(environment);
+            });
+        }
+        ~async_tocker_t() override = default;
+
+    public:
+        auto tock(const ntta_t& state) const -> std::vector<expr::symbol_table_t> override {
+            if(!job.valid())
+                return {};
+            auto c = job.get();
+            tock_async(state.symbols);
+            return {c};
+        }
+    };
+
 }
 
 auto operator<<(std::ostream& os, const aaltitoad::ntta_t& state) -> std::ostream&;
