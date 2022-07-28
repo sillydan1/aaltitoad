@@ -9,6 +9,7 @@
 #include <utility>
 #include <uuid>
 #include <permutation>
+#include <set>
 
 namespace aaltitoad {
     struct location_t {
@@ -63,13 +64,6 @@ namespace aaltitoad {
 #else
         using tta_map_t = std::unordered_map<std::string,tta_t>;
 #endif
-        expr::symbol_table_t symbols;
-        std::vector<expr::symbol_table_t::iterator> external_symbols;
-        tta_map_t components;
-
-        ntta_t() : symbols{}, external_symbols{}, components{}, interpreter{symbols} {}
-        ntta_t(expr::symbol_table_t symbols, tta_map_t components) : symbols{std::move(symbols)}, external_symbols{}, components{std::move(components)}, interpreter{symbols} {}
-
         struct location_change_t {
             tta_map_t::iterator component;
             tta_t::graph_node_iterator_t new_location;
@@ -84,17 +78,45 @@ namespace aaltitoad {
             expr::symbol_table_t symbol_changes;
             auto operator+=(const choice_t&) -> state_change_t&;
         };
+
+        expr::symbol_table_t symbols;
+        std::vector<expr::symbol_table_t::iterator> external_symbols;
+        tta_map_t components;
+
+        ntta_t() : symbols{}, external_symbols{}, components{} {}
+        ntta_t(expr::symbol_table_t symbols, tta_map_t components) : symbols{std::move(symbols)}, external_symbols{}, components{std::move(components)} {}
+
         auto tick() -> std::vector<state_change_t>;
         auto tock() const -> expr::symbol_table_t; // TODO: How do we model verification choices? - Should the injected tocker handle this?
-
         void apply(const state_change_t& changes);
         void apply(const expr::symbol_table_t& symbol_changes);
-
     private:
+        class tick_resolver {
+        public:
+            using set = std::set<std::string>;
+            using solution_keys = std::vector<std::set<std::string>>;
+            using graph_type = ya::graph<tta_t::graph_edge_iterator_t, uint32_t, std::string>;
+            using graph_type_builder = ya::graph_builder<tta_t::graph_edge_iterator_t, uint32_t, std::string>;
+            struct choice_dependency_problem {
+                graph_type dependency_graph;
+                std::unordered_map<std::string, choice_t> choices;
+            };
+
+            explicit tick_resolver(const graph_type& G);
+            auto solve() -> solution_keys;
+        private:
+            void solve_recursive(solution_keys& S, const set& a);
+            auto get_neighbors(const std::string& node_key) -> set;
+            auto get_postsets(const set& node_keys) -> set;
+            static auto _union(const set& a, const set& b) -> set;
+            static auto _difference(const set& a, const set& b) -> set;
+
+            const graph_type& G;
+            set N;
+        };
+        auto generate_enabled_choice_dependency_graph() -> tick_resolver::choice_dependency_problem;
         static auto eval_updates(expr::interpreter& i, const expr::compiler::compiled_expr_collection_t& t) -> expr::symbol_table_t;
         static auto eval_guard(expr::interpreter& i, const expr::compiler::compiled_expr_t& e) -> expr::symbol_value_t;
-        // --- management things --- //
-        expr::interpreter interpreter;
     };
 }
 
