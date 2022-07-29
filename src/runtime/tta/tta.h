@@ -82,13 +82,16 @@ namespace aaltitoad {
             auto operator+=(const choice_t&) -> state_change_t&;
         };
 
-        std::vector<expr::symbol_table_t::iterator> external_symbols;
         std::vector<std::unique_ptr<tocker_t>> tockers;
         expr::symbol_table_t symbols;
+        expr::symbol_table_t external_symbols;
         tta_map_t components;
 
         ntta_t() : symbols{}, external_symbols{}, components{} {}
-        ntta_t(expr::symbol_table_t symbols, tta_map_t components) : symbols{std::move(symbols)}, external_symbols{}, components{std::move(components)} {}
+        ntta_t(expr::symbol_table_t symbols, tta_map_t components)
+         : symbols{std::move(symbols)}, external_symbols{}, components{std::move(components)} {}
+        ntta_t(expr::symbol_table_t symbols, expr::symbol_table_t external_symbols, tta_map_t components)
+         : symbols{std::move(symbols)}, external_symbols{std::move(external_symbols)}, components{std::move(components)} {}
 
         auto tick() -> std::vector<state_change_t>;
         auto tock() const -> std::vector<expr::symbol_table_t>;

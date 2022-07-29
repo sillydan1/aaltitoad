@@ -54,7 +54,8 @@ namespace aaltitoad {
 
     auto ntta_t::generate_enabled_choice_dependency_graph() -> tick_resolver::choice_dependency_problem {
         // Build dependency graph and collect choices
-        expr::interpreter i{symbols};
+        auto all_symbols = symbols + external_symbols;
+        expr::interpreter i{all_symbols};
         tick_resolver::graph_type_builder edge_dependency_graph_builder{};
         std::unordered_map<std::string, choice_t> all_enabled_choices{};
         uint32_t uniqueness_counter = 0;

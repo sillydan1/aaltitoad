@@ -30,7 +30,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
-CPMAddPackage(NAME expr      VERSION 1.5.0 GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 OFF")
+CPMAddPackage(NAME expr GIT_TAG z3-patches GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
 CPMAddPackage(NAME argvparse VERSION 1.2.3 GITHUB_REPOSITORY sillydan1/argvparse)
 CPMAddPackage(NAME ctlparser VERSION 1.0.0 GITHUB_REPOSITORY sillydan1/ctlparser)
 
@@ -79,7 +79,8 @@ set(${PROJECT_NAME}_SOURCES
         src/plugin_system/plugin_system.cpp
         src/extensions/string_extensions.cpp)
 add_library(yatta
-        src/runtime/tta/tta.cpp)
+        src/runtime/tta/tta.cpp
+        src/runtime/tta/interesting_tocker.cpp)
 target_link_libraries(yatta)
 
 if(NOT DEFINED TEST_COVERAGE)
