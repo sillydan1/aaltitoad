@@ -49,8 +49,8 @@ namespace aaltitoad {
 
         tta_t() : graph{}, initial_location{}, current_location{} {}
         tta_t(std::shared_ptr<graph_t> graph, location_t::graph_key_t initial_location)
-         : graph{std::move(graph)}, initial_location{std::move(initial_location)},
-           current_location{}
+                : graph{std::move(graph)}, initial_location{std::move(initial_location)},
+                  current_location{}
         {
             auto it = this->graph->nodes.find(this->initial_location);
             if(it == this->graph->nodes.end())
@@ -151,7 +151,6 @@ namespace aaltitoad {
             return {c};
         }
     };
-
 }
 
 auto operator<<(std::ostream& os, const aaltitoad::ntta_t& state) -> std::ostream&;

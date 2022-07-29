@@ -75,9 +75,16 @@ TEST_CASE("Bigger_test") {
         component_map["D"] = {std::move(factory.build_heap()), "L0"};
     }
 
-    auto n = aaltitoad::ntta_t{{}, component_map};
+    expr::symbol_table_t initial_symbols{};
+    initial_symbols["x"] = 0;
+    initial_symbols["y"] = 0;
+    initial_symbols["z"] = 0;
+    auto n = aaltitoad::ntta_t{initial_symbols, component_map};
+    std::cout << std::hash<aaltitoad::ntta_t>{}(n) << "\n" << n << "===========\n";
     auto changes = n.tick();
     REQUIRE(6 == changes.size());
+    n.apply(changes[0]);
+    std::cout << std::hash<aaltitoad::ntta_t>{}(n) << "\n" << n << "===========\n";
 }
 
 TEST_CASE("edge_case_test") {
