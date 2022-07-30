@@ -10,9 +10,8 @@ namespace aaltitoad {
         [[nodiscard]] auto tock(const ntta_t& state) -> std::vector<expr::symbol_table_t> override;
         ~interesting_tocker() override = default;
     private:
-        auto find_solution(expr::z3_driver& driver, const expr::syntax_tree_t& guard) -> expr::symbol_table_t;
-        auto contains_external_variables(const expr::syntax_tree_t& tree) const -> bool;
-        auto thing(expr::z3_driver& d, const ya::combiner_iterator_list_t<expr::syntax_tree_t>& elements) -> std::optional<expr::symbol_table_t>;
+        [[nodiscard]] auto contains_external_variables(const expr::syntax_tree_t& tree, const expr::symbol_table_t& symbols) const -> bool;
+        static auto find_solution(expr::z3_driver& d, const ya::combiner_iterator_list_t<expr::syntax_tree_t>& elements) -> std::optional<expr::symbol_table_t>;
         std::unordered_map<std::string, tta_t::graph_edge_iterator_t> edge_cache;
     };
 }
