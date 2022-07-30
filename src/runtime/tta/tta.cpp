@@ -42,6 +42,10 @@ namespace aaltitoad {
         return result;
     }
 
+    void ntta_t::add_tocker(std::unique_ptr<tocker_t> &&tocker) {
+        tockers.push_back(std::move(tocker));
+    }
+
     void ntta_t::apply(const state_change_t &changes)  {
         for(auto& location_change : changes.location_changes)
             location_change.component->second.current_location = location_change.new_location;

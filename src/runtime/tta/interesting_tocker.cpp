@@ -21,7 +21,7 @@ namespace aaltitoad {
             d.add_tree(expression);
             if (d.result.empty())
                 return {};
-            return d.result;
+            return std::optional{d.result};
         } catch(std::domain_error& e) {
             spdlog::trace("encountered unsatisfiable tock step ignoring");
         } catch(std::exception& e) {
@@ -47,9 +47,7 @@ namespace aaltitoad {
         }
         // TODO: Maybe implement a "only-add-changes-to-already-existing-variables"-apply function for symbol_table_t
         //       This is because known and unknown symbols are not interchangeable
-        ya::combiner_funct_t<expr::symbol_table_t, expr::syntax_tree_t> f = [&d](const ya::combiner_iterator_list_t<expr::syntax_tree_t>& elements) -> std::optional<expr::symbol_table_t> {
-            return find_solution(d, elements);
-        };
+        ya::combiner_funct_t<expr::symbol_table_t, expr::syntax_tree_t> f = [&d](const ya::combiner_iterator_list_t<expr::syntax_tree_t>& elements) -> std::optional<expr::symbol_table_t> {return find_solution(d, elements);};
         return ya::generate_permutations(guards, f);
     }
 
@@ -59,15 +57,15 @@ namespace aaltitoad {
                 [&symbols, &return_value](const expr::symbol_reference_t& r){ return_value |= symbols.contains(r->first); },
                 [&symbols, &return_value](const expr::c_symbol_reference_t& r){ return_value |= symbols.contains(r->first); },
                 [this, &tree, &symbols, &return_value](const expr::root_t& r){ return_value |= contains_external_variables(tree.children[0], symbols); },
-                [&return_value](const expr::symbol_value_t& r){ return_value |= false; },
                 [this, &tree, &symbols, &return_value](const expr::operator_t& r){
                     for(auto& c : tree.children) {
                         return_value |= contains_external_variables(c, symbols);
                         if(return_value)
                             return;
                     }
-                }
-        ), static_cast<expr::underlying_syntax_node_t>(tree.node));
+                },
+                [](auto&&){}
+        ), tree.node);
         return return_value;
     }
 }

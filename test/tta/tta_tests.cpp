@@ -1,6 +1,7 @@
 #include <runtime/tta/tta.h>
 #include <catch2/catch_test_macros.hpp>
 #include <utility>
+#include <runtime/tta/interesting_tocker.h>
 
 TEST_CASE("testing_new_tta_stuff") {
     spdlog::set_level(spdlog::level::trace);
@@ -90,15 +91,20 @@ TEST_CASE("Bigger_test") {
 TEST_CASE("edge_case_test") {
     spdlog::set_level(spdlog::level::debug);
     aaltitoad::ntta_t::tta_map_t component_map{};
-    expr::symbol_table_t declared_variables = {};
-    expr::compiler compiler{declared_variables};
-    compiler.parse("");
-    auto empty_guard = compiler.trees["expression_result"];
+    expr::symbol_table_t e{};
+    e["y"] = 0;
+    expr::compiler compiler{e};
     auto compile_update = [&compiler](const std::string& updates) {
         compiler.trees = {};
         compiler.parse(updates);
         return compiler.trees;
     };
+    auto compile_guard = [&compiler](const std::string& guard) {
+        compiler.trees = {};
+        compiler.parse(guard);
+        return compiler.trees["expression_result"];
+    };
+    auto empty_guard = compile_guard("");
 
     { // A
         auto factory = aaltitoad::tta_t::graph_builder{};
@@ -111,11 +117,13 @@ TEST_CASE("edge_case_test") {
         auto factory = aaltitoad::tta_t::graph_builder{};
         factory.add_node({"L0"});
         factory.add_node({"L1"});
-        factory.add_edge("L0", "L1", {.identifier="b", .guard=empty_guard, .updates=compile_update("x:=2")});
+        factory.add_edge("L0", "L1", {.identifier="b", .guard=compile_guard("y >= 0"), .updates=compile_update("x:=2")});
         component_map["B"] = {std::move(factory.build_heap()), "L0"};
     }
-
-    auto n = aaltitoad::ntta_t{{}, component_map};
-    auto changes = n.tick();
-    REQUIRE(2 == changes.size());
+    auto n = aaltitoad::ntta_t{{}, e,component_map};
+    n.add_tocker(std::make_unique<aaltitoad::interesting_tocker>());
+    auto tick_changes = n.tick();
+    auto tock_changes = n.tock();
+    REQUIRE(2 == tick_changes.size());
+    REQUIRE(2 == tock_changes.size());
 }
