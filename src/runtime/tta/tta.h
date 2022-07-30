@@ -127,7 +127,7 @@ namespace aaltitoad {
     };
 
     struct tocker_t {
-        [[nodiscard]] virtual auto tock(const ntta_t& state) const -> std::vector<expr::symbol_table_t> = 0;
+        [[nodiscard]] virtual auto tock(const ntta_t& state) -> std::vector<expr::symbol_table_t> = 0;
         virtual ~tocker_t() = default;
     };
 
@@ -143,7 +143,7 @@ namespace aaltitoad {
         ~async_tocker_t() override = default;
 
     public:
-        auto tock(const ntta_t& state) const -> std::vector<expr::symbol_table_t> override {
+        auto tock(const ntta_t& state) -> std::vector<expr::symbol_table_t> override {
             if(!job.valid())
                 return {};
             auto c = job.get();
