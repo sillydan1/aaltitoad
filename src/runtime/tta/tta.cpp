@@ -49,10 +49,14 @@ namespace aaltitoad {
     void ntta_t::apply(const state_change_t &changes)  {
         for(auto& location_change : changes.location_changes)
             location_change.component->second.current_location = location_change.new_location;
-        symbols += changes.symbol_changes;
+        apply_internal(changes.symbol_changes);
     }
 
     void ntta_t::apply(const expr::symbol_table_t &symbol_changes) {
+        external_symbols += symbol_changes;
+    }
+
+    void ntta_t::apply_internal(const expr::symbol_table_t &symbol_changes) {
         symbols += symbol_changes;
     }
 

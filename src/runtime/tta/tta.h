@@ -97,7 +97,8 @@ namespace aaltitoad {
         auto tock() const -> std::vector<expr::symbol_table_t>;
         void add_tocker(std::unique_ptr<tocker_t>&& tocker);
         void apply(const state_change_t& changes);
-        void apply(const expr::symbol_table_t& symbol_changes);
+        void apply(const expr::symbol_table_t& external_symbol_changes);
+        void apply_internal(const expr::symbol_table_t& symbol_changes);
     private:
         class tick_resolver {
         public:
@@ -131,27 +132,6 @@ namespace aaltitoad {
         [[nodiscard]] virtual auto tock(const ntta_t& state) -> std::vector<expr::symbol_table_t> = 0;
         virtual ~tocker_t() = default;
     };
-
-    class async_tocker_t : public tocker_t {
-    protected:
-        mutable std::future<expr::symbol_table_t> job{};
-        virtual expr::symbol_table_t get_tock_values(const expr::symbol_table_t& invocation_environment) const = 0;
-        virtual void tock_async(const expr::symbol_table_t& environment) const {
-            job = std::async([this, &environment](){
-                return get_tock_values(environment);
-            });
-        }
-        ~async_tocker_t() override = default;
-
-    public:
-        auto tock(const ntta_t& state) -> std::vector<expr::symbol_table_t> override {
-            if(!job.valid())
-                return {};
-            auto c = job.get();
-            tock_async(state.symbols);
-            return {c};
-        }
-    };
 }
 
 auto operator<<(std::ostream& os, const aaltitoad::ntta_t& state) -> std::ostream&;
@@ -183,12 +163,13 @@ namespace std {
         }
     };
 
-    template<>
+    // TODO: Add this back in when you need it.
+    /* template<>
     struct hash<aaltitoad::tta_t::graph_edge_iterator_t> {
         inline auto operator()(const aaltitoad::tta_t::graph_edge_iterator_t& v) const -> size_t {
             return hash<std::string>{}(v->second.data.identifier);
         }
-    };
+    }; */
 }
 
 #endif //AALTITOAD_TTA_H
