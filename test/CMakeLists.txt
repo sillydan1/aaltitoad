@@ -10,6 +10,7 @@ find_package(Catch2 3 REQUIRED)
 add_executable(${PROJECT_NAME}
         ntta/ntta_tests.cpp
         tta/tta_tests.cpp
+        tta/tocker_tests.cpp
         algorithms/tarjan_tests.cpp
         algorithms/dfs_tests.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE aaltitoad Catch2::Catch2WithMain yatta)

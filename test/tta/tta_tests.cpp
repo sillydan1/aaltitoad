@@ -1,9 +1,6 @@
 #include <runtime/tta/tta.h>
 #include <catch2/catch_test_macros.hpp>
 #include <utility>
-#include <runtime/tta/interesting_tocker.h>
-
-// TODO: async / sync tocker scenario
 
 SCENARIO("constructing networks of TTAs", "[ntta_t-construction]") {
     struct dummy_tocker : public aaltitoad::tocker_t {
