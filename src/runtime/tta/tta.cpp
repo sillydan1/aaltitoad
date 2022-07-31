@@ -1,5 +1,6 @@
 #include "tta.h"
 #include "drivers/z3_driver.h"
+#include <setwrappers>
 #include <algorithm>
 #include <spdlog/spdlog.h>
 
@@ -33,7 +34,6 @@ namespace aaltitoad {
     }
 
     auto ntta_t::tock() const -> std::vector<expr::symbol_table_t> {
-        // TODO: What to do if two tockers generate overlapping & non-idempotent symbol changes?
         std::vector<expr::symbol_table_t> result{};
         for(auto& tocker : tockers) {
             auto changes = tocker->tock(*this);
@@ -54,6 +54,16 @@ namespace aaltitoad {
 
     void ntta_t::apply(const expr::symbol_table_t &symbol_changes) {
         external_symbols += symbol_changes;
+    }
+
+    void ntta_t::apply(const std::vector<expr::symbol_table_t>& symbol_change_list) {
+        expr::symbol_table_t combined_changes{};
+        for(auto& changes : symbol_change_list) {
+            if(combined_changes.is_overlapping_and_not_idempotent(changes)) // TODO: add -Wno-overlap-non-idem
+                spdlog::warn("overlapping and non-idempotent changes in tocker-change application, will overwrite depending on the order");
+            combined_changes += changes;
+        }
+        external_symbols += combined_changes;
     }
 
     void ntta_t::apply_internal(const expr::symbol_table_t &symbol_changes) {
@@ -85,9 +95,10 @@ namespace aaltitoad {
             for (auto it2 = it1; it2 != all_enabled_choices.end(); it2++) {
                 if(it1 == it2)
                     continue;
-                if (it1->second.symbol_changes.is_overlapping_and_not_idempotent(it2->second.symbol_changes))
-                    // TODO: Warn about overlapping non-idempotent choices (unless silenced with -Wno-overlap-non-idem)
+                if (it1->second.symbol_changes.is_overlapping_and_not_idempotent(it2->second.symbol_changes)) {
+                    spdlog::warn("overlapping and non-idempotent changes in tick-change calculation"); // TODO: add -Wno-overlap-non-idem
                     edge_dependency_graph_builder.add_edge(it1->first, it2->first, uniqueness_counter++);
+                }
             }
         }
         // TODO: Check that the builder is valid (when yalibs implements it)
@@ -111,11 +122,11 @@ namespace aaltitoad {
             if(std::includes(s.begin(),s.end(),a.begin(),a.end()))
                 return;
         }
-        auto k = _difference(N, _union(a, get_postsets(a)));
+        auto k = ya::set_difference(N, ya::set_union(a, get_all_neighbors(a)));
         if(k.empty())
             S.push_back(a);
         for(auto& m : k)
-            solve_recursive(S,_union(a,{m}));
+            solve_recursive(S,ya::set_union(a,{m}));
     }
 
     auto ntta_t::tick_resolver::get_neighbors(const std::string& node_key) -> set {
@@ -127,26 +138,13 @@ namespace aaltitoad {
         return value;
     }
 
-    auto ntta_t::tick_resolver::get_postsets(const set& node_keys) -> set {
+    auto ntta_t::tick_resolver::get_all_neighbors(const set& node_keys) -> set {
         set value{};
         for(auto& key : node_keys) {
             auto s = get_neighbors(key);
             std::set_union(value.begin(), value.end(), s.begin(), s.end(), std::inserter(value, value.begin()));
         }
         return value;
-    }
-
-    // TODO: Make a yalibs wrapper library for this
-    auto ntta_t::tick_resolver::_union(const set& a, const set& b) -> set {
-        set r{};
-        std::set_union(a.begin(),a.end(),b.begin(),b.end(),std::inserter(r,r.begin()));
-        return r;
-    }
-
-    auto ntta_t::tick_resolver::_difference(const set& a, const set& b) -> set {
-        set r{};
-        std::set_difference(a.begin(),a.end(),b.begin(),b.end(),std::inserter(r,r.begin()));
-        return r;
     }
 }
 

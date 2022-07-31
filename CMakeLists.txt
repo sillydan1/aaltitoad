@@ -41,6 +41,7 @@ CPMAddPackage("gh:yalibs/yathreadpool@1.0.1")
 CPMAddPackage("gh:yalibs/yagraph@1.0.3")
 CPMAddPackage("gh:yalibs/yatree@1.0.0")
 CPMAddPackage("gh:yalibs/yauuid@1.0.1")
+CPMAddPackage("gh:yalibs/yasetwrappers@1.0.0")
 CPMAddPackage("gh:yalibs/yapermutation#main")
 
 CPMAddPackage("gh:gabime/spdlog@1.8.2")
@@ -70,6 +71,7 @@ include_directories(
         ${yatree_SOURCE_DIR}/include
         ${yauuid_SOURCE_DIR}/include
         ${yapermutation_SOURCE_DIR}/include
+        ${yasetwrappers_SOURCE_DIR}/include
         src
 )
 set(${PROJECT_NAME}_SOURCES

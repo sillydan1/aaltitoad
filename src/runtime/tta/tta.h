@@ -98,6 +98,7 @@ namespace aaltitoad {
         void add_tocker(std::unique_ptr<tocker_t>&& tocker);
         void apply(const state_change_t& changes);
         void apply(const expr::symbol_table_t& external_symbol_changes);
+        void apply(const std::vector<expr::symbol_table_t>& external_symbol_change_list);
         void apply_internal(const expr::symbol_table_t& symbol_changes);
     private:
         class tick_resolver {
@@ -116,9 +117,7 @@ namespace aaltitoad {
         private:
             void solve_recursive(solution_keys& S, const set& a);
             auto get_neighbors(const std::string& node_key) -> set;
-            auto get_postsets(const set& node_keys) -> set;
-            static auto _union(const set& a, const set& b) -> set;
-            static auto _difference(const set& a, const set& b) -> set;
+            auto get_all_neighbors(const set& node_keys) -> set;
 
             const graph_type& G;
             set N;
@@ -162,14 +161,6 @@ namespace std {
             return ya::hash_combine(v.symbols, v.components);
         }
     };
-
-    // TODO: Add this back in when you need it.
-    /* template<>
-    struct hash<aaltitoad::tta_t::graph_edge_iterator_t> {
-        inline auto operator()(const aaltitoad::tta_t::graph_edge_iterator_t& v) const -> size_t {
-            return hash<std::string>{}(v->second.data.identifier);
-        }
-    }; */
 }
 
 #endif //AALTITOAD_TTA_H
