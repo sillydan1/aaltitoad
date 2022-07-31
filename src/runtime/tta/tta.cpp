@@ -101,8 +101,12 @@ namespace aaltitoad {
                 }
             }
         }
-        // TODO: Check that the builder is valid (when yalibs implements it)
-        return {edge_dependency_graph_builder.optimize().build(), all_enabled_choices};
+        try {
+            return { edge_dependency_graph_builder.validate().optimize().build(), all_enabled_choices };
+        } catch(std::exception& e) {
+            spdlog::critical("unable to generate enabled choice dependency graph: '{0}' please report this as an issue on github.com/sillydan1/AALTITOAD", e.what());
+            throw e;
+        }
     }
 
     ntta_t::tick_resolver::tick_resolver(const graph_type& G) : G{G} {
