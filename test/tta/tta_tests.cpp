@@ -154,6 +154,7 @@ SCENARIO("constructing networks of TTAs", "[ntta_t-construction]") {
         }
     }
 }
+
 SCENARIO("ticking result in maximal behavior (no tockers registered)", "[tick-maximal-no-tockers]") {
     spdlog::set_level(spdlog::level::trace);
     aaltitoad::ntta_t::tta_map_t component_map{};
