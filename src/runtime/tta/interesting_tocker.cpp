@@ -23,7 +23,8 @@ namespace aaltitoad {
                 return {};
             return std::optional{d.result};
         } catch(std::domain_error& e) {
-            spdlog::trace("encountered unsatisfiable tock step ignoring");
+            std::stringstream ss{}; ss << expression;
+            spdlog::trace("'{0}' for '{1}'", e.what(), ss.str());
         } catch(std::exception& e) {
             spdlog::warn("error during tock step evaluation: '{0}'", e.what());
         }
@@ -45,6 +46,7 @@ namespace aaltitoad {
             if(!interesting_guards.empty())
                 guards.push_back(interesting_guards);
         }
+        if(guards.empty()) return {};
         // TODO: Maybe implement a "only-add-changes-to-already-existing-variables"-apply function for symbol_table_t
         //       This is because known and unknown symbols are not interchangeable
         ya::combiner_funct_t<expr::symbol_table_t, expr::syntax_tree_t> f = [&d](const ya::combiner_iterator_list_t<expr::syntax_tree_t>& elements) -> std::optional<expr::symbol_table_t> {return find_solution(d, elements);};
@@ -56,7 +58,10 @@ namespace aaltitoad {
         std::visit(ya::overload(
                 [&symbols, &return_value](const expr::symbol_reference_t& r){ return_value |= symbols.contains(r->first); },
                 [&symbols, &return_value](const expr::c_symbol_reference_t& r){ return_value |= symbols.contains(r->first); },
-                [this, &tree, &symbols, &return_value](const expr::root_t& r){ return_value |= contains_external_variables(tree.children[0], symbols); },
+                [this, &tree, &symbols, &return_value](const expr::root_t& r){
+                    if(!tree.children.empty())
+                        return_value |= contains_external_variables(tree.children[0], symbols);
+                },
                 [this, &tree, &symbols, &return_value](const expr::operator_t& r){
                     for(auto& c : tree.children) {
                         return_value |= contains_external_variables(c, symbols);
