@@ -3,23 +3,25 @@
 #include "tta.h"
 
 namespace aaltitoad {
+    template<typename T>
+    bool is_future_ready(std::future<T>& t){
+        return t.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+    }
+
     class async_tocker_t : public tocker_t {
     protected:
-        mutable std::future<expr::symbol_table_t> job{};
-        virtual expr::symbol_table_t get_tock_values(const expr::symbol_table_t& invocation_environment) const = 0;
-        virtual void tock_async(const expr::symbol_table_t& environment) const {
-            job = std::async([this, &environment](){
-                return get_tock_values(environment);
-            });
-        }
+        std::future<expr::symbol_table_t> job{};
+        virtual void tock_async(const expr::symbol_table_t& environment) = 0;
         ~async_tocker_t() override = default;
 
     public:
         auto tock(const ntta_t& state) -> std::vector<expr::symbol_table_t> override {
             if(!job.valid())
+                tock_async(state.symbols);
+            if(!is_future_ready(job))
                 return {};
             auto c = job.get();
-            tock_async(state.symbols);
+            job = {};
             return {c};
         }
     };

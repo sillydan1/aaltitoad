@@ -42,8 +42,8 @@ namespace aaltitoad {
         return result;
     }
 
-    void ntta_t::add_tocker(std::unique_ptr<tocker_t> &&tocker) {
-        tockers.push_back(std::move(tocker));
+    void ntta_t::add_tocker(const std::shared_ptr<tocker_t>& tocker) {
+        tockers.push_back(tocker);
     }
 
     void ntta_t::apply(const state_change_t &changes)  {

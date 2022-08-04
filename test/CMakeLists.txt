@@ -8,11 +8,8 @@ include(../cmake/CPM.cmake)
 CPMAddPackage("gh:catchorg/Catch2@3.0.0-preview4")
 find_package(Catch2 3 REQUIRED)
 add_executable(${PROJECT_NAME}
-        ntta/ntta_tests.cpp
         tta/tta_tests.cpp
-        tta/tocker_tests.cpp
-        algorithms/tarjan_tests.cpp
-        algorithms/dfs_tests.cpp)
+        tta/tocker_tests.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE aaltitoad Catch2::Catch2WithMain yatta)
 if(${COVERAGE_ENABLE})
     target_compile_options(${PROJECT_NAME} PRIVATE --coverage)
