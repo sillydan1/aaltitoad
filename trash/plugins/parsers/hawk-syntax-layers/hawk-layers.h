@@ -1,13 +1,13 @@
 #ifndef AALTITOAD_HAWK_LAYERS_H
 #define AALTITOAD_HAWK_LAYERS_H
-#include <extensions/function_layer.h>
+#include "extensions/function_layer.h"
 #include <regex>
-#include <extensions/map_extensions.h>
-#include <timer>
-#include <threadpool>
+#include "extensions/map_extensions.h"
+#include "_deps/yatimer-src/include/timer"
+#include "_deps/yathreadpool-src/include/threadpool"
 #include "../hawk-parser.h"
 #include "extensions/exceptions/ntta_error.h"
-#include <drivers/interpreter.h>
+#include "_deps/expr-src/include/drivers/interpreter.h"
 
 /// Keys to check for in the model file(s)
 namespace syntax_constants {

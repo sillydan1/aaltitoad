@@ -1,7 +1,6 @@
 #ifndef AALTITOAD_NTTA_ERROR_H
 #define AALTITOAD_NTTA_ERROR_H
 #include <aaltitoadpch.h>
-#include "runtime/edge.h"
 #include <nlohmann/json.hpp>
 #include <spdlog/sinks/ostream_sink.h>
 

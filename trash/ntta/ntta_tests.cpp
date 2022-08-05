@@ -1,4 +1,4 @@
-#include <runtime/ntta.h>
+#include "../../trash/ntta.h"
 #include <catch2/catch_test_macros.hpp>
 #include <utility>
 

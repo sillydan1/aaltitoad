@@ -75,15 +75,10 @@ include_directories(
         src
 )
 set(${PROJECT_NAME}_SOURCES
-        src/runtime/ntta.cpp
-        src/runtime/component.cpp
-        src/runtime/edge.cpp
+        src/runtime/tta/tta.cpp
+        src/runtime/tta/interesting_tocker.cpp
         src/plugin_system/plugin_system.cpp
         src/extensions/string_extensions.cpp)
-add_library(yatta
-        src/runtime/tta/tta.cpp
-        src/runtime/tta/interesting_tocker.cpp)
-target_link_libraries(yatta)
 
 if(NOT DEFINED TEST_COVERAGE)
     add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES})
@@ -94,7 +89,6 @@ endif()
 target_link_libraries(${PROJECT_NAME} expr dl pthread)
 add_compile_definitions(ENABLE_Z3)
 
-add_subdirectory(src/plugins)
 add_subdirectory(src/cli/simulator)
 add_subdirectory(test)
 

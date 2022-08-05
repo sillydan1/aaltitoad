@@ -1,7 +1,7 @@
 #ifndef AALTITOAD_HAWK_PARSER_H
 #define AALTITOAD_HAWK_PARSER_H
 #include "plugin_system/plugin_system.h"
-#include <nlohmann/json.hpp>
+#include "_deps/json-src/include/nlohmann/json.hpp"
 
 using template_map = std::unordered_map<std::string, nlohmann::json>;
 struct template_symbol_collection_t {

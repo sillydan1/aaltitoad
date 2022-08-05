@@ -1,5 +1,5 @@
-#include <timer>
-#include <drivers/interpreter.h>
+#include "_deps/yatimer-src/include/timer"
+#include "_deps/expr-src/include/drivers/interpreter.h"
 #include "hawk-parser.h"
 #include "extensions/graph_algorithms"
 #include "hawk-syntax-layers/hawk-layers.h"

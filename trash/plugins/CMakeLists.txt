@@ -1,5 +1,5 @@
 project(default_plugins VERSION 1.0.0)
-include_directories(../runtime)
+include_directories(../../src/runtime)
 add_definitions(-DPLUGIN_VERSION="v${PROJECT_VERSION}")
 
 add_library(h-uppaal-parser SHARED parsers/h-uppaal-parser.cpp)
