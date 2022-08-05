@@ -75,8 +75,8 @@ include_directories(
         src
 )
 set(${PROJECT_NAME}_SOURCES
-        src/runtime/tta/tta.cpp
-        src/runtime/tta/interesting_tocker.cpp
+        src/ntta/tta.cpp
+        src/ntta/interesting_tocker.cpp
         src/plugin_system/plugin_system.cpp
         src/extensions/string_extensions.cpp)
 

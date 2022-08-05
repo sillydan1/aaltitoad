@@ -1,5 +1,5 @@
-#include <runtime/tta/interesting_tocker.h>
-#include <runtime/tta/async_tocker.h>
+#include <ntta/interesting_tocker.h>
+#include <ntta/async_tocker.h>
 #include <catch2/catch_test_macros.hpp>
 
 SCENARIO("interesting tocker", "[interesting-tocker]") {

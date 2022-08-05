@@ -1,7 +1,7 @@
 #ifndef AALTITOAD_PLUGIN_SYSTEM_H
 #define AALTITOAD_PLUGIN_SYSTEM_H
 #include <dlfcn.h>
-#include <runtime/tta/tta.h>
+#include <ntta/tta.h>
 
 //// ===== aaltitoad plugin system =====
 //// must implement the following extern
