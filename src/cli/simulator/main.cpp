@@ -7,7 +7,8 @@
 
 void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_arguments);
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
-auto instantiate_tocker(const std::string& arg, const plugin_map_t& available_plugins, const ntta_t& automata) -> std::optional<tocker_t*>;
+auto generate_test_ntta() -> std::unique_ptr<aaltitoad::ntta_t>;
+auto instantiate_tocker(const std::string& arg, const plugin_map_t& available_plugins, const aaltitoad::ntta_t& automata) -> std::optional<aaltitoad::tocker_t*>;
 
 int main(int argc, char** argv) {
     auto options = get_options();
@@ -27,9 +28,10 @@ int main(int argc, char** argv) {
 void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_arguments) {
     /// Load plugins
     auto available_plugins = load_plugins(cli_arguments);
-    if(cli_arguments["list-plugins"] || available_plugins.empty()) {
-        std::cout << "Available Plugins:\n" << available_plugins;
-        return;
+    if(cli_arguments["list-plugins"]) {
+        auto ss = std::stringstream{} << available_plugins;
+        spdlog::info("Available plugins:\n{0}", ss.str());
+        // return;
     }
 
     /// Parser related arguments
@@ -39,18 +41,21 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
         ignore_list = cli_arguments["ignore"].as_list();
 
     /// Get the parser
-    auto selected_parser = cli_arguments["parser"].as_string_or_default("h_uppaal_parser");
-    if(!available_plugins.contains(selected_parser) || available_plugins.at(selected_parser).type != plugin_type::parser) {
-        spdlog::critical("No such parser available: '{0}'", selected_parser);
-        return;
-    }
+    // auto selected_parser = cli_arguments["parser"].as_string_or_default("h_uppaal_parser");
+    // if(!available_plugins.contains(selected_parser) || available_plugins.at(selected_parser).type != plugin_type::parser) {
+    //     spdlog::critical("No such parser available: '{0}'", selected_parser);
+    //     return;
+    // }
 
     /// Parse provided model
-    spdlog::info("Parsing with {0} plugin", selected_parser);
-    auto parser = std::get<parser_func_t>(available_plugins.at(selected_parser).function);
-    t.start();
-    auto automata = std::unique_ptr<ntta_t>(parser(cli_arguments["input"].as_list(), ignore_list));
-    spdlog::info("Model parsing took {0}ms", t.milliseconds_elapsed());
+    // spdlog::info("Parsing with {0} plugin", selected_parser);
+    // auto parser = std::get<parser_func_t>(available_plugins.at(selected_parser).function);
+    // t.start();
+    // auto automata = std::unique_ptr<aaltitoad::ntta_t>(parser(cli_arguments["input"].as_list(), ignore_list));
+    // spdlog::info("Model parsing took {0}ms", t.milliseconds_elapsed());
+
+    spdlog::warn("using test ntta_t - this must be switched out when a parser is implemented");
+    auto automata = generate_test_ntta();
 
     /// Inject tockers - CLI Format: "name(argument)"
     for(auto& arg : cli_arguments["tocker"].as_list_or_default({})) {
@@ -68,8 +73,17 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     try {
 #endif
         for (; i < x || x < 0; i++) {
-            automata->tock();
-            automata->tick();
+            if(spdlog::get_level() <= spdlog::level::trace) {
+                std::stringstream ss{};
+                ss << "state:\n" << *automata;
+                spdlog::trace(ss.str());
+            }
+            auto tock_changes = automata->tock();
+            if(!tock_changes.empty())
+                automata->apply(tock_changes[0]);
+            auto tick_changes = automata->tick();
+            if(!tick_changes.empty())
+                automata->apply(tick_changes[0]);
         }
 #ifdef NDEBUG
     } catch (std::exception& e) {
@@ -90,7 +104,7 @@ auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_ma
     return plugins::load(look_dirs);
 }
 
-auto instantiate_tocker(const std::string& arg, const plugin_map_t& available_plugins, const ntta_t& automata) -> std::optional<tocker_t*> {
+auto instantiate_tocker(const std::string& arg, const plugin_map_t& available_plugins, const aaltitoad::ntta_t& automata) -> std::optional<aaltitoad::tocker_t*> {
     try {
         auto s = split(arg, "(");
         if(s.size() < 2) {
@@ -111,4 +125,26 @@ auto instantiate_tocker(const std::string& arg, const plugin_map_t& available_pl
         spdlog::error("Error during tocker instantiation: {0}", e.what());
         return {};
     }
+}
+
+auto generate_test_ntta() -> std::unique_ptr<aaltitoad::ntta_t> {
+    aaltitoad::ntta_t::tta_map_t component_map{};
+    expr::symbol_table_t symbols{};
+    expr::compiler compiler{symbols};
+    auto compile_update = [&compiler](const std::string& updates) { compiler.trees = {}; compiler.parse(updates); return compiler.trees; };
+    auto compile_guard = [&compiler](const std::string& guard) { compiler.trees = {}; compiler.parse(guard); return compiler.trees["expression_result"]; };
+    auto empty_guard = compile_guard("");
+    { // TTA A
+        auto factory = aaltitoad::tta_t::graph_builder{};
+        factory.add_nodes({{"L0"},{"L1"}});
+        factory.add_edge("L0", "L1", {.identifier="a", .guard=empty_guard, .updates={}});
+        component_map["A"] = {std::move(factory.build_heap()), "L0"};
+    }
+    { // TTA B
+        auto factory = aaltitoad::tta_t::graph_builder{};
+        factory.add_nodes({{"L0"},{"L1"}});
+        factory.add_edge("L0", "L1", {.identifier="b", .guard=empty_guard, .updates={}});
+        component_map["B"] = {std::move(factory.build_heap()), "L0"};
+    }
+    return std::make_unique<aaltitoad::ntta_t>(symbols, component_map);
 }
