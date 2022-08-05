@@ -22,7 +22,7 @@
 
 class not_implemented_yet_exception : public std::logic_error {
 public:
-    not_implemented_yet_exception () : std::logic_error{"Function not yet implemented."} {}
+    not_implemented_yet_exception () : std::logic_error{"function not yet implemented"} {}
 };
 
 #endif //AALTITOAD_NOT_IMPLEMENTED_YET_EXCEPTION_H
