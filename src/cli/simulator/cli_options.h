@@ -1,6 +1,8 @@
 #ifndef AALTITOAD_CLI_OPTIONS_H
 #define AALTITOAD_CLI_OPTIONS_H
 #include <argvparse.h>
+#include <warnings.h>
+#include <magic_enum.hpp>
 
 std::vector<option_t> get_options() {
     return {
@@ -16,6 +18,9 @@ std::vector<option_t> get_options() {
             {"list-plugins",'L', argument_requirement::NO_ARG,       "List found plugins and exit"},
 
             {"ticks",       'n', argument_requirement::REQUIRE_ARG,  "Specify the amount of ticks to perform default is infinite"},
+
+            {"disable-warn",'w', argument_requirement::REQUIRE_ARG,  "Disable a warning"},
+            {"list-warn",   'W', argument_requirement::NO_ARG,       "List all warnings available"},
     };
 }
 
@@ -35,6 +40,12 @@ bool is_required_provided(std::map<std::string, argument_t>& provided_args, cons
     return true;
 }
 
+int print_required_args() {
+    std::cout << "Required arguments:\n";
+    std::cout << " --input\n";
+    return 1;
+}
+
 int print_help(const std::string& program_name, const std::vector<option_t>& options) {
     std::cout << get_license() << std::endl;
     std::cout << PROJECT_NAME << " v" << PROJECT_VER << std::endl;
@@ -46,6 +57,25 @@ int print_help(const std::string& program_name, const std::vector<option_t>& opt
 
 int print_version() {
     std::cout << PROJECT_NAME << " v" << PROJECT_VER << std::endl;
+    return 0;
+}
+
+void disable_warnings(const argument_t& disable_warns_arg) {
+    if(!disable_warns_arg)
+        return;
+    for(auto& w : disable_warns_arg.as_list()) {
+        auto opt = magic_enum::enum_cast<aaltitoad::w_t>(w);
+        if(opt.has_value())
+            aaltitoad::warnings::disable_warning(opt.value());
+        else
+            std::cerr << "not a warning: " << w;
+    }
+}
+
+int list_warnings() {
+    std::cout << "[WARNINGS]:\n";
+    for(const auto& warning : aaltitoad::warnings::descriptions())
+        std::cout << "\t - [" << magic_enum::enum_name(warning.first) << "]: " << warning.second << "\n";
     return 0;
 }
 

@@ -46,6 +46,7 @@ CPMAddPackage("gh:yalibs/yapermutation#main")
 
 CPMAddPackage("gh:gabime/spdlog@1.8.2")
 CPMAddPackage("gh:nlohmann/json@3.10.5")
+CPMAddPackage("gh:neargye/magic_enum@0.8.1")
 
 CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.5")
 cpm_licenses_create_disclaimer_target(write-licenses "${CMAKE_CURRENT_BINARY_DIR}/third_party.txt" "${CPM_PACKAGES}")
@@ -62,6 +63,7 @@ include_directories(
         ${expr_SOURCE_DIR}/src
         ${expr_BUILD_DIR}
         ${optionparser_SOURCE_DIR}/src
+        ${magic_enum_SOURCE_DIR}/include
 
         ${yatimer_SOURCE_DIR}/include
         ${yaoverload_SOURCE_DIR}/include
@@ -78,6 +80,7 @@ set(${PROJECT_NAME}_SOURCES
         src/ntta/tta.cpp
         src/ntta/interesting_tocker.cpp
         src/plugin_system/plugin_system.cpp
+        src/warnings.cpp
         src/extensions/string_extensions.cpp)
 
 if(NOT DEFINED TEST_COVERAGE)

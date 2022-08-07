@@ -60,9 +60,8 @@ namespace aaltitoad {
     void ntta_t::apply(const std::vector<expr::symbol_table_t>& symbol_change_list) {
         expr::symbol_table_t combined_changes{};
         for(auto& changes : symbol_change_list) {
-            if(warnings::is_enabled("overlap-idem"))
-                if(combined_changes.is_overlapping_and_not_idempotent(changes))
-                    spdlog::warn("W[overlap-idem] overlapping and non-idempotent changes in tocker-change application, will overwrite depending on the order");
+            if(combined_changes.is_overlapping_and_not_idempotent(changes))
+                warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tocker-change application, will overwrite depending on the order");
             combined_changes += changes;
         }
         external_symbols += combined_changes;
@@ -98,8 +97,7 @@ namespace aaltitoad {
                 if(it1 == it2)
                     continue;
                 if (it1->second.symbol_changes.is_overlapping_and_not_idempotent(it2->second.symbol_changes)) {
-                    if(warnings::is_enabled("overlap-idem"))
-                        spdlog::warn("W[overlap-idem] overlapping and non-idempotent changes in tick-change calculation");
+                    warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tick-change calculation");
                     edge_dependency_graph_builder.add_edge(it1->first, it2->first, uniqueness_counter++);
                 }
             }

@@ -4,11 +4,17 @@
 #include <string>
 
 namespace aaltitoad {
+    enum w_t {
+        overlap_idem
+    };
+
     class warnings {
-        static std::unordered_map<std::string, bool> disabled_warnings; // NOTE: This implies -Wall is always on
     public:
-        static auto is_enabled(const std::string& warning_name) -> bool;
-        static void disable_warning(const std::string& warning_name);
+        static auto is_enabled(const w_t& warning_name) -> bool;
+        static void disable_warning(const w_t& warning_name);
+        static void enable_all();
+        static auto descriptions() -> std::unordered_map<w_t, std::string>;
+        static void warn(const w_t& warning, const std::string& msg);
     };
 }
 
