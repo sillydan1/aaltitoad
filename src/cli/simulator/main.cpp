@@ -100,8 +100,7 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
 }
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t {
-    // TODO: Figure out what are the most common env vars for library paths (No, not $PATH - that is for executables)
-    auto rpath = std::getenv("RPATH");
+    auto rpath = std::getenv("AALTITOAD_LIBPATH");
     std::vector<std::string> look_dirs = { ".", "lib", "plugins" };
     if(rpath)
         look_dirs.emplace_back(rpath);

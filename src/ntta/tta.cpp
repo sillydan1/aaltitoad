@@ -54,7 +54,7 @@ namespace aaltitoad {
     }
 
     void ntta_t::apply(const expr::symbol_table_t &symbol_changes) {
-        external_symbols += symbol_changes;
+        external_symbols.overwrite_elements(symbol_changes);
     }
 
     void ntta_t::apply(const std::vector<expr::symbol_table_t>& symbol_change_list) {
@@ -64,7 +64,7 @@ namespace aaltitoad {
                 warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tocker-change application, will overwrite depending on the order");
             combined_changes += changes;
         }
-        external_symbols += combined_changes;
+        apply(combined_changes);
     }
 
     void ntta_t::apply_internal(const expr::symbol_table_t &symbol_changes) {

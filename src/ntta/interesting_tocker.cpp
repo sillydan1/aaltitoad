@@ -35,7 +35,7 @@ namespace aaltitoad {
         expr::z3_driver d{state.symbols, state.external_symbols};
         std::vector<std::vector<expr::syntax_tree_t>> guards;
         for(auto& component : state.components) {
-            // TODO: Cache the interesting edges for easy lookups later (can be done later) (lookup by component-location identifier)
+            // If this is slow, we should investigate maintaining a cache to avoid iteration
             std::vector<expr::syntax_tree_t> interesting_guards{};
             for(auto& edge : component.second.current_location->second.outgoing_edges) {
                 if(contains_external_variables(edge->second.data.guard, state.external_symbols)) {
@@ -46,10 +46,12 @@ namespace aaltitoad {
             if(!interesting_guards.empty())
                 guards.push_back(interesting_guards);
         }
-        if(guards.empty()) return {};
-        // TODO: Maybe implement a "only-add-changes-to-already-existing-variables"-apply function for symbol_table_t
-        //       This is because known and unknown symbols are not interchangeable
-        ya::combiner_funct_t<expr::symbol_table_t, expr::syntax_tree_t> f = [&d](const ya::combiner_iterator_list_t<expr::syntax_tree_t>& elements) -> std::optional<expr::symbol_table_t> {return find_solution(d, elements);};
+        if(guards.empty())
+            return {};
+        ya::combiner_funct_t<expr::symbol_table_t, expr::syntax_tree_t> f =
+                [&d](const ya::combiner_iterator_list_t<expr::syntax_tree_t>& elements) -> std::optional<expr::symbol_table_t> {
+            return find_solution(d, elements);
+        };
         return ya::generate_permutations(guards, f);
     }
 
