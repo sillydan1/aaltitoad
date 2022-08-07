@@ -301,7 +301,7 @@ SCENARIO("ticking result in maximal behavior (no tockers registered)", "[tick-ma
     GIVEN("one TTAs checking an external variable") {
         expr::symbol_table_t ex_symbols{};
         ex_symbols["x"] = 0;
-        expr::compiler ex_compiler{ex_symbols}; // TODO: expr::compiler should be able to have a list of symbol_table_t's
+        expr::compiler ex_compiler{ex_symbols};
         auto ex_compile_guard = [&ex_compiler](const std::string& guard) { ex_compiler.trees = {}; ex_compiler.parse(guard); return ex_compiler.trees["expression_result"]; };
         { // TTA A
             auto factory = aaltitoad::tta_t::graph_builder{};
