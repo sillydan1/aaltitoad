@@ -1,0 +1,13 @@
+ForwardReachabilitySearch(N, \phi):
+    P = Ø
+    W = {s_0}
+    pick s \in W:
+        if s \satisfies \phi
+            return true
+        for all s' \in s\cdot
+            W = W \union {s'}
+            W = W \union tock_changes(s') // TODO: what to do to avoid tock-tock-tock's
+        W = W \setdifference {s}
+        P = P \union {s} // <-- here is where you put back-traceability
+        if W = Ø
+            return false
