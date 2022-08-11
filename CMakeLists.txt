@@ -94,7 +94,6 @@ add_compile_definitions(ENABLE_Z3)
 
 add_subdirectory(src/cli/simulator)
 add_subdirectory(test)
-add_subdirectory(src/verification)
 
 if(NOT WIN32)
     target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
