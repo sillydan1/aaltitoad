@@ -67,7 +67,7 @@ SCENARIO("constructing networks of TTAs", "[ntta_t-construction]") {
         }
         GIVEN("adding a tocker implementation with some changes to report") {
             expr::symbol_table_t ex_symbols{};
-            ex_symbols["x"] = 0;
+            n.external_symbols["x"] = 0;
             expr::interpreter i{ex_symbols};
             auto interpret_update = [&i](const std::string& update){ i.result = {}; i.parse(update); return i.result; };
             n.add_tocker(std::make_unique<dummy_tocker>(std::vector<expr::symbol_table_t>{interpret_update("x:=32")}));
