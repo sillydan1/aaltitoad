@@ -80,7 +80,10 @@ set(${PROJECT_NAME}_SOURCES
         src/ntta/tta.cpp
         src/ntta/interesting_tocker.cpp
         src/plugin_system/plugin_system.cpp
+        src/verification/ctl.cpp
+        src/verification/forward_reachability.cpp
         src/warnings.cpp
+        src/extensions/random.cpp
         src/extensions/string_extensions.cpp)
 
 if(NOT DEFINED TEST_COVERAGE)

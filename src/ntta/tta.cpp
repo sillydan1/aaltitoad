@@ -72,6 +72,7 @@ namespace aaltitoad {
     }
 
     auto ntta_t::generate_enabled_choice_dependency_graph() -> tick_resolver::choice_dependency_problem {
+        // TODO: Implement the optimized version of this (see notes)
         // Build dependency graph and collect choices
         auto all_symbols = symbols + external_symbols;
         expr::interpreter i{all_symbols};
@@ -159,4 +160,23 @@ auto operator<<(std::ostream& os, const aaltitoad::ntta_t& state) -> std::ostrea
     return os << state.symbols;
 }
 
+auto operator+(const aaltitoad::ntta_t& state, const aaltitoad::ntta_t::state_change_t& change) -> aaltitoad::ntta_t {
+    auto cpy = state;
+    cpy.apply(change);
+    return cpy;
+}
 
+auto operator+(const aaltitoad::ntta_t& state, const expr::symbol_table_t& external_symbol_changes) -> aaltitoad::ntta_t {
+    auto cpy = state;
+    cpy.apply(external_symbol_changes);
+    return cpy;
+}
+
+auto operator==(const aaltitoad::ntta_t& a, const aaltitoad::ntta_t& b) -> bool {
+    // compare locations
+    for(auto& c : a.components)
+        if(c.second.current_location != b.components.at(c.first).current_location)
+            return false;
+    // compare symbol tables
+    return a.symbols == b.symbols;
+}

@@ -134,6 +134,9 @@ namespace aaltitoad {
 }
 
 auto operator<<(std::ostream& os, const aaltitoad::ntta_t& state) -> std::ostream&;
+auto operator+(const aaltitoad::ntta_t& state, const aaltitoad::ntta_t::state_change_t& change) -> aaltitoad::ntta_t;
+auto operator+(const aaltitoad::ntta_t& state, const expr::symbol_table_t& external_symbol_changes) -> aaltitoad::ntta_t;
+auto operator==(const aaltitoad::ntta_t& a, const aaltitoad::ntta_t& b) -> bool;
 
 namespace std {
     template<>

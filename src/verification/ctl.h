@@ -2,6 +2,7 @@
 #define AALTITOAD_CTL_H
 #include <string>
 #include <drivers/compiler.h>
+#include <ntta/tta.h>
 
 namespace aaltitoad::ctl {
     enum path_quantifier {
@@ -32,6 +33,8 @@ namespace aaltitoad::ctl {
 
     using query = std::variant<ax_query, ag_query, af_query, au_query, aw_query,
                                ex_query, eg_query, ef_query, eu_query, ew_query>;
+
+    auto is_satisfied(const query& q, const ntta_t& state) -> bool;
 }
 
 #endif //AALTITOAD_CTL_H
