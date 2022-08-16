@@ -96,6 +96,8 @@ TEST_CASE("givenGraphWithWithWeaklyConnectedComponents_whenSearchForSCCs_thenFou
     REQUIRE(found_scc4);
 }
 
+// TODO: Test a single looping node
+
 #include <graph>
 struct node_data {
     std::string name;

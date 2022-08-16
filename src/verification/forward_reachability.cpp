@@ -2,11 +2,16 @@
 
 namespace aaltitoad {
     auto forward_reachability_searcher::is_reachable(const aaltitoad::ntta_t& s0, const ctl::query &q) -> bool {
+        // TODO: List of queries
+        // TODO: statistics on all return statements (info)
+        // TODO: Catch SIGTERM's and write statistics (info)
+        // TODO: Periodically print waiting list size for debugging purposes (debug)
+        // TODO: Max search time? / max explosion allowed? nah
         W = {s0}; P = {};
         while(!W.empty()) {
             auto s = W.pop();
             if(ctl::is_satisfied(q, s))
-                return true; // TODO: traceability
+                return true; // TODO: return traceable results
             for(auto& si : s.tick()) {
                 auto successor = s + si;
                 if(P.contains(successor))
@@ -17,7 +22,6 @@ namespace aaltitoad {
             }
             P.add(s);
         }
-        // TODO: statistics on all return statements
-        return false; // TODO: traceability
+        return false; // TODO: return traceable results
     }
 }

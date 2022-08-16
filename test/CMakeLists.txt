@@ -9,7 +9,9 @@ CPMAddPackage("gh:catchorg/Catch2@3.0.0-preview4")
 find_package(Catch2 3 REQUIRED)
 add_executable(${PROJECT_NAME}
         tta/tta_tests.cpp
-        tta/tocker_tests.cpp)
+        tta/tocker_tests.cpp
+        verification/forward_reachability_tests.cpp
+        algorithms/tarjan_tests.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE aaltitoad Catch2::Catch2WithMain)
 if(${COVERAGE_ENABLE})
     target_compile_options(${PROJECT_NAME} PRIVATE --coverage)
