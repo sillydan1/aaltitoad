@@ -30,9 +30,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
-CPMAddPackage(NAME expr GIT_TAG symbol-table-extensions GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
+CPMAddPackage(NAME expr GIT_TAG fix/multiple-use-compatibility GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
 CPMAddPackage(NAME argvparse VERSION 1.2.3 GITHUB_REPOSITORY sillydan1/argvparse)
-CPMAddPackage(NAME ctlparser VERSION 1.0.0 GITHUB_REPOSITORY sillydan1/ctlparser)
+CPMAddPackage(NAME ctl-expr GIT_TAG main GITHUB_REPOSITORY sillydan1/ctl-expr)
 
 CPMAddPackage("gh:yalibs/yatimer@1.0.0")
 CPMAddPackage("gh:yalibs/yaoverload@1.0.0")
@@ -53,10 +53,13 @@ cpm_licenses_create_disclaimer_target(write-licenses "${CMAKE_CURRENT_BINARY_DIR
 
 include_directories(
         ${CMAKE_BINARY_DIR}
+        ${CMAKE_CURRENT_BINARY_DIR}
         ${argvparse_SOURCE_DIR}/include
         ${argvparse_SOURCE_DIR}/src
         ${rapidjson_SOURCE_DIR}/include
-        ${ctlparser_SOURCE_DIR}/include
+        ${ctl-expr_SOURCE_DIR}/include
+        ${ctl-expr_SOURCE_DIR}/src
+        ${ctl-expr_SOURCE_DIR}/../ctl-expr-build
         ${json_SOURCE_DIR}/include
         ${spdlog_SOURCE_DIR}/include
         ${expr_SOURCE_DIR}/include
@@ -80,8 +83,8 @@ set(${PROJECT_NAME}_SOURCES
         src/ntta/tta.cpp
         src/ntta/interesting_tocker.cpp
         src/plugin_system/plugin_system.cpp
-        src/verification/ctl.cpp
         src/verification/forward_reachability.cpp
+        src/verification/ctl_sat.cpp
         src/warnings.cpp
         src/extensions/random.cpp
         src/extensions/string_extensions.cpp)
@@ -92,7 +95,7 @@ if(NOT DEFINED TEST_COVERAGE)
 else()
     add_library(${PROJECT_NAME} ${${PROJECT_NAME}_SOURCES})
 endif()
-target_link_libraries(${PROJECT_NAME} expr dl pthread)
+target_link_libraries(${PROJECT_NAME} expr dl pthread ctl)
 add_compile_definitions(ENABLE_Z3)
 
 add_subdirectory(src/cli/simulator)

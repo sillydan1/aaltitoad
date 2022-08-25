@@ -1,11 +1,12 @@
 #ifndef AALTITOAD_FORWARD_REACHABILITY_H
 #define AALTITOAD_FORWARD_REACHABILITY_H
-#include "ctl.h"
+#include "ctl_sat.h"
 #include "ntta/tta.h"
 #include <unordered_map>
 #include <map>
 #include <extensions/random.h>
 #include <extensions/exceptions/not_implemented_yet_exception.h>
+#include <ctl_compiler.h>
 
 namespace aaltitoad {
     enum class pick_strategy {
@@ -74,7 +75,7 @@ namespace aaltitoad {
     class forward_reachability_searcher {
         colliding_multimap<ntta_t> W, P;
     public:
-        auto is_reachable(const ntta_t& model, const ctl::query& q) -> bool;
+        auto is_reachable(const ntta_t& model, const ctl::compiler::compiled_expr_t& q) -> bool;
     };
 }
 

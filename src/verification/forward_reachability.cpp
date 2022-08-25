@@ -1,7 +1,8 @@
 #include "forward_reachability.h"
+#include "ctl_sat.h"
 
 namespace aaltitoad {
-    auto forward_reachability_searcher::is_reachable(const aaltitoad::ntta_t& s0, const ctl::query &q) -> bool {
+    auto forward_reachability_searcher::is_reachable(const aaltitoad::ntta_t& s0, const ctl::compiler::compiled_expr_t& q) -> bool {
         // TODO: List of queries
         // TODO: statistics on all return statements (info)
         // TODO: Catch SIGTERM's and write statistics (info)
@@ -10,7 +11,7 @@ namespace aaltitoad {
         W = {s0}; P = {};
         while(!W.empty()) {
             auto s = W.pop();
-            if(ctl::is_satisfied(q, s))
+            if(is_satisfied(q, s))
                 return true; // TODO: return traceable results
             for(auto& si : s.tick()) {
                 auto successor = s + si;
