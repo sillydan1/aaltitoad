@@ -80,6 +80,7 @@ include_directories(
         src
 )
 set(${PROJECT_NAME}_SOURCES
+        src/ntta/ntta_builder.cpp
         src/ntta/tta.cpp
         src/ntta/interesting_tocker.cpp
         src/plugin_system/plugin_system.cpp

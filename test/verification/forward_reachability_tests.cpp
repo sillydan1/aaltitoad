@@ -3,7 +3,7 @@
 #include <utility>
 
 SCENARIO("Trivial example", "[frs]") {
-    // Create a simple NTTA n
-    // Create a query q that should be satisfied 1 tick in
-    // Check that FRS(n,q) returns true
+    // TODO: Create a simple NTTA n
+    // TODO: Create a query q that should be satisfied 1 tick in
+    // TODO: Check that FRS(n,q) returns true
 }
