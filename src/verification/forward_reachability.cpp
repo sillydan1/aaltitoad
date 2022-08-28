@@ -13,8 +13,8 @@ namespace aaltitoad {
     }
 
     auto forward_reachability_searcher::is_reachable(const aaltitoad::ntta_t& s0, const std::vector<compiled_query_t>& q) -> solutions_t {
-        // TODO: statistics on all return statements (info)
-        // TODO: Catch SIGTERM (ctrl-c) and write statistics (info)
+        // TODO: statistics on all return statements (trace)
+        // TODO: Catch SIGTERM (ctrl-c) and write statistics (trace)
         // TODO: Periodically print waiting list size for debugging purposes (debug)
         W = {s0}; P = {}; solutions = empty_solution_set(q);
         while(!W.empty()) {
@@ -25,15 +25,24 @@ namespace aaltitoad {
 
             for(auto& si : s.data.tick()) {
                 auto sn = s.data + si;
-                if(P.contains(sn))
+                if(P.contains(sn)) continue;
+
+                // Calculate interesting tock changes
+                auto sn_tocks = sn.tock();
+
+                // if nothing interesting is possible, just add tick-space state to W
+                if(sn_tocks.empty()) {
+                    W.add(s_it, sn);
                     continue;
+                }
 
+                // Add tock-space states to W
                 auto sn_it = P.add(s_it, sn);
-                if(check_satisfactions(sn_it))
-                    return solutions;
-
-                for(auto& so : sn.tock())
-                    W.add(sn_it, sn + so);
+                for(auto& so : sn_tocks) {
+                    auto sp = sn + so;
+                    if(!P.contains(sp))
+                        W.add(sn_it, sp);
+                }
             }
         }
         spdlog::trace("[len(P)={0}] end of reachable state-space", P.size());
