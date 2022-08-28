@@ -95,7 +95,7 @@ namespace aaltitoad {
 
         auto tick() -> std::vector<state_change_t>;
         auto tock() const -> std::vector<expr::symbol_table_t>;
-        void add_tocker(const std::shared_ptr<tocker_t>& tocker);
+        auto add_tocker(const std::shared_ptr<tocker_t>& tocker) -> ntta_t&;
         void apply(const state_change_t& changes);
         void apply(const expr::symbol_table_t& external_symbol_changes);
         void apply(const std::vector<expr::symbol_table_t>& external_symbol_change_list);

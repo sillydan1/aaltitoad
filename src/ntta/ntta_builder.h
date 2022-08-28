@@ -1,6 +1,7 @@
 #ifndef AALTITOAD_NTTA_BUILDER_H
 #define AALTITOAD_NTTA_BUILDER_H
 #include "tta.h"
+#include "interesting_tocker.h"
 
 namespace aaltitoad {
     struct tta_builder {
@@ -81,6 +82,9 @@ namespace aaltitoad {
         }
         auto build() const -> ntta_t {
             return aaltitoad::ntta_t{symbols, components};
+        }
+        auto build_with_interesting_tocker() -> ntta_t {
+            return build().add_tocker(std::make_shared<aaltitoad::interesting_tocker>());
         }
 
         aaltitoad::ntta_t::tta_map_t components;
