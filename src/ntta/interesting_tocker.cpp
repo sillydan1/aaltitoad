@@ -47,7 +47,7 @@ namespace aaltitoad {
                 guards.push_back(interesting_guards);
         }
         if(guards.empty())
-            return {};
+            return {{}};
         ya::combiner_funct_t<expr::symbol_table_t, expr::syntax_tree_t> f =
                 [&d](const ya::combiner_iterator_list_t<expr::syntax_tree_t>& elements) -> std::optional<expr::symbol_table_t> {
             return find_solution(d, elements);

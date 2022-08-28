@@ -1,18 +1,11 @@
 #include "ctl_sat.h"
 
 namespace aaltitoad {
-    auto eval(const expr::syntax_tree_t& t, expr::interpreter& i) {
-        return expr::interpreter::evaluate(t,i,i,i);
-    }
-
     auto is_satisfied(const ctl::compiler::compiled_expr_t& ast, const ntta_t& state) -> bool {
         // TODO: This does not work if the ast is more complex than E F predicate
         auto value = false;
         std::visit(ya::overload(
-                [&](const expr::syntax_tree_t& v)   {
-                    expr::interpreter i{state.symbols + state.external_symbols};
-                    value = std::get<bool>(eval(v, i));
-                    },
+                [&](const expr::syntax_tree_t& v)   { value = std::get<bool>(expr::interpreter{state.symbols + state.external_symbols}.evaluate(v)); },
                 [&](const ctl::location_t &v)       {
                     for(auto& component : state.components) {
                         if(component.second.current_location->first == v.location_name) {
@@ -48,7 +41,8 @@ namespace aaltitoad {
                         case expr::operator_type_t::_not:
                             value = !is_satisfied(ast.children[0], state); break;
                         default: throw std::logic_error("not a valid raw CTL operator");
-                    }}
+                    }},
+                [](auto&&) { std::cerr << "not here!" << std::endl; }
         ), ast.node);
         return value;
     }

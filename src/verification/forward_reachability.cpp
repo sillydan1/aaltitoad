@@ -36,6 +36,8 @@ namespace aaltitoad {
                     W.add(sn_it, sn + so);
             }
         }
+        spdlog::trace("[len(P)={0}] end of reachable state-space", P.size());
+        spdlog::trace("[{0}/{1}] queries with solutions", count_solutions(), solutions.size());
         return solutions;
     }
 
@@ -53,6 +55,14 @@ namespace aaltitoad {
                 solution.solution = s;
         }
         return std::all_of(solutions.begin(), solutions.end(), [](const query_solution_t& sol){ return sol.solution.has_value(); });
+    }
+
+    auto forward_reachability_searcher::count_solutions() -> size_t {
+        return std::accumulate(solutions.begin(), solutions.end(), 0, [&](size_t acc, const query_solution_t& a) {
+            if(a.solution.has_value())
+                return acc+1;
+            return acc;
+        });
     }
 }
 

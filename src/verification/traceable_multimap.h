@@ -64,6 +64,9 @@ namespace aaltitoad {
             for (auto i = 0; i < pick; i++, it++);
             return it;
         }
+        auto size() -> size_t {
+            return data.size();
+        }
     };
 }
 

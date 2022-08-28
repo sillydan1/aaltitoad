@@ -28,6 +28,7 @@ namespace aaltitoad {
 
         static auto empty_solution_set(const std::vector<compiled_query_t>& q) -> solutions_t;
         auto check_satisfactions(const solution_t& s) -> bool;
+        auto count_solutions() -> size_t;
     };
 }
 auto operator<<(std::ostream& o, const aaltitoad::forward_reachability_searcher::solution_t& s) -> std::ostream&;

@@ -13,11 +13,11 @@ namespace aaltitoad {
     }
 
     auto ntta_t::eval_updates(expr::interpreter &i, const expr::compiler::compiled_expr_collection_t &t) -> expr::symbol_table_t {
-        return expr::interpreter::evaluate(t,i,i,i);
+        return i.evaluate(t);
     }
 
     auto ntta_t::eval_guard(expr::interpreter &i, const expr::compiler::compiled_expr_t &e) -> expr::symbol_value_t {
-        return expr::interpreter::evaluate(e,i,i,i);
+        return i.evaluate(e);
     }
 
     auto ntta_t::tick() -> std::vector<state_change_t> {
