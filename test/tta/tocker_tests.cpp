@@ -69,8 +69,9 @@ SCENARIO("interesting tocker", "[interesting-tocker]") {
         WHEN("calculating tock changes") {
             n.add_tocker(std::make_unique<aaltitoad::interesting_tocker>());
             auto changes = n.tock();
-            THEN("no changes are available") {
-                REQUIRE(changes.empty());
+            THEN("one change is available (\\epsion transition)") {
+                REQUIRE(changes.size() == 1);
+                REQUIRE(changes.begin()->empty());
             }
         }
     }
@@ -121,8 +122,9 @@ SCENARIO("interesting tocker", "[interesting-tocker]") {
         WHEN("calculating tock changes") {
             n.add_tocker(std::make_unique<aaltitoad::interesting_tocker>());
             auto changes = n.tock();
-            THEN("no choices are available") {
-                REQUIRE(changes.empty());
+            THEN("one change is available (\\epsion transition)") {
+                REQUIRE(changes.size() == 1);
+                REQUIRE(changes.begin()->empty());
             }
         }
     }
