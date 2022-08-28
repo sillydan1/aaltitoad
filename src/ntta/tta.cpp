@@ -49,7 +49,7 @@ namespace aaltitoad {
 
     void ntta_t::apply(const state_change_t &changes)  {
         for(auto& location_change : changes.location_changes)
-            location_change.component->second.current_location = location_change.new_location;
+            components.at(location_change.component->first).current_location = location_change.new_location; // TODO: Maybe state-changes should just keep component name instead of a reference?
         apply_internal(changes.symbol_changes);
     }
 
