@@ -129,6 +129,7 @@ namespace aaltitoad {
 
     struct tocker_t {
         [[nodiscard]] virtual auto tock(const ntta_t& state) -> std::vector<expr::symbol_table_t> = 0;
+        [[nodiscard]] virtual auto get_name() -> std::string { return "tocker"; };
         virtual ~tocker_t() = default;
     };
 }

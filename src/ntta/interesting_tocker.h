@@ -8,6 +8,7 @@ namespace aaltitoad {
     class interesting_tocker : public tocker_t {
     public:
         [[nodiscard]] auto tock(const ntta_t& state) -> std::vector<expr::symbol_table_t> override;
+        [[nodiscard]] auto get_name() -> std::string override;
         ~interesting_tocker() override = default;
     private:
         [[nodiscard]] auto contains_external_variables(const expr::syntax_tree_t& tree, const expr::symbol_table_t& symbols) const -> bool;

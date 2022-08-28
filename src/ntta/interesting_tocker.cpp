@@ -52,7 +52,9 @@ namespace aaltitoad {
                 [&d](const ya::combiner_iterator_list_t<expr::syntax_tree_t>& elements) -> std::optional<expr::symbol_table_t> {
             return find_solution(d, elements);
         };
-        return ya::generate_permutations(guards, f);
+        auto perms = ya::generate_permutations(guards, f);
+        spdlog::trace("{0} interesting guards generated {1} permutations", guards.size(), perms.size());
+        return perms;
     }
 
     auto interesting_tocker::contains_external_variables(const expr::syntax_tree_t& tree, const expr::symbol_table_t& symbols) const -> bool {
@@ -74,5 +76,9 @@ namespace aaltitoad {
                 [](auto&&){}
         ), tree.node);
         return return_value;
+    }
+
+    auto interesting_tocker::get_name() -> std::string {
+        return "interesting_tocker";
     }
 }
