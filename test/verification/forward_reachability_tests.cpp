@@ -14,11 +14,13 @@ SCENARIO("basic reachability", "[frs]") {
                 .add_tta("A", aaltitoad::tta_builder{builder.symbols}
                         .add_locations({"L0", "L1"})
                         .set_starting_location("L0")
-                        .add_edges({{"L0", "L1", "x > -3", "x := x - 1"}, {"L1", "L0"}}))
+                        .add_edges({{"L0", "L1", "x > 0", "x := x - 1"}, {"L1", "L0"}}))
                 // Add tockers
                 .build_with_interesting_tocker();
         GIVEN("a simple reachability query 'can x reach zero?'") {
-            auto s = n.symbols + n.external_symbols; // TODO: ctl::compiler should be able to have more than one symbol table to lookup in
+            // TODO: ctl::compiler should be able to have more than one symbol table to lookup in, that way we wont need
+            //       to manually have a copy of the symbol table on the stack to avoid invalid memory access...
+            auto s = n.symbols + n.external_symbols;
             auto query = ctl::compiler{s}.compile("E F x == 0");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{};
