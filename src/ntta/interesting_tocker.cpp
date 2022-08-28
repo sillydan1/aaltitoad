@@ -32,7 +32,6 @@ namespace aaltitoad {
     }
 
     auto interesting_tocker::tock(const ntta_t& state) -> std::vector<expr::symbol_table_t> {
-        expr::z3_driver d{state.symbols, state.external_symbols};
         std::vector<std::vector<expr::syntax_tree_t>> guards;
         for(auto& component : state.components) {
             // If this is slow, we should investigate maintaining a cache to avoid iteration
@@ -48,6 +47,7 @@ namespace aaltitoad {
         }
         if(guards.empty())
             return {{}};
+        expr::z3_driver d{state.symbols, state.external_symbols};
         ya::combiner_funct_t<expr::symbol_table_t, expr::syntax_tree_t> f =
                 [&d](const ya::combiner_iterator_list_t<expr::syntax_tree_t>& elements) -> std::optional<expr::symbol_table_t> {
             return find_solution(d, elements);
