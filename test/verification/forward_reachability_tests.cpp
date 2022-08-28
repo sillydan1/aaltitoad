@@ -38,4 +38,28 @@ SCENARIO("basic reachability", "[frs]") {
             }
         }
     }
+    GIVEN("one looping tta and no symbol manipulation") {
+        aaltitoad::ntta_builder builder{};
+        auto n = builder
+                .add_symbol({"x", 0})
+                // Add components
+                .add_tta("A", aaltitoad::tta_builder{builder.symbols}
+                        .add_location("L0")
+                        .set_starting_location("L0")
+                        .add_edge({"L0", "L0"}))
+                // Add tockers
+                .build_with_interesting_tocker();
+        GIVEN("a simple unsatisfiable query 'can x reach 1?'") {
+            auto s = n.symbols + n.external_symbols;
+            auto query = ctl::compiler{s}.compile("E F x == 1");
+            WHEN("searching through the state-space with forward reachability search") {
+                aaltitoad::forward_reachability_searcher frs{};
+                auto results = frs.is_reachable(n, query);
+                THEN("no answer can be found") {
+                    REQUIRE(results.size() == 1);
+                    REQUIRE(!results.begin()->solution.has_value());
+                }
+            }
+        }
+    }
 }
