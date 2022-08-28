@@ -18,25 +18,24 @@ namespace aaltitoad {
         // TODO: Periodically print waiting list size for debugging purposes (debug)
         W = {s0}; P = {}; solutions = empty_solution_set(q);
         while(!W.empty()) {
+            /// Select the next state to search
             auto s = W.pop();
+            /// Does this state complete our query-list?
             auto s_it = P.add(s.parent, s.data);
             if(check_satisfactions(s_it))
                 return solutions;
-
+            /// Add successors
             for(auto& si : s.data.tick()) {
                 auto sn = s.data + si;
                 if(P.contains(sn)) continue;
-
-                // Calculate interesting tock changes
+                /// Calculate interesting tock changes
                 auto sn_tocks = sn.tock();
-
-                // if nothing interesting is possible, just add tick-space state to W
+                /// if nothing interesting is possible, just add tick-space state to W
                 if(sn_tocks.empty()) {
                     W.add(s_it, sn);
                     continue;
                 }
-
-                // Add tock-space states to W
+                /// Add tock-space states to W
                 auto sn_it = P.add(s_it, sn);
                 for(auto& so : sn_tocks) {
                     auto sp = sn + so;
@@ -45,6 +44,7 @@ namespace aaltitoad {
                 }
             }
         }
+        /// Searched through all of the reachable state-space from s0
         spdlog::trace("[len(P)={0}] end of reachable state-space", P.size());
         spdlog::trace("[{0}/{1}] queries with solutions", count_solutions(), solutions.size());
         return solutions;
