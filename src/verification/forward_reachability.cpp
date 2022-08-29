@@ -37,6 +37,8 @@ namespace aaltitoad {
                 }
                 /// Add tock-space states to W
                 auto sn_it = P.add(s_it, sn);
+                if(check_satisfactions(sn_it))
+                    return solutions;
                 for(auto& so : sn_tocks) {
                     auto sp = sn + so;
                     if(!P.contains(sp))
