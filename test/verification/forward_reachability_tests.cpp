@@ -36,9 +36,7 @@ SCENARIO("basic reachability", "[frs]") {
                     REQUIRE(results.begin()->solution.value()->second.data.symbols.at("x") == expr::symbol_value_t{0});
                 }
                 AND_THEN("the trace is printable") {
-                    REQUIRE_NOTHROW([&results](){
-                        std::cout << results.begin()->solution.value() << std::endl;
-                    });
+                    std::cout << results.begin()->solution.value() << std::endl;
                 }
             }
         }
@@ -107,6 +105,45 @@ SCENARIO("basic reachability", "[frs]") {
                     REQUIRE(results.begin()->solution.has_value());
                     auto& y_sym = results.begin()->solution.value()->second.data.external_symbols.at("y");
                     REQUIRE(y_sym > expr::symbol_value_t{0});
+                }
+            }
+        }
+    }
+    GIVEN("one tta with an interesting edge from somewhere in the middle") {
+        aaltitoad::ntta_builder builder{};
+        auto n = builder
+                // Add symbols
+                .add_external_symbol({"y", 0})
+                        // Add components
+                .add_tta("A", aaltitoad::tta_builder{builder.symbols, builder.external_symbols}
+                        .add_locations({"L0", "L1", "L2"})
+                        .set_starting_location("L0")
+                        .add_edge({"L0", "L1"})
+                        .add_edge({"L1", "L2"})
+                        .add_edge({"L2", "L0", "y > 0", ""}))
+                        // Add tockers
+                .build_with_interesting_tocker();
+        GIVEN("a simple query matching the interesting guard 'E F y > 0'") {
+            auto s = n.symbols + n.external_symbols;
+            auto query = ctl::compiler{&s}.compile("E F y > 0");
+            WHEN("searching through the state-space with forward reachability search (strategy last)") {
+                aaltitoad::forward_reachability_searcher frs{aaltitoad::pick_strategy::last};
+                auto results = frs.is_reachable(n, query);
+                THEN("the query is satisfied") {
+                    REQUIRE(results.begin()->solution.has_value());
+                    auto& y_sym = results.begin()->solution.value()->second.data.external_symbols.at("y");
+                    REQUIRE(y_sym > expr::symbol_value_t{0});
+                }
+            }
+        }
+        GIVEN("is L2 reachable?") {
+            auto s = n.symbols + n.external_symbols;
+            auto query = ctl::compiler{&s}.compile("E F L2");
+            WHEN("searching through the state-space with forward reachability search") {
+                aaltitoad::forward_reachability_searcher frs{aaltitoad::pick_strategy::random};
+                auto results = frs.is_reachable(n, query);
+                THEN("the query is satisfied") {
+                    REQUIRE(results.begin()->solution.has_value());
                 }
             }
         }

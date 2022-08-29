@@ -53,7 +53,7 @@ namespace aaltitoad {
         auto pop(const pick_strategy& strategy = pick_strategy::first) -> with_parent_t<T> {
             switch (strategy) {
                 case pick_strategy::first:  return pop_it(data.begin());
-                case pick_strategy::last:   return pop_it(data.end());
+                case pick_strategy::last:   return pop_it(last_it());
                 case pick_strategy::random: return pop_it(random_it());
                 default:
                     throw not_implemented_yet_exception();
@@ -68,6 +68,11 @@ namespace aaltitoad {
             auto pick = random::value(0, data.size() - 1);
             auto it = data.begin();
             for (auto i = 0; i < pick; i++, it++);
+            return it;
+        }
+        auto last_it() -> iterator_t {
+            auto it = data.begin();
+            for(auto i = 0; i < data.size()-1; i++, it++);
             return it;
         }
         auto size() -> size_t {
