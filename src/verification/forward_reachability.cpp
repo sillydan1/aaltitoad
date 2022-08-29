@@ -8,6 +8,9 @@ namespace aaltitoad {
     //       With that, we could also do a Waiting-list velocity calculation. Maybe even output
     //       waiting-list size to a CSV file so it could be graphed! (very useful for papers)
     //       This behavior can be embedded into a specialization of traceable_multimap<T>
+    forward_reachability_searcher::forward_reachability_searcher(const aaltitoad::pick_strategy& strategy)
+     : W{}, P{}, solutions{}, strategy{strategy} {}
+
     auto forward_reachability_searcher::is_reachable(const ntta_t& s0, const compiled_query_t& q) -> solutions_t {
         return is_reachable(s0, std::vector{q});
     }
@@ -19,7 +22,7 @@ namespace aaltitoad {
         W = {s0}; P = {}; solutions = empty_solution_set(q);
         while(!W.empty()) {
             /// Select the next state to search
-            auto s = W.pop();
+            auto s = W.pop(strategy);
             /// Does this state complete our query-list?
             auto s_it = P.add(s.parent, s.data);
             if(check_satisfactions(s_it))

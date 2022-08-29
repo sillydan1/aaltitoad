@@ -18,13 +18,14 @@ namespace aaltitoad {
             query_solution_t(compiled_query_t query) : query{std::move(query)}, solution{} {}
         };
         using solutions_t = std::vector<query_solution_t>;
-        forward_reachability_searcher() = default;
+        forward_reachability_searcher(const pick_strategy& strategy = pick_strategy::first);
         auto is_reachable(const ntta_t& s0, const compiled_query_t& q) -> solutions_t;
         auto is_reachable(const ntta_t& s0, const std::vector<compiled_query_t>& q) -> solutions_t;
 
     private:
         traceable_multimap<ntta_t> W{}, P{};
         solutions_t solutions{};
+        pick_strategy strategy{};
 
         static auto empty_solution_set(const std::vector<compiled_query_t>& q) -> solutions_t;
         auto check_satisfactions(const solution_t& s) -> bool;
