@@ -91,6 +91,10 @@ set(${PROJECT_NAME}_SOURCES
         src/extensions/string_extensions.cpp)
 
 add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES})
+if(${CODE_COVERAGE})
+    target_link_options(${PROJECT_NAME} PUBLIC --coverage)
+    target_compile_options(${PROJECT_NAME} PUBLIC --coverage)
+endif()
 target_link_libraries(${PROJECT_NAME} expr dl pthread ctl)
 add_compile_definitions(ENABLE_Z3)
 

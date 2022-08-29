@@ -13,3 +13,7 @@ add_executable(${PROJECT_NAME}
         verification/forward_reachability_tests.cpp
         algorithms/tarjan_tests.cpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC aaltitoad Catch2::Catch2WithMain)
+if(${CODE_COVERAGE})
+    target_link_options(${PROJECT_NAME} PUBLIC --coverage)
+    target_compile_options(${PROJECT_NAME} PUBLIC --coverage)
+endif()
