@@ -22,6 +22,12 @@ namespace aaltitoad {
             for(auto t : ts)
                 add(t);
         }
+        auto begin() {
+            return data.begin();
+        }
+        auto end() {
+            return data.end();
+        }
         auto empty() -> bool {
             return data.empty();
         }
