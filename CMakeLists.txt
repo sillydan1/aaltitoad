@@ -90,12 +90,7 @@ set(${PROJECT_NAME}_SOURCES
         src/extensions/random.cpp
         src/extensions/string_extensions.cpp)
 
-if(NOT DEFINED TEST_COVERAGE)
-    add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES})
-    install(TARGETS ${PROJECT_NAME})
-else()
-    add_library(${PROJECT_NAME} ${${PROJECT_NAME}_SOURCES})
-endif()
+add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES})
 target_link_libraries(${PROJECT_NAME} expr dl pthread ctl)
 add_compile_definitions(ENABLE_Z3)
 

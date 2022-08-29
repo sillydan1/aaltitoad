@@ -12,8 +12,4 @@ add_executable(${PROJECT_NAME}
         tta/tocker_tests.cpp
         verification/forward_reachability_tests.cpp
         algorithms/tarjan_tests.cpp)
-target_link_libraries(${PROJECT_NAME} PRIVATE aaltitoad Catch2::Catch2WithMain)
-if(${COVERAGE_ENABLE})
-    target_compile_options(${PROJECT_NAME} PRIVATE --coverage)
-    target_link_options(${PROJECT_NAME} PRIVATE --coverage)
-endif()
+target_link_libraries(${PROJECT_NAME} PUBLIC aaltitoad Catch2::Catch2WithMain)
