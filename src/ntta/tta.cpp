@@ -164,7 +164,7 @@ namespace aaltitoad {
 auto operator<<(std::ostream& os, const aaltitoad::ntta_t& state) -> std::ostream& {
     for (auto &component: state.components)
         os << component.first << ": " << component.second.current_location->first << "\n";
-    return os << state.symbols;
+    return os << state.symbols << state.external_symbols;
 }
 
 auto operator+(const aaltitoad::ntta_t& state, const aaltitoad::ntta_t::state_change_t& change) -> aaltitoad::ntta_t {
@@ -185,5 +185,5 @@ auto operator==(const aaltitoad::ntta_t& a, const aaltitoad::ntta_t& b) -> bool 
         if(c.second.current_location != b.components.at(c.first).current_location)
             return false;
     // compare symbol tables
-    return a.symbols == b.symbols;
+    return a.symbols == b.symbols && a.external_symbols == b.external_symbols;
 }
