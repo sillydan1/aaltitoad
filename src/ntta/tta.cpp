@@ -153,6 +153,12 @@ namespace aaltitoad {
         }
         return value;
     }
+
+    auto ntta_t::to_string() const -> std::string {
+        std::stringstream ss{};
+        ss << *this;
+        return ss.str();
+    }
 }
 
 auto operator<<(std::ostream& os, const aaltitoad::ntta_t& state) -> std::ostream& {

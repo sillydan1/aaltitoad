@@ -100,6 +100,7 @@ namespace aaltitoad {
         void apply(const expr::symbol_table_t& external_symbol_changes);
         void apply(const std::vector<expr::symbol_table_t>& external_symbol_change_list);
         void apply_internal(const expr::symbol_table_t& symbol_changes);
+        auto to_string() const -> std::string;
     private:
         class tick_resolver {
         public:
