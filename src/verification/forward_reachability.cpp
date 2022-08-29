@@ -9,7 +9,9 @@ namespace aaltitoad {
     //       waiting-list size to a CSV file so it could be graphed! (very useful for papers)
     //       This behavior can be embedded into a specialization of traceable_multimap<T>
     forward_reachability_searcher::forward_reachability_searcher(const aaltitoad::pick_strategy& strategy)
-     : W{}, P{}, solutions{}, strategy{strategy} {}
+     : W{}, P{}, solutions{}, strategy{strategy} {
+
+    }
 
     auto forward_reachability_searcher::is_reachable(const ntta_t& s0, const compiled_query_t& q) -> solutions_t {
         return is_reachable(s0, std::vector{q});
@@ -20,6 +22,12 @@ namespace aaltitoad {
         // TODO: Catch SIGTERM (ctrl-c) and write statistics (trace)
         // TODO: Periodically print waiting list size for debugging purposes (debug)
         W = {s0}; P = {}; solutions = empty_solution_set(q);
+        auto s0_it = P.add(s0);
+        for(auto& l : s0.tock()) {
+            auto sp = s0 + l;
+            if(!P.contains(sp))
+                W.add(s0_it, sp);
+        }
         while(!W.empty()) {
             /// Select the next state to search
             auto s = W.pop(strategy);
