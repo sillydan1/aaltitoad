@@ -59,6 +59,10 @@ namespace aaltitoad {
         components[name] = builder.build();
         return *this;
     }
+    auto ntta_builder::add_tta(const std::string& name, const tta_t& builder) -> ntta_builder& {
+        components[name] = builder;
+        return *this;
+    }
     auto ntta_builder::add_symbol(const symbol_value_pair& symbol) -> ntta_builder& {
         symbols[symbol.name] = symbol.value;
         return *this;
@@ -66,6 +70,10 @@ namespace aaltitoad {
     auto ntta_builder::add_symbols(const std::vector<symbol_value_pair>& ss) -> ntta_builder& {
         for(auto& s : ss)
             add_symbol(s);
+        return *this;
+    }
+    auto ntta_builder::add_symbols(const expr::symbol_table_t& ss) -> ntta_builder& {
+        symbols += ss;
         return *this;
     }
     auto ntta_builder::add_external_symbol(const aaltitoad::ntta_builder::symbol_value_pair &symbol) -> ntta_builder & {
@@ -80,7 +88,15 @@ namespace aaltitoad {
     auto ntta_builder::build() const -> ntta_t {
         return aaltitoad::ntta_t{symbols, external_symbols, components};
     }
+    auto ntta_builder::build_heap() const -> ntta_t* {
+        return new aaltitoad::ntta_t{symbols, external_symbols, components};
+    }
     auto ntta_builder::build_with_interesting_tocker() const -> ntta_t {
         return build().add_tocker(std::make_shared<aaltitoad::interesting_tocker>());
+    }
+    auto ntta_builder::build_heap_with_interesting_tocker() const -> ntta_t* {
+        auto* n = build_heap();
+        n->add_tocker(std::make_shared<aaltitoad::interesting_tocker>());
+        return n;
     }
 }

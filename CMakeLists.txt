@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
-
+# TODO: Add license header to all source files
 # 3.16+ because of target_precompiled_header
 cmake_minimum_required(VERSION 3.16)
 project(aaltitoad VERSION 1.0.0)
@@ -99,6 +99,7 @@ target_link_libraries(${PROJECT_NAME} expr dl pthread ctl)
 add_compile_definitions(ENABLE_Z3)
 
 add_subdirectory(src/cli/simulator)
+add_subdirectory(src/parser)
 add_subdirectory(test)
 
 if(NOT WIN32)

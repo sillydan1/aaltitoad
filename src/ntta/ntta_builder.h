@@ -32,12 +32,16 @@ namespace aaltitoad {
         };
         ntta_builder();
         auto add_tta(const std::string& name, tta_builder& builder) -> ntta_builder&;
+        auto add_tta(const std::string& name, const tta_t& tta) -> ntta_builder&;
         auto add_symbol(const symbol_value_pair& symbol) -> ntta_builder&;
         auto add_symbols(const std::vector<symbol_value_pair>& ss) -> ntta_builder&;
+        auto add_symbols(const expr::symbol_table_t& ss) -> ntta_builder&;
         auto add_external_symbol(const symbol_value_pair& symbol) -> ntta_builder&;
         auto add_external_symbols(const std::vector<symbol_value_pair>& ss) -> ntta_builder&;
         auto build() const -> ntta_t;
+        auto build_heap() const -> ntta_t*;
         auto build_with_interesting_tocker() const -> ntta_t;
+        auto build_heap_with_interesting_tocker() const -> ntta_t*;
 
         aaltitoad::ntta_t::tta_map_t components;
         expr::symbol_table_t symbols, external_symbols;
