@@ -1,6 +1,6 @@
 #include <ntta/tta.h>
 #include <catch2/catch_test_macros.hpp>
-#include <ntta/ntta_builder.h>
+#include <ntta/builder/ntta_builder.h>
 #include <verification/forward_reachability.h>
 
 SCENARIO("basic reachability", "[frs]") {

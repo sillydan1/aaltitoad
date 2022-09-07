@@ -1,7 +1,7 @@
 #ifndef AALTITOAD_NTTA_BUILDER_H
 #define AALTITOAD_NTTA_BUILDER_H
-#include "tta.h"
-#include "interesting_tocker.h"
+#include "ntta/tta.h"
+#include "ntta/interesting_tocker.h"
 
 namespace aaltitoad {
     struct tta_builder {
@@ -38,6 +38,7 @@ namespace aaltitoad {
         auto add_symbols(const expr::symbol_table_t& ss) -> ntta_builder&;
         auto add_external_symbol(const symbol_value_pair& symbol) -> ntta_builder&;
         auto add_external_symbols(const std::vector<symbol_value_pair>& ss) -> ntta_builder&;
+        auto add_external_symbols(const expr::symbol_table_t& ss) -> ntta_builder&;
         auto build() const -> ntta_t;
         auto build_heap() const -> ntta_t*;
         auto build_with_interesting_tocker() const -> ntta_t;
