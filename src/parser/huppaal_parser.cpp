@@ -11,8 +11,11 @@ namespace aaltitoad::huppaal {
         for(const auto& filepath : filepaths) {
             for(const auto &entry: std::filesystem::directory_iterator(filepath)) {
                 try {
-                    if(std::find(ignore_list.begin(), ignore_list.end(), entry.path().c_str()) != ignore_list.end())
+                    if(std::find(ignore_list.begin(), ignore_list.end(), entry.path().c_str()) != ignore_list.end()) {
+                        spdlog::trace("ignoring file {0}", entry.path().c_str());
                         continue;
+                    }
+                    spdlog::trace("loading file {0}", entry.path().c_str());
 
                     std::ifstream input_filestream(entry.path());
                     auto json_file = nlohmann::json::parse(input_filestream);
@@ -34,18 +37,27 @@ namespace aaltitoad::huppaal {
         if(json_file.contains("parts"))
             for(auto& p : json_file["parts"])
                 // TODO: Missing external/internal check
-                b.add_external_declarations(load_part(p));
+                b.add_declarations(load_part(p));
     }
 
     auto load_part(const nlohmann::json& json_file) -> std::string {
         std::stringstream ss{};
-        ss << json_file["PartName"] << " := " << json_file["SpecificType"]["Variable"]["Value"];
+        if(json_file["SpecificType"].contains("Variable"))
+            ss << (std::string)json_file["PartName"] << " := " << json_file["SpecificType"]["Variable"]["Value"];
+        else if(json_file["SpecificType"].contains("Timer"))
+            ss << (std::string)json_file["PartName"] << " := " << json_file["SpecificType"]["Timer"]["Value"];
+        else
+            throw std::logic_error("invalid piece of json: "+to_string(json_file));
         return ss.str();
     }
 
     auto load_tta(const nlohmann::json& json_file) -> aaltitoad::tta_builder2 {
         aaltitoad::tta_builder2 builder{};
-        builder.set_start_location(json_file["initial_location"]["id"]);
+        builder.set_instance_name(json_file["name"])
+               .add_location(json_file["initial_location"]["id"])
+               .set_start_location(json_file["initial_location"]["id"]);
+        for(auto& subcomponent : json_file["sub_components"])
+            builder.add_sub_tta(subcomponent["component"], subcomponent["identifier"]);
         for(auto& loc : json_file["locations"])
             builder.add_location(loc["id"]);
         for(auto& edge : json_file["edges"]) {
@@ -55,6 +67,8 @@ namespace aaltitoad::huppaal {
             builder.add_edge({edge["source_location"], target_loc,
                               (std::string) edge["guard"], (std::string) edge["update"]});
         }
+        if(json_file["main"])
+            builder.set_main();
         return builder;
     }
 }

@@ -85,6 +85,11 @@ namespace aaltitoad {
             add_external_symbol(s);
         return *this;
     }
+    auto ntta_builder::add_external_symbols(const expr::symbol_table_t &ss) -> ntta_builder & {
+        for(auto& s : ss)
+            add_external_symbol({s.first, s.second});
+        return *this;
+    }
     auto ntta_builder::build() const -> ntta_t {
         return aaltitoad::ntta_t{symbols, external_symbols, components};
     }

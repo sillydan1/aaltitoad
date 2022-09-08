@@ -7,6 +7,7 @@ set(CXX_STANDARD_REQUIRED ON)
 include(../cmake/CPM.cmake)
 CPMAddPackage("gh:catchorg/Catch2@3.0.0-preview4")
 find_package(Catch2 3 REQUIRED)
+add_compile_definitions(AALTITOAD_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
 add_executable(${PROJECT_NAME}
         tta/tta_tests.cpp
         tta/tocker_tests.cpp

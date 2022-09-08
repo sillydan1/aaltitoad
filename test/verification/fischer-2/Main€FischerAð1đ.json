@@ -161,7 +161,7 @@
             "target_location": "Main€FischerAð1đ€L3",
             "select": "",
             "guard": "true",
-            "update": "pubid :=  0 ;counter :=  counter -1;",
+            "update": "pubid := 0 ;counter := counter -1;",
             "sync": "",
             "nails":
             []
