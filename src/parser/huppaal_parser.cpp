@@ -11,7 +11,7 @@ namespace aaltitoad::huppaal {
         for(const auto& filepath : filepaths) {
             for(const auto &entry: std::filesystem::directory_iterator(filepath)) {
                 try {
-                    if(std::find(ignore_list.begin(), ignore_list.end(), entry.path().c_str()) != ignore_list.end()) {
+                    if(should_ignore(entry, ignore_list)) {
                         spdlog::trace("ignoring file {0}", entry.path().c_str());
                         continue;
                     }
@@ -29,6 +29,15 @@ namespace aaltitoad::huppaal {
             }
         }
         return builder.build().build_heap();
+    }
+
+    auto should_ignore(const std::filesystem::directory_entry& entry, const std::vector<std::string>& ignore_list) -> bool {
+        return std::any_of(ignore_list.begin(), ignore_list.end(),
+                           [&entry](const auto& ig){ return should_ignore(entry, ig); });
+    }
+
+    auto should_ignore(const std::filesystem::directory_entry& entry, const std::string& ignore_regex) -> bool {
+        return std::regex_match(entry.path().c_str(), std::regex{ignore_regex});
     }
 
     void load_declarations(ntta_builder2& b, const nlohmann::json& json_file) {
