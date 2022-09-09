@@ -1,11 +1,12 @@
+#include <warnings.h>
 #include "plugin_system.h"
 
-namespace plugins {
+namespace aaltitoad::plugins {
     template<typename T>
     T load_symbol(void* handle, const std::string& symbol_name) {
         T val = (T) dlsym(handle, symbol_name.c_str());
         if(!val)
-            throw std::logic_error("Could not find "+symbol_name+" symbol");
+            throw std::logic_error("could not find "+symbol_name+" symbol");
         return val;
     }
 
@@ -19,25 +20,25 @@ namespace plugins {
         plugin_map_t loaded_plugins{};
         for (auto &directory: search_directories) {
             if (!std::filesystem::exists(directory)) {
-                spdlog::trace("Does not exist: {0}", directory);
+                spdlog::trace("does not exist: {0}", directory);
                 continue;
             }
-            spdlog::trace("Searching for plugins in: {0}", directory);
+            spdlog::trace("searching for plugins in: {0}", directory);
             for (const auto &entry: std::filesystem::directory_iterator(directory)) {
                 try {
                     if (entry.is_regular_file()) {
                         if (is_dynamic_library(entry.path().filename())) {
-                            spdlog::trace("Attempting to load file '{0}' as a plugin",
+                            spdlog::trace("attempting to load file '{0}' as a plugin",
                                           entry.path().filename().string());
                             auto *handle = dlopen(entry.path().c_str(), RTLD_LAZY);
                             if (!handle)
-                                throw std::logic_error("Could not load as a shared/dynamic library");
+                                throw std::logic_error("could not load as a shared/dynamic library");
                             auto stem = std::string(load_symbol<get_plugin_name_t>(handle, "get_plugin_name")());
                             auto type = static_cast<plugin_type>(load_symbol<get_plugin_type_t>(handle,
                                                                                                 "get_plugin_type")());
                             auto version = std::string(load_symbol<get_plugin_version_t>(handle, "get_plugin_version")());
                             if (loaded_plugins.contains(stem))
-                                throw std::logic_error("Plugin with name '" + stem +
+                                throw std::logic_error("plugin with name '" + stem +
                                                        "' is already loaded. All plugins must have unique names");
                             switch (type) {
                                 case plugin_type::tocker: {
@@ -51,11 +52,11 @@ namespace plugins {
                                     break;
                                 }
                             }
-                            spdlog::debug("Loaded plugin '{0}'", stem);
+                            spdlog::debug("loaded plugin '{0}'", stem);
                         }
                     }
                 } catch (std::exception &e) {
-                    spdlog::warn("Failed to load '{0}' as a plugin: {1}", entry.path().string(), e.what());
+                    aaltitoad::warnings::warn(plugin_load_failed, "failed to load '"+entry.path().string()+"' as a plugin: "+e.what());
                 }
             }
         }
@@ -65,6 +66,6 @@ namespace plugins {
 
 std::ostream& operator<<(std::ostream& stream, const plugin_map_t& map) {
     for(auto& t : map)
-        stream << "  - " << t.first << " " << t.second.version << " (" << plugin_type_name(t.second.type) << ")" << std::endl;
+        stream << "  - [" << t.first << "] " << t.second.version << " (" << plugin_type_name(t.second.type) << ")" << std::endl;
     return stream;
 }

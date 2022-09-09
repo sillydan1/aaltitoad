@@ -1,9 +1,11 @@
 #include <aaltitoadpch.h>
 #include <config.h>
 #include "cli_options.h"
+#include "../cli_common.h"
 #include <timer>
 #include <plugin_system/plugin_system.h>
 #include <numeric>
+#include <ntta/interesting_tocker.h>
 
 void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_arguments);
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
@@ -37,7 +39,7 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     if(cli_arguments["list-plugins"]) {
         auto ss = std::stringstream{} << available_plugins;
         spdlog::info("Available plugins:\n{0}", ss.str());
-        // return;
+        return;
     }
 
     /// Parser related arguments
@@ -47,28 +49,26 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
         ignore_list = cli_arguments["ignore"].as_list();
 
     /// Get the parser
-    // auto selected_parser = cli_arguments["parser"].as_string_or_default("h_uppaal_parser");
-    // if(!available_plugins.contains(selected_parser) || available_plugins.at(selected_parser).type != plugin_type::parser) {
-    //     spdlog::critical("No such parser available: '{0}'", selected_parser);
-    //     return;
-    // }
+    auto selected_parser = cli_arguments["parser"].as_string_or_default("huppaal_parser");
+    if(!available_plugins.contains(selected_parser) || available_plugins.at(selected_parser).type != plugin_type::parser) {
+        spdlog::critical("No such parser available: '{0}'", selected_parser);
+        return;
+    }
 
     /// Parse provided model
-    // spdlog::info("Parsing with {0} plugin", selected_parser);
-    // auto parser = std::get<parser_func_t>(available_plugins.at(selected_parser).function);
-    // t.start();
-    // auto automata = std::unique_ptr<aaltitoad::ntta_t>(parser(cli_arguments["input"].as_list(), ignore_list));
-    // spdlog::info("Model parsing took {0}ms", t.milliseconds_elapsed());
-
-    spdlog::warn("using test ntta_t - this must be switched out when a parser is implemented");
-    auto automata = generate_test_ntta();
+    spdlog::info("Parsing with {0} plugin", selected_parser);
+    auto parser = std::get<parser_func_t>(available_plugins.at(selected_parser).function);
+    t.start();
+    auto automata = std::unique_ptr<aaltitoad::ntta_t>(parser(cli_arguments["input"].as_list(), ignore_list));
+    spdlog::info("Model parsing took {0}ms", t.milliseconds_elapsed());
 
     /// Inject tockers - CLI Format: "name(argument)"
-    for(auto& arg : cli_arguments["tocker"].as_list_or_default({})) {
-        auto tocker = instantiate_tocker(arg, available_plugins, *automata);
-        if(tocker.has_value())
-            automata->tockers.emplace_back(tocker.value());
-    }
+    automata->add_tocker(std::make_shared<aaltitoad::interesting_tocker>());
+    // for(auto& arg : cli_arguments["tocker"].as_list_or_default({})) {
+    //     auto tocker = instantiate_tocker(arg, available_plugins, *automata);
+    //     if(tocker.has_value())
+    //         automata->tockers.emplace_back(tocker.value());
+    // }
 
     /// Run
     t.start();
@@ -106,7 +106,7 @@ auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_ma
         look_dirs.emplace_back(rpath);
     auto provided_dirs = cli_arguments["plugin-dir"].as_list_or_default({});
     look_dirs.insert(look_dirs.end(), provided_dirs.begin(), provided_dirs.end());
-    return plugins::load(look_dirs);
+    return aaltitoad::plugins::load(look_dirs);
 }
 
 auto instantiate_tocker(const std::string& arg, const plugin_map_t& available_plugins, const aaltitoad::ntta_t& automata) -> std::optional<aaltitoad::tocker_t*> {

@@ -12,6 +12,7 @@ namespace aaltitoad {
     }
 
     void warnings::disable_warning(const w_t &warning_name) {
+        spdlog::debug("disabling warning [{0}]", magic_enum::enum_name(warning_name));
         enabled_warnings[warning_name] = false;
     }
 
@@ -22,6 +23,7 @@ namespace aaltitoad {
     auto warnings::descriptions() -> std::unordered_map<w_t, std::string> {
         return {
             {w_t::overlap_idem, "warnings about overlapping non-idempotent symbol table changes"},
+            {w_t::plugin_load_failed, "warnings about plugins failing to load"},
         };
     }
 

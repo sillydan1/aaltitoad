@@ -1,23 +1,23 @@
 #ifndef AALTITOAD_CLI_OPTIONS_H
 #define AALTITOAD_CLI_OPTIONS_H
+#include <vector>
 #include <argvparse.h>
-#include <warnings.h>
+#include <iostream>
+#include <config.h>
 #include <magic_enum.hpp>
+#include <warnings.h>
 
 std::vector<option_t> get_options() {
     return {
-            {"input",       'f', argument_requirement::REQUIRE_ARG,  "(Required) input folder containing diagram files to parse and simulate"},
+            {"input",       'f', argument_requirement::REQUIRE_ARG,  "(Required) input folder containing diagram files to parse"},
             {"version",     'V', argument_requirement::NO_ARG,       "Print version and exit"},
             {"verbosity",   'v', argument_requirement::REQUIRE_ARG,  "Set verbosity level (6 for max verbosity)"},
-            {"ignore",      'i', argument_requirement::REQUIRE_ARG,  "Specify a file to ignore (-i file1 -i file2 for multiple files)"},
+            {"ignore",      'i', argument_requirement::REQUIRE_ARG,  "Specify a GNU-style regex for filename(s) to ignore"},
 
-            {"tocker",      't', argument_requirement::REQUIRE_ARG,  "Specify a tocker by name to instantiate"},
             {"parser",      'p', argument_requirement::REQUIRE_ARG,  "Specify the parser to use"},
 
             {"plugin-dir",  'P', argument_requirement::REQUIRE_ARG,  "Specify directories to look for parser plugins"},
             {"list-plugins",'L', argument_requirement::NO_ARG,       "List found plugins and exit"},
-
-            {"ticks",       'n', argument_requirement::REQUIRE_ARG,  "Specify the amount of ticks to perform default is infinite"},
 
             {"disable-warn",'w', argument_requirement::REQUIRE_ARG,  "Disable a warning"},
             {"list-warn",   'W', argument_requirement::NO_ARG,       "List all warnings available"},
@@ -40,4 +40,4 @@ bool is_required_provided(std::map<std::string, argument_t>& provided_args, cons
     return true;
 }
 
-#endif
+#endif //AALTITOAD_CLI_OPTIONS_H

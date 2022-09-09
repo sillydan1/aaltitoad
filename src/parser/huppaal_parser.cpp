@@ -53,7 +53,7 @@ namespace aaltitoad::huppaal {
         std::stringstream ss{};
         if(json_file["SpecificType"].contains("Variable"))
             ss << (std::string)json_file["PartName"] << " := " << json_file["SpecificType"]["Variable"]["Value"];
-        else if(json_file["SpecificType"].contains("Timer"))
+        else if(json_file["SpecificType"].contains("Timer")) // TODO: support timers/clocks in expr
             ss << (std::string)json_file["PartName"] << " := " << json_file["SpecificType"]["Timer"]["Value"];
         else
             throw std::logic_error("invalid piece of json: "+to_string(json_file));

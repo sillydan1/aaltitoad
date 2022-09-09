@@ -101,6 +101,7 @@ target_link_libraries(${PROJECT_NAME} expr dl pthread ctl)
 add_compile_definitions(ENABLE_Z3)
 
 add_subdirectory(src/cli/simulator)
+add_subdirectory(src/cli/verifier)
 add_subdirectory(src/parser)
 add_subdirectory(test)
 

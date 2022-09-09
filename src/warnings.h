@@ -5,7 +5,8 @@
 
 namespace aaltitoad {
     enum w_t {
-        overlap_idem
+        overlap_idem,
+        plugin_load_failed
     };
 
     class warnings {
