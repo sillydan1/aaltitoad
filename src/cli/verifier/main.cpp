@@ -2,6 +2,8 @@
 #include <ntta/tta.h>
 #include <timer>
 #include <plugin_system/plugin_system.h>
+#include <ctl_compiler.h>
+#include <verification/forward_reachability.h>
 #include "cli_options.h"
 #include "../cli_common.h"
 
@@ -21,7 +23,7 @@ int main(int argc, char** argv) {
     if(!is_required_provided(cli_arguments, options))
         return print_required_args();
     spdlog::trace("welcome to {0} v{1}", PROJECT_NAME, PROJECT_VER);
-    disable_warnings(cli_arguments["disable-warn"]);
+    disable_warnings(cli_arguments["disable-warn"].as_list_or_default({}));
 
     auto available_plugins = load_plugins(cli_arguments);
     if(cli_arguments["list-plugins"]) {
@@ -44,6 +46,17 @@ int main(int argc, char** argv) {
     spdlog::debug("model parsing took {0}ms", t.milliseconds_elapsed());
 
     // TODO: load the queries
+    t.start();
+    auto s = n->symbols + n->external_symbols;
+    auto query = ctl::compiler{&s}.compile("E F x == 1");
+    spdlog::debug("query parsing took {0}ms", t.milliseconds_elapsed());
+
+    t.start();
+    aaltitoad::forward_reachability_searcher frs{};
+    auto results = frs.is_reachable(*n, query);
+    spdlog::debug("reachability search took {0}ms", t.milliseconds_elapsed());
+    for(auto& result : results)
+        std::cout << result.query << ": " << std::boolalpha << result.solution.has_value() << "\n";
     // TODO: filter unsupported queries out
     // TODO: run the verification
     // TODO: gather and return results

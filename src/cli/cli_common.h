@@ -27,11 +27,9 @@ int print_version() {
     return 0;
 }
 
-void disable_warnings(const argument_t& disable_warns_arg) {
+void disable_warnings(const std::vector<std::string>& disable_warns) {
     aaltitoad::warnings::enable_all();
-    if(!disable_warns_arg)
-        return;
-    for(auto& w : disable_warns_arg.as_list()) {
+    for(auto& w : disable_warns) {
         auto opt = magic_enum::enum_cast<aaltitoad::w_t>(w);
         if(opt.has_value())
             aaltitoad::warnings::disable_warning(opt.value());

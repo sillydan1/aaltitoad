@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
 
     spdlog::trace("Welcome to {0} v{1}", PROJECT_NAME, PROJECT_VER);
 
-    disable_warnings(cli_arguments["disable-warn"]);
+    disable_warnings(cli_arguments["disable-warn"].as_list_or_default({}));
     parse_and_execute_simulator(cli_arguments);
     return 0;
 }
