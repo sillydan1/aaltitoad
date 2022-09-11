@@ -62,6 +62,7 @@ namespace aaltitoad {
         expr::symbol_table_t combined_changes{};
         for(auto& changes : symbol_change_list) {
             if(combined_changes.is_overlapping_and_not_idempotent(changes))
+                // TODO: Also provide the data if high verbosity
                 warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tocker-change application, will overwrite depending on the order");
             combined_changes += changes;
         }
@@ -83,14 +84,14 @@ namespace aaltitoad {
         for(auto component_it = components.begin(); component_it != components.end(); component_it++) {
             std::vector<std::string_view> enabled_edges{};
             for(auto edge : component_it->second.current_location->second.outgoing_edges) {
-                if(!std::get<bool>(eval_guard(i,edge->second.data.guard)))
+                if(!std::get<bool>(i.evaluate(edge->second.data.guard)))
                     continue;
                 edge_dependency_graph_builder.add_node({edge->first.identifier, edge});
                 for(auto& choice : enabled_edges)
                     edge_dependency_graph_builder.add_edge(edge->first.identifier, std::string{choice}, uniqueness_counter++);
                 enabled_edges.push_back(edge->first.identifier);
                 all_enabled_choices[edge->first.identifier] = choice_t{edge,{component_it,edge->second.target},
-                                                                       eval_updates(i,edge->second.data.updates)};
+                                                                       i.evaluate(edge->second.data.updates)};
             }
         }
         // Add overlapping non-idempotent edges to the dependency graph
@@ -99,6 +100,7 @@ namespace aaltitoad {
                 if(it1 == it2)
                     continue;
                 if (it1->second.symbol_changes.is_overlapping_and_not_idempotent(it2->second.symbol_changes)) {
+                    // TODO: Also provide the data if high verbosity
                     warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tick-change calculation");
                     edge_dependency_graph_builder.add_edge(it1->first, it2->first, uniqueness_counter++);
                 }

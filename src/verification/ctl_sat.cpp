@@ -5,7 +5,10 @@ namespace aaltitoad {
         // TODO: This does not work if the ast is more complex than E F predicate
         auto value = false;
         std::visit(ya::overload(
-                [&](const expr::syntax_tree_t& v)   { value = std::get<bool>(expr::interpreter{state.symbols + state.external_symbols}.evaluate(v)); },
+                [&](const expr::syntax_tree_t& v)   {
+                    auto s = state.symbols + state.external_symbols;
+                    value = std::get<bool>(expr::interpreter{s}.evaluate(v));
+                    },
                 [&](const ctl::location_t &v)       {
                     for(auto& component : state.components) {
                         if(component.second.current_location->first == v.location_name) {

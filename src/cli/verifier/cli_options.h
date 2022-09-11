@@ -9,14 +9,14 @@
 
 std::vector<option_t> get_options() {
     return {
-            {"input",       'f', argument_requirement::REQUIRE_ARG,  "(Required) input folder containing diagram files to parse"},
+            {"input",       'f', argument_requirement::REQUIRE_ARG,  "(Required) input folder containing diagram files"},
             {"version",     'V', argument_requirement::NO_ARG,       "Print version and exit"},
             {"verbosity",   'v', argument_requirement::REQUIRE_ARG,  "Set verbosity level (6 for max verbosity)"},
-            {"ignore",      'i', argument_requirement::REQUIRE_ARG,  "Specify a GNU-style regex for filename(s) to ignore"},
+            {"ignore",      'i', argument_requirement::REQUIRE_ARG,  "GNU-style regex for filename(s) to ignore"},
 
-            {"parser",      'p', argument_requirement::REQUIRE_ARG,  "Specify the parser to use"},
+            {"parser",      'p', argument_requirement::REQUIRE_ARG,  "Which parser to use"},
 
-            {"plugin-dir",  'P', argument_requirement::REQUIRE_ARG,  "Specify directories to look for parser plugins"},
+            {"plugin-dir",  'P', argument_requirement::REQUIRE_ARG,  "Directories to look for parser plugins"},
             {"list-plugins",'L', argument_requirement::NO_ARG,       "List found plugins and exit"},
 
             {"disable-warn",'w', argument_requirement::REQUIRE_ARG,  "Disable a warning"},

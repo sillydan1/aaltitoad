@@ -91,6 +91,7 @@ namespace aaltitoad {
         return *this;
     }
     auto ntta_builder::build() const -> ntta_t {
+        // TODO: This moves the (ex)symbols into the return ntta_t, but expr's still have iterators into the old symbols...
         return aaltitoad::ntta_t{symbols, external_symbols, components};
     }
     auto ntta_builder::build_heap() const -> ntta_t* {

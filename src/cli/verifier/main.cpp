@@ -48,15 +48,18 @@ int main(int argc, char** argv) {
     // TODO: load the queries
     t.start();
     auto s = n->symbols + n->external_symbols;
-    auto query = ctl::compiler{&s}.compile("E F x == 1");
+    auto query = ctl::compiler{&s}.compile("E F pubid == 1");
     spdlog::debug("query parsing took {0}ms", t.milliseconds_elapsed());
 
     t.start();
     aaltitoad::forward_reachability_searcher frs{};
     auto results = frs.is_reachable(*n, query);
     spdlog::debug("reachability search took {0}ms", t.milliseconds_elapsed());
-    for(auto& result : results)
+    for(auto& result : results) {
         std::cout << result.query << ": " << std::boolalpha << result.solution.has_value() << "\n";
+        if(result.solution.has_value())
+            std::cout << result.solution.value();
+    }
     // TODO: filter unsupported queries out
     // TODO: run the verification
     // TODO: gather and return results
