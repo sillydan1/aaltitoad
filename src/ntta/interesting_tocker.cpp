@@ -58,24 +58,21 @@ namespace aaltitoad {
     }
 
     auto interesting_tocker::contains_external_variables(const expr::syntax_tree_t& tree, const expr::symbol_table_t& symbols) const -> bool {
-        bool return_value = false;
-        std::visit(ya::overload(
-                [&symbols, &return_value](const expr::symbol_reference_t& r){ return_value |= symbols.contains(r->first); },
-                [&symbols, &return_value](const expr::c_symbol_reference_t& r){ return_value |= symbols.contains(r->first); },
-                [this, &tree, &symbols, &return_value](const expr::root_t& r){
-                    if(!tree.children.empty())
-                        return_value |= contains_external_variables(tree.children[0], symbols);
+        return std::visit(ya::overload(
+                [&symbols](const expr::identifier_t& r){ return symbols.contains(r.ident); },
+                [this, &tree, &symbols](const expr::root_t& r){
+                    if(tree.children.empty())
+                        throw std::logic_error("ROOT node has no children!");
+                    return contains_external_variables(tree.children[0], symbols);
                 },
-                [this, &tree, &symbols, &return_value](const expr::operator_t& r){
-                    for(auto& c : tree.children) {
-                        return_value |= contains_external_variables(c, symbols);
-                        if(return_value)
-                            return;
-                    }
+                [this, &tree, &symbols](const expr::operator_t& r){
+                    return std::any_of(tree.children.begin(), tree.children.end(),
+                                       [&](const auto& c){
+                                           return contains_external_variables(c, symbols);
+                                       });
                 },
-                [](auto&&){}
+                [](auto&&){ return false; }
         ), tree.node);
-        return return_value;
     }
 
     auto interesting_tocker::get_name() -> std::string {

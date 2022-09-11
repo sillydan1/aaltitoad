@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
     // TODO: load the queries
     t.start();
     auto s = n->symbols + n->external_symbols;
-    auto query = ctl::compiler{&s}.compile("E F pubid == 1");
+    auto query = ctl::compiler{{s}}.compile("E F pubid == 1");
     spdlog::debug("query parsing took {0}ms", t.milliseconds_elapsed());
 
     t.start();
