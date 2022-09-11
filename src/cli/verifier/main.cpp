@@ -51,6 +51,8 @@ int main(int argc, char** argv) {
     auto query = ctl::compiler{{s}}.compile("E F pubid == 1");
     spdlog::debug("query parsing took {0}ms", t.milliseconds_elapsed());
 
+    // TODO: filter unsupported queries out
+
     t.start();
     aaltitoad::forward_reachability_searcher frs{};
     auto results = frs.is_reachable(*n, query);
@@ -60,9 +62,9 @@ int main(int argc, char** argv) {
         if(result.solution.has_value())
             std::cout << result.solution.value();
     }
-    // TODO: filter unsupported queries out
-    // TODO: run the verification
+
     // TODO: gather and return results
+
     return 0;
 }
 
