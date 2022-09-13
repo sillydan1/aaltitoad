@@ -21,7 +21,7 @@ SCENARIO("basic reachability", "[frs]") {
             // TODO: ctl::compiler should be able to have more than one symbol table to lookup in, that way we wont need
             //       to manually have a copy of the symbol table on the stack to avoid invalid memory access...
             auto s = n.symbols + n.external_symbols;
-            auto query = ctl::compiler{&s}.compile("E F x == 0");
+            auto query = ctl::compiler{{s}}.compile("E F x == 0");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{};
                 auto results = frs.is_reachable(n, query);
@@ -33,7 +33,7 @@ SCENARIO("basic reachability", "[frs]") {
                         REQUIRE(result.solution.has_value());
                 }
                 AND_THEN("'x' is 0 in the satisfaction state") {
-                    REQUIRE(results.begin()->solution.value()->second.data.symbols.at("x") == expr::symbol_value_t{0});
+                    REQUIRE(std::get<bool>(results.begin()->solution.value()->second.data.symbols.at("x") == 0));
                 }
                 AND_THEN("the trace is printable") {
                     std::cout << results.begin()->solution.value() << std::endl;
@@ -42,7 +42,7 @@ SCENARIO("basic reachability", "[frs]") {
         }
         GIVEN("a simple reachability query 'can L1 be reached?'") {
             auto s = n.symbols + n.external_symbols;
-            auto query = ctl::compiler{&s}.compile("E F L1");
+            auto query = ctl::compiler{{s}}.compile("E F L1");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{};
                 auto results = frs.is_reachable(n, query);
@@ -72,7 +72,7 @@ SCENARIO("basic reachability", "[frs]") {
                 .build_with_interesting_tocker();
         GIVEN("a simple unsatisfiable query 'can x reach 1?'") {
             auto s = n.symbols + n.external_symbols;
-            auto query = ctl::compiler{&s}.compile("E F x == 1");
+            auto query = ctl::compiler{{s}}.compile("E F x == 1");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{};
                 auto results = frs.is_reachable(n, query);
@@ -97,14 +97,14 @@ SCENARIO("basic reachability", "[frs]") {
                 .build_with_interesting_tocker();
         GIVEN("a simple query matching the interesting guard 'E F y > 0'") {
             auto s = n.symbols + n.external_symbols;
-            auto query = ctl::compiler{&s}.compile("E F y > 0");
+            auto query = ctl::compiler{{s}}.compile("E F y > 0");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{};
                 auto results = frs.is_reachable(n, query);
                 THEN("the query is satisfied") {
                     REQUIRE(results.begin()->solution.has_value());
                     auto& y_sym = results.begin()->solution.value()->second.data.external_symbols.at("y");
-                    REQUIRE(y_sym > expr::symbol_value_t{0});
+                    REQUIRE(std::get<bool>(y_sym > expr::symbol_value_t{0}));
                 }
             }
         }
@@ -125,20 +125,20 @@ SCENARIO("basic reachability", "[frs]") {
                 .build_with_interesting_tocker();
         GIVEN("a simple query matching the interesting guard 'E F y > 0'") {
             auto s = n.symbols + n.external_symbols;
-            auto query = ctl::compiler{&s}.compile("E F y > 0");
+            auto query = ctl::compiler{{s}}.compile("E F y > 0");
             WHEN("searching through the state-space with forward reachability search (strategy last)") {
                 aaltitoad::forward_reachability_searcher frs{aaltitoad::pick_strategy::last};
                 auto results = frs.is_reachable(n, query);
                 THEN("the query is satisfied") {
                     REQUIRE(results.begin()->solution.has_value());
                     auto& y_sym = results.begin()->solution.value()->second.data.external_symbols.at("y");
-                    REQUIRE(y_sym > expr::symbol_value_t{0});
+                    REQUIRE(std::get<bool>(y_sym > expr::symbol_value_t{0}));
                 }
             }
         }
         GIVEN("is L2 reachable?") {
             auto s = n.symbols + n.external_symbols;
-            auto query = ctl::compiler{&s}.compile("E F L2");
+            auto query = ctl::compiler{{s}}.compile("E F L2");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{aaltitoad::pick_strategy::random};
                 auto results = frs.is_reachable(n, query);

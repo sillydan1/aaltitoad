@@ -62,7 +62,7 @@ namespace aaltitoad {
                 [&symbols](const expr::identifier_t& r){ return symbols.contains(r.ident); },
                 [this, &tree, &symbols](const expr::root_t& r){
                     if(tree.children.empty())
-                        throw std::logic_error("ROOT node has no children!");
+                        return false;
                     return contains_external_variables(tree.children[0], symbols);
                 },
                 [this, &tree, &symbols](const expr::operator_t& r){
