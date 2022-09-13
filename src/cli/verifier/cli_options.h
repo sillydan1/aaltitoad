@@ -23,6 +23,7 @@ std::vector<option_t> get_options() {
 
             {"disable-warn",'w', argument_requirement::REQUIRE_ARG,  "Disable a warning"},
             {"list-warn",   'W', argument_requirement::NO_ARG,       "List all warnings available"},
+            {"no-warn",     'm', argument_requirement::NO_ARG,       "Disable all warnings"},
     };
 }
 

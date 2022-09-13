@@ -27,7 +27,10 @@ int main(int argc, char** argv) {
 
     spdlog::trace("Welcome to {0} v{1}", PROJECT_NAME, PROJECT_VER);
 
+    if(cli_arguments["no-warn"])
+        aaltitoad::warnings::disable_all();
     disable_warnings(cli_arguments["disable-warn"].as_list_or_default({}));
+
     parse_and_execute_simulator(cli_arguments);
     return 0;
 }

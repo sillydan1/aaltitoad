@@ -24,6 +24,8 @@ int main(int argc, char** argv) {
     if(!is_required_provided(cli_arguments, options))
         return print_required_args();
     spdlog::trace("welcome to {0} v{1}", PROJECT_NAME, PROJECT_VER);
+    if(cli_arguments["no-warn"])
+        aaltitoad::warnings::disable_all();
     disable_warnings(cli_arguments["disable-warn"].as_list_or_default({}));
 
     auto available_plugins = load_plugins(cli_arguments);

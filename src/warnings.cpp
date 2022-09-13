@@ -20,6 +20,11 @@ namespace aaltitoad {
         default_value = true;
     }
 
+    void warnings::disable_all() {
+        for(auto& w : magic_enum::enum_values<w_t>())
+            disable_warning(w);
+    }
+
     auto warnings::descriptions() -> std::unordered_map<w_t, std::string> {
         return {
             {w_t::overlap_idem, "warnings about overlapping non-idempotent symbol table changes"},
