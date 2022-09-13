@@ -18,7 +18,7 @@ namespace aaltitoad {
             query_solution_t(compiled_query_t query) : query{std::move(query)}, solution{} {}
         };
         using solutions_t = std::vector<query_solution_t>;
-        forward_reachability_searcher(const pick_strategy& strategy = pick_strategy::first);
+        explicit forward_reachability_searcher(const pick_strategy& strategy = pick_strategy::first);
         auto is_reachable(const ntta_t& s0, const compiled_query_t& q) -> solutions_t;
         auto is_reachable(const ntta_t& s0, const std::vector<compiled_query_t>& q) -> solutions_t;
 

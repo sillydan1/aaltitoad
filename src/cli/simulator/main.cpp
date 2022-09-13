@@ -9,7 +9,6 @@
 
 void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_arguments);
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
-auto generate_test_ntta() -> std::unique_ptr<aaltitoad::ntta_t>;
 auto instantiate_tocker(const std::string& arg, const plugin_map_t& available_plugins, const aaltitoad::ntta_t& automata) -> std::optional<aaltitoad::tocker_t*>;
 
 int main(int argc, char** argv) {
@@ -130,26 +129,4 @@ auto instantiate_tocker(const std::string& arg, const plugin_map_t& available_pl
         spdlog::error("Error during tocker instantiation: {0}", e.what());
         return {};
     }
-}
-
-auto generate_test_ntta() -> std::unique_ptr<aaltitoad::ntta_t> {
-    aaltitoad::ntta_t::tta_map_t component_map{};
-    expr::symbol_table_t symbols{};
-    expr::compiler compiler{symbols};
-    auto compile_update = [&compiler](const std::string& updates) { compiler.trees = {}; compiler.parse(updates); return compiler.trees; };
-    auto compile_guard = [&compiler](const std::string& guard) { compiler.trees = {}; compiler.parse(guard); return compiler.trees["expression_result"]; };
-    auto empty_guard = compile_guard("");
-    { // TTA A
-        auto factory = aaltitoad::tta_t::graph_builder{};
-        factory.add_nodes({{"L0"},{"L1"}});
-        factory.add_edge("L0", "L1", {.identifier="a", .guard=empty_guard, .updates={}});
-        component_map["A"] = {std::move(factory.build_heap()), "L0"};
-    }
-    { // TTA B
-        auto factory = aaltitoad::tta_t::graph_builder{};
-        factory.add_nodes({{"L0"},{"L1"}});
-        factory.add_edge("L0", "L1", {.identifier="b", .guard=empty_guard, .updates={}});
-        component_map["B"] = {std::move(factory.build_heap()), "L0"};
-    }
-    return std::make_unique<aaltitoad::ntta_t>(symbols, component_map);
 }
