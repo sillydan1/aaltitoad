@@ -6,6 +6,7 @@
 #include <verification/forward_reachability.h>
 #include "cli_options.h"
 #include "../cli_common.h"
+#include "query_json_loader.h"
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
 
@@ -45,17 +46,25 @@ int main(int argc, char** argv) {
     std::unique_ptr<aaltitoad::ntta_t> n{parser(inputs, ignore)};
     spdlog::debug("model parsing took {0}ms", t.milliseconds_elapsed());
 
-    // TODO: load the queries
     t.start();
-    auto s = n->symbols + n->external_symbols;
-    auto query = ctl::compiler{{s}}.compile("E F pubid == 1");
+    std::vector<ctl::compiler::compiled_expr_t> queries{};
+    ctl::compiler ctl_compiler{{n->symbols, n->external_symbols}};
+    for(auto& q : cli_arguments["query"].as_list_or_default({})) {
+        spdlog::trace("compiling query '{0}'", q);
+        queries.emplace_back(ctl_compiler.compile(q));
+    }
+    for(auto& f : cli_arguments["query-file"].as_list_or_default({})) {
+        spdlog::trace("loading queries in file {0}", f);
+        auto json_queries = aaltitoad::load_query_json_file(f, {n->symbols, n->external_symbols});
+        queries.insert(queries.end(), json_queries.begin(), json_queries.end());
+    }
     spdlog::debug("query parsing took {0}ms", t.milliseconds_elapsed());
 
     // TODO: filter unsupported queries out
 
     t.start();
     aaltitoad::forward_reachability_searcher frs{};
-    auto results = frs.is_reachable(*n, query);
+    auto results = frs.is_reachable(*n, queries);
     spdlog::debug("reachability search took {0}ms", t.milliseconds_elapsed());
     for(auto& result : results) {
         std::cout << result.query << ": " << std::boolalpha << result.solution.has_value() << "\n";

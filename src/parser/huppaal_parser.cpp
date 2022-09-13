@@ -23,7 +23,7 @@ namespace aaltitoad::huppaal {
                     if(json_file.contains("name"))
                         builder.add_tta(load_tta(json_file));
                 } catch (std::exception &e) {
-                    spdlog::error("Unable to parse json file {0}: {1}", entry.path().c_str(), e.what());
+                    spdlog::error("unable to parse json file {0}: {1}", entry.path().c_str(), e.what());
                     throw e;
                 }
             }

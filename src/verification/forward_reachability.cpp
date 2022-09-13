@@ -18,9 +18,10 @@ namespace aaltitoad {
     }
 
     auto forward_reachability_searcher::is_reachable(const aaltitoad::ntta_t& s0, const std::vector<compiled_query_t>& q) -> solutions_t {
-        // TODO: statistics on all return statements (trace)
-        // TODO: Catch SIGTERM (ctrl-c) and write statistics (trace)
+        // TODO: statistics on all return statements (info)
+        // TODO: Catch SIGTERM (ctrl-c) and write statistics (info)
         // TODO: Periodically print waiting list size for debugging purposes (debug)
+        // TODO: Tocking clocks (interestingly) should delay the entire symbol_table
         W = {s0}; P = {}; solutions = empty_solution_set(q);
         auto s0_it = P.add(s0);
         for(auto& l : s0.tock()) {
