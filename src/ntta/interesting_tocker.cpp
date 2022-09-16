@@ -19,7 +19,7 @@ namespace aaltitoad {
         try {
             d.result = {};
             d.add_tree(expression);
-            if (d.result.empty())
+            if (d.result.empty() && !d.result.get_delay_amount().has_value())
                 return {};
             return std::optional{d.result};
         } catch(std::domain_error& e) {
@@ -37,7 +37,8 @@ namespace aaltitoad {
             // If this is slow, we should investigate maintaining a cache to avoid iteration
             std::vector<expr::syntax_tree_t> interesting_guards{};
             for(auto& edge : component.second.current_location->second.outgoing_edges) {
-                if(contains_external_variables(edge->second.data.guard, state.external_symbols)) {
+                if(contains_external_variables(edge->second.data.guard, state.external_symbols)
+                || contains_timer_variables(edge->second.data.guard, state.symbols)) {
                     interesting_guards.push_back(edge->second.data.guard);
                     interesting_guards.push_back(expr::syntax_tree_t{expr::operator_t{expr::operator_type_t::_not}}.concat(edge->second.data.guard));
                 }
@@ -53,8 +54,32 @@ namespace aaltitoad {
             return find_solution(d, elements);
         };
         auto perms = ya::generate_permutations(guards, f);
-        spdlog::trace("{0} interesting guards generated {1} permutations", guards.size(), perms.size());
+        spdlog::debug("{0} interesting guards generated {1} permutations", guards.size(), perms.size());
         return perms;
+    }
+
+    auto interesting_tocker::contains_timer_variables(const expr::syntax_tree_t& tree, const expr::symbol_table_t& symbols) const -> bool {
+        auto expr_clock_index = expr::symbol_value_t{expr::clock_t{0}}.index();
+        return std::visit(ya::overload(
+                [&symbols, &expr_clock_index](const expr::identifier_t& r){
+                    if(symbols.contains(r.ident))
+                        if(symbols.find(r.ident)->second.index() == expr_clock_index)
+                            return true;
+                    return false;
+                },
+                [this, &tree, &symbols](const expr::root_t& r){
+                    if(tree.children.empty())
+                        return false;
+                    return contains_timer_variables(tree.children[0], symbols);
+                },
+                [this, &tree, &symbols](const expr::operator_t& r){
+                    return std::any_of(tree.children.begin(), tree.children.end(),
+                                       [&](const auto& c){
+                                           return contains_timer_variables(c, symbols);
+                                       });
+                },
+                [](auto&&){ return false; }
+        ), tree.node);
     }
 
     auto interesting_tocker::contains_external_variables(const expr::syntax_tree_t& tree, const expr::symbol_table_t& symbols) const -> bool {

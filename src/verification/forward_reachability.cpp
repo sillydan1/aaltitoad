@@ -30,6 +30,7 @@ namespace aaltitoad {
                 W.add(s0_it, sp);
         }
         while(!W.empty()) {
+            spdlog::debug("len(W)={0} | len(P)={1}", W.size(), P.size());
             /// Select the next state to search
             auto s = W.pop(strategy);
             /// Does this state complete our query-list?
@@ -48,6 +49,7 @@ namespace aaltitoad {
                     continue;
                 }
                 /// Add tock-space states to W
+                spdlog::trace("'{0}' tock values available", sn_tocks.size());
                 auto sn_it = P.add(s_it, sn);
                 if(check_satisfactions(sn_it))
                     return solutions;
@@ -59,7 +61,7 @@ namespace aaltitoad {
             }
         }
         /// Searched through all of the reachable state-space from s0
-        spdlog::trace("[len(P)={0}] end of reachable state-space", P.size());
+        spdlog::trace("[len(P)={0}, len(W)={1}] end of reachable state-space", P.size(), W.size());
         spdlog::trace("[{0}/{1}] queries with solutions", count_solutions(), solutions.size());
         return solutions;
     }

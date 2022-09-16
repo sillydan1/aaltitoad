@@ -55,6 +55,8 @@ namespace aaltitoad {
     }
 
     void ntta_t::apply(const expr::symbol_table_t &symbol_changes) {
+        if(symbol_changes.get_delay_amount().has_value())
+            symbols.delay(symbol_changes.get_delay_amount().value());
         external_symbols.overwrite_elements(symbol_changes);
     }
 
