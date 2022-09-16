@@ -121,7 +121,7 @@
             "target_location": "Main€FischerBð2đ€L4",
             "select": "",
             "guard": "pubid == 0",
-            "update": "x :=  0;",
+            "update": "x :=  0_ms;",
             "sync": "",
             "nails":
             []
@@ -131,7 +131,7 @@
             "target_location": "Main€FischerBð2đ€L6",
             "select": "",
             "guard": "pubid == 2 && counter == 0",
-            "update": "counter :=  counter +1 ;x :=  0;",
+            "update": "counter :=  counter +1 ;x :=  0_ms;",
             "sync": "",
             "nails":
             []
@@ -151,7 +151,7 @@
             "target_location": "Main€FischerBð2đ€L4",
             "select": "",
             "guard": "x > k && pubid != 2",
-            "update": "x :=  0;",
+            "update": "x :=  0_ms;",
             "sync": "",
             "nails":
             []
