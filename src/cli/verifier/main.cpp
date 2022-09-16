@@ -4,6 +4,7 @@
 #include <plugin_system/plugin_system.h>
 #include <ctl_compiler.h>
 #include <verification/forward_reachability.h>
+#include <ntta/interesting_tocker.h>
 #include "cli_options.h"
 #include "../cli_common.h"
 #include "query_json_loader.h"
@@ -46,6 +47,7 @@ int main(int argc, char** argv) {
     auto parser = std::get<parser_func_t>(available_plugins.at(selected_parser).function);
     ya::timer<int> t{};
     std::unique_ptr<aaltitoad::ntta_t> n{parser(inputs, ignore)};
+    n->add_tocker(std::make_unique<aaltitoad::interesting_tocker>());
     spdlog::debug("model parsing took {0}ms", t.milliseconds_elapsed());
 
     t.start();
@@ -60,23 +62,22 @@ int main(int argc, char** argv) {
         auto json_queries = aaltitoad::load_query_json_file(f, {n->symbols, n->external_symbols});
         queries.insert(queries.end(), json_queries.begin(), json_queries.end());
     }
-    spdlog::debug("query parsing took {0}ms", t.milliseconds_elapsed());
-
     // TODO: filter unsupported queries out
+    spdlog::debug("query parsing took {0}ms", t.milliseconds_elapsed());
 
     t.start();
     aaltitoad::forward_reachability_searcher frs{};
     auto results = frs.is_reachable(*n, queries);
     spdlog::debug("reachability search took {0}ms", t.milliseconds_elapsed());
+
+    // TODO: gather and return results
     for(auto& result : results) {
         std::cout << result.query << ": " << std::boolalpha << result.solution.has_value() << "\n";
         if(result.solution.has_value())
             std::cout << result.solution.value();
     }
 
-    // TODO: gather and return results
-
-    return 0;
+    return 0; // TODO: Maybe return unsolved query count
 }
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t {

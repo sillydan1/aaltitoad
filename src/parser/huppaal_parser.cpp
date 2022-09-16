@@ -43,18 +43,26 @@ namespace aaltitoad::huppaal {
     void load_declarations(ntta_builder2& b, const nlohmann::json& json_file) {
         if(json_file.contains("declarations"))
             b.add_declarations(json_file["declarations"]);
-        if(json_file.contains("parts"))
-            for(auto& p : json_file["parts"])
-                // TODO: Missing external/internal check
+        if(json_file.contains("parts")) {
+            for (auto& p: json_file["parts"]) {
+                auto part = load_part(p);
+                if(p.contains("External")) {
+                    if(p["External"]) {
+                        b.add_external_declarations(load_part(p));
+                        continue;
+                    }
+                }
                 b.add_declarations(load_part(p));
+            }
+        }
     }
 
     auto load_part(const nlohmann::json& json_file) -> std::string {
         std::stringstream ss{};
         if(json_file["SpecificType"].contains("Variable"))
             ss << (std::string)json_file["PartName"] << " := " << json_file["SpecificType"]["Variable"]["Value"];
-        else if(json_file["SpecificType"].contains("Timer")) // TODO: support timers/clocks in expr
-            ss << (std::string)json_file["PartName"] << " := " << json_file["SpecificType"]["Timer"]["Value"];
+        else if(json_file["SpecificType"].contains("Timer"))
+            ss << (std::string)json_file["PartName"] << " := " << json_file["SpecificType"]["Timer"]["Value"] << "_ms";
         else
             throw std::logic_error("invalid piece of json: "+to_string(json_file));
         return ss.str();
