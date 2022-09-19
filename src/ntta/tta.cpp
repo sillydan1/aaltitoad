@@ -92,8 +92,8 @@ namespace aaltitoad {
                 for(auto& choice : enabled_edges)
                     edge_dependency_graph_builder.add_edge(edge->first.identifier, std::string{choice}, uniqueness_counter++);
                 enabled_edges.push_back(edge->first.identifier);
-                all_enabled_choices[edge->first.identifier] = choice_t{edge,{component_it,edge->second.target},
-                                                                       i.evaluate(edge->second.data.updates)};
+                all_enabled_choices.insert({edge->first.identifier, choice_t{edge,{component_it,edge->second.target},
+                                                                       i.evaluate(edge->second.data.updates)}});
             }
         }
         // Add overlapping non-idempotent edges to the dependency graph
