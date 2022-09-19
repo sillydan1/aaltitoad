@@ -4,11 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [v0.11.0](https://github.com/sillydan1/AALTITOAD/releases/tag/v0.11.0) - 2022-09-11
+## [v0.11.0](https://github.com/sillydan1/AALTITOAD/releases/tag/v0.11.0) - 2022-09-19
 
 <small>[Compare with v0.10.2](https://github.com/sillydan1/AALTITOAD/compare/v0.10.2...v0.11.0)</small>
 
 ### Bug Fixes
+- Forgot to update fischer-10 ([3509839](https://github.com/sillydan1/AALTITOAD/commit/3509839dd5de270fa9196ac17382c5b21ccece21) by Asger Gitz-Johansen).
+- Interesting tocker will now actually handle clock delay stuff ([dde1f65](https://github.com/sillydan1/AALTITOAD/commit/dde1f65200fd37f04c899aba1e55604bf7b69a5d) by Asger Gitz-Johansen).
+- Fischer-2/5 test sets should reset their timer to 0_ms instead of 0 ([23ce8c6](https://github.com/sillydan1/AALTITOAD/commit/23ce8c61d357d27497079e36d11e01f060ef6c60) by Asger Gitz-Johansen).
+- Fix compilation issues ([4f8fe0e](https://github.com/sillydan1/AALTITOAD/commit/4f8fe0e91ce525b2f308f904ccf7f13743565430) by Asger Gitz-Johansen).
+- Fix new expr and ctl-expr usages ([228ee15](https://github.com/sillydan1/AALTITOAD/commit/228ee15328fc9eca7535f90c604da1220125de41) by Asger Gitz-Johansen).
 - Add huppaal_parser unit tests ([e7d2697](https://github.com/sillydan1/AALTITOAD/commit/e7d26974f297e536eca9ab0ebbaa4efe05ef1187) by Asger Gitz-Johansen).
 - Handle edge case when query is reachable after initial tock ([79f5904](https://github.com/sillydan1/AALTITOAD/commit/79f59048ff1f9271588712f61ff2d1dcb9b8cff4) by Asger Gitz-Johansen).
 - Forgot about external_variables in operator<< and operator+ for ntta_t ([b1bb2bb](https://github.com/sillydan1/AALTITOAD/commit/b1bb2bbe64c4d5ce87894be23391df1e71d216f4) by Asger Gitz-Johansen).
@@ -28,6 +33,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add some extra tocker information trace logs ([33cef48](https://github.com/sillydan1/AALTITOAD/commit/33cef48f8c7619c000dfee714cab946e1b8662e2) by Asger Gitz-Johansen).
 
 ### Features
+- Add --no-warn command line option to verifier and simulator ([968dd80](https://github.com/sillydan1/AALTITOAD/commit/968dd80278a2b38a82524a52bb2f6649a4effa4f) by Asger Gitz-Johansen).
+- Add query file and direct query to verifier cli ([c8163d3](https://github.com/sillydan1/AALTITOAD/commit/c8163d3e369c71c47f41ebd509cdcc101a497790) by Asger Gitz-Johansen).
 - Add verifier cli ([0015d9e](https://github.com/sillydan1/AALTITOAD/commit/0015d9e98d2d1ca6b002c02f2ebc2b97ddc5cee7) by Asger Gitz-Johansen).
 - Add regex-style ignore lists ([c864251](https://github.com/sillydan1/AALTITOAD/commit/c8642513265b6bc4876d101616b80b4ea7f1bdfe) by Asger Gitz-Johansen).
 - Add ntta builder that works on strings ([54f73dd](https://github.com/sillydan1/AALTITOAD/commit/54f73dd9f954be41e973352e986f029bf1e11588) by Asger Gitz-Johansen).
