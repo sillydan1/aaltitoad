@@ -79,7 +79,7 @@ namespace aaltitoad {
                                        });
                 },
                 [](auto&&){ return false; }
-        ), tree.node);
+        ), static_cast<const expr::underlying_syntax_node_t&>(tree.node));
     }
 
     auto interesting_tocker::contains_external_variables(const expr::syntax_tree_t& tree, const expr::symbol_table_t& symbols) const -> bool {
@@ -97,7 +97,7 @@ namespace aaltitoad {
                                        });
                 },
                 [](auto&&){ return false; }
-        ), tree.node);
+        ), static_cast<const expr::underlying_syntax_node_t&>(tree.node));
     }
 
     auto interesting_tocker::get_name() -> std::string {

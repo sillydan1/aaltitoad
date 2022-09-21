@@ -46,7 +46,7 @@ namespace aaltitoad {
                         default: throw std::logic_error("not a valid raw CTL operator");
                     }},
                 [](auto&&) { std::cerr << "not here!" << std::endl; }
-        ), ast.node);
+        ), static_cast<const ctl::underlying_syntax_node_t&>(ast.node));
         return value;
     }
 }
