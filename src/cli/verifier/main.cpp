@@ -47,7 +47,6 @@ int main(int argc, char** argv) {
     auto parser = std::get<parser_func_t>(available_plugins.at(selected_parser).function);
     ya::timer<int> t{};
     std::unique_ptr<aaltitoad::ntta_t> n{parser(inputs, ignore)};
-    n->add_tocker(std::make_unique<aaltitoad::interesting_tocker>());
     spdlog::debug("model parsing took {0}ms", t.milliseconds_elapsed());
 
     t.start();
@@ -65,6 +64,8 @@ int main(int argc, char** argv) {
     // TODO: filter unsupported queries out
     spdlog::debug("query parsing took {0}ms", t.milliseconds_elapsed());
 
+    n->add_tocker(std::make_unique<aaltitoad::interesting_tocker>());
+    spdlog::trace("starting reachability search for {0} queries", queries.size());
     t.start();
     aaltitoad::forward_reachability_searcher frs{};
     auto results = frs.is_reachable(*n, queries);
