@@ -13,7 +13,7 @@ namespace aaltitoad::huppaal {
         return *this;
     }
 
-    auto scoped_template_builder::instantiate_tta_recursively(const model::tta_instance_t& instance) -> std::vector<tta_t> {
+    auto scoped_template_builder::instantiate_tta_recursively(const model::tta_instance_t& instance) -> std::vector<tta_t> { // NOLINT(misc-no-recursion)
         std::vector<tta_t> result{};
         if(!templates.contains(instance.tta_template_name)) {
             spdlog::error("'{0}': no such template", instance.tta_template_name);
@@ -49,19 +49,24 @@ namespace aaltitoad::huppaal {
     }
 
     auto scoped_template_builder::build_heap() -> ntta_t* {
-        // Find the "Main" component and instantiate it
-        // Instantiate from there
-        auto main_it = std::find_if(templates.begin(), templates.end(),
-                  [](const auto& t){ return t.second.is_main; });
+        auto main_it = std::find_if(templates.begin(), templates.end(),[](const auto& t){ return t.second.is_main; });
         if(main_it == templates.end())
             throw parse_error("no main template");
+
+        // TODO: Check for only One Main Component
+        //       Check for duplicate Locations For Each Component
+        //       Check for duplicate Locations
+        //       Check for strongly Connected Component Declarations
+
         ntta_builder builder{};
         // TODO: add Global symbols (when the rest of aaltitoad support expr::tree_interpreter)
         // TODO: extend expr to expose the "access" of a declaration (i.e. public => global, anything else => local)
 
-        // TODO: Check for infinite recursion (build dependency graph and look for SCCs) in instances
+        throw_if_infinite_recursion_in_dependencies();
+
         // TODO: instantiate the main component too
         // TODO: use stl parallel constructs to compile faster
+        spdlog::trace("building ntta from main component: '{0}'", main_it->second.name);
         for(auto& instance : main_it->second.instances) {
             auto tta_instances = instantiate_tta_recursively(instance);
             for(auto& tta : tta_instances)
@@ -70,8 +75,37 @@ namespace aaltitoad::huppaal {
         return builder.build_heap();
     }
 
-    auto scoped_template_builder::find_instance_sccs() -> std::vector<std::vector<std::string>> {
-        
-        return {};
+    auto scoped_template_builder::find_instance_sccs() -> std::vector<scc_t<std::string,std::string,std::string>> {
+        spdlog::trace("looking for infinite recursive structures");
+        auto template_dependency_graph_builder = ya::graph_builder<std::string,std::string>{};
+        for(auto& t : templates) {
+            template_dependency_graph_builder.add_node({t.first});
+            for(auto& i : t.second.instances)
+                template_dependency_graph_builder.add_edge(t.first, i.tta_template_name, " instantiates ");
+        }
+        auto g = template_dependency_graph_builder.build();
+        return tarjan(g);
+    }
+
+    void scoped_template_builder::throw_if_infinite_recursion_in_dependencies() {
+        auto recursive_instantiations = find_instance_sccs();
+        if(!recursive_instantiations.empty()) {
+            spdlog::info("SCCs:");
+            for(auto& scc : recursive_instantiations) {
+                std::stringstream ss{};
+                for(auto& s: scc)
+                    for(auto& e: s->second.outgoing_edges)
+                        ss << "<"
+                           << e->second.source->second.data
+                           << e->first
+                           << e->second.target->second.data
+                           << ">\n";
+                spdlog::info("\n[\n{0}]", ss.str());
+            }
+            // TODO: this might throw all the time (iirc, the tarjan algorithm includes trivial components)
+            throw parse_error("cannot instantiate network due to infinitely recursive instantiation, "
+                              "set verbosity to info or higher for further information");
+        }
+        spdlog::trace("model doesn't have recursive instantiation");
     }
 }

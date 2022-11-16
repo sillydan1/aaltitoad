@@ -18,19 +18,19 @@ namespace aaltitoad::huppaal {
                         continue;
                     }
 
-                    spdlog::trace("loading file {0}", entry.path().c_str());
                     std::ifstream input_filestream(entry.path());
                     auto json_file = nlohmann::json::parse(input_filestream);
                     if(json_file.contains("name")) {
-                        spdlog::trace("file is a template");
+                        spdlog::trace("loading file {0}", entry.path().c_str());
                         builder.add_template(json_file.get<model::tta_template>());
-                    } else {
-                        spdlog::trace("file is a symbols declaration file");
+                    } else if(json_file.contains("parts")) {
+                        spdlog::trace("loading file {0}", entry.path().c_str());
                         builder.add_global_symbols(load_part(json_file));
-                    }
+                    } else
+                        spdlog::trace("ignoring file {0} (not a valid model file)", entry.path().c_str());
                 } catch (std::exception &e) {
                     spdlog::error("unable to parse json file {0}: {1}", entry.path().c_str(), e.what());
-                    throw e;
+                    throw e; // todo: accumulate errors and throw in the end
                 }
             }
         }
@@ -47,11 +47,12 @@ namespace aaltitoad::huppaal {
     }
 
     auto load_part(const nlohmann::json& json_file) -> std::string {
+        spdlog::trace("loading parts file");
         std::stringstream ss{};
-        if(json_file["SpecificType"].contains("Variable"))
-            ss << (std::string)json_file["PartName"] << " := " << json_file["SpecificType"]["Variable"]["Value"];
-        else if(json_file["SpecificType"].contains("Timer"))
-            ss << (std::string)json_file["PartName"] << " := " << json_file["SpecificType"]["Timer"]["Value"] << "_ms";
+        if(json_file.at("SpecificType").contains("Variable"))
+            ss << (std::string)json_file.at("PartName") << " := " << json_file.at("SpecificType").at("Variable").at("Value");
+        else if(json_file.at("SpecificType").contains("Timer"))
+            ss << (std::string)json_file.at("PartName") << " := " << json_file.at("SpecificType").at("Timer").at("Value") << "_ms";
         else
             throw std::logic_error("invalid piece of json: "+to_string(json_file));
         return ss.str();

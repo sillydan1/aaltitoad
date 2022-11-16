@@ -2,6 +2,7 @@
 #define AALTITOAD_SCOPED_TEMPLATE_BUILDER_H
 #include "model.h"
 #include <ntta/tta.h>
+#include <extensions/tarjan.h>
 
 namespace aaltitoad::huppaal {
     class scoped_template_builder {
@@ -15,7 +16,8 @@ namespace aaltitoad::huppaal {
         auto build_heap() -> ntta_t*;
     private:
         auto instantiate_tta_recursively(const model::tta_instance_t& instance) -> std::vector<tta_t>;
-        auto find_instance_sccs() -> std::vector<std::vector<std::string>>;
+        auto find_instance_sccs() -> std::vector<scc_t<std::string,std::string,std::string>>;
+        void throw_if_infinite_recursion_in_dependencies();
     };
 }
 

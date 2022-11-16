@@ -23,7 +23,7 @@ void strong_connect(ya::node_refference<T,E,K> v,
                     tarjan_stack<T,E,K>& stack,
                     std::vector<scc_t<T,E,K>>& sccs) {
     decorations.insert(std::make_pair(v->first, tarjan_decoration{.index=index, .low_link=index, .on_stack=true}));
-    auto& decoration_v = decorations[v->first];
+    auto& decoration_v = decorations.at(v->first);
     stack.push(v);
     index++;
 
@@ -36,19 +36,20 @@ void strong_connect(ya::node_refference<T,E,K> v,
             decoration_v.low_link = std::min(decoration_v.low_link, decorations.at(w->first).index);
     }
 
-    if(decoration_v.low_link == decoration_v.index) {
-        scc_t<T,E,K> scc{};
-        auto& w = stack.top();
-        while(decorations.at(w->first).index >= decoration_v.index) {
-            stack.pop();
-            decorations.at(w->first).on_stack = false;
-            scc.push_back(w);
-            if(stack.empty())
-                break;
-            w = stack.top();
-        }
-        sccs.push_back(scc);
+    if(decoration_v.low_link != decoration_v.index)
+        return;
+
+    scc_t<T,E,K> scc{};
+    auto& w = stack.top();
+    while(decorations.at(w->first).index >= decoration_v.index) {
+        stack.pop();
+        decorations.at(w->first).on_stack = false;
+        scc.push_back(w);
+        if(stack.empty())
+            break;
+        w = stack.top();
     }
+    sccs.push_back(scc);
 }
 
 template<typename T, typename E, typename K>
@@ -59,7 +60,7 @@ auto tarjan(ya::graph<T,E,K>& input_graph) {
     for(auto v = input_graph.nodes.begin(); v != input_graph.nodes.end(); ++v) {
         if(!search_decorations.contains(v->first)) {
             tarjan_stack<T,E,K> S{};
-            strong_connect(v, input_graph, search_decorations, index, S, sccs);
+            strong_connect<T,E,K>(v, input_graph, search_decorations, index, S, sccs);
         }
     }
     return sccs;
