@@ -24,7 +24,6 @@ int main(int argc, char** argv) {
         return print_help(argv[0], options);
     if(!is_required_provided(cli_arguments, options))
         return print_required_args();
-
     spdlog::trace("Welcome to {0} v{1}", PROJECT_NAME, PROJECT_VER);
 
     if(cli_arguments["no-warn"])
