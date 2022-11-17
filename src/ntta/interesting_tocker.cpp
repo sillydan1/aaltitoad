@@ -68,12 +68,12 @@ namespace aaltitoad {
                     return false;
                 },
                 [this, &tree, &symbols](const expr::root_t& r){
-                    if(tree.children.empty())
+                    if(tree.children().empty())
                         return false;
-                    return contains_timer_variables(tree.children[0], symbols);
+                    return contains_timer_variables(tree.children()[0], symbols);
                 },
                 [this, &tree, &symbols](const expr::operator_t& r){
-                    return std::any_of(tree.children.begin(), tree.children.end(),
+                    return std::any_of(tree.children().begin(), tree.children().end(),
                                        [&](const auto& c){
                                            return contains_timer_variables(c, symbols);
                                        });
@@ -86,12 +86,12 @@ namespace aaltitoad {
         return std::visit(ya::overload(
                 [&symbols](const expr::identifier_t& r){ return symbols.contains(r.ident); },
                 [this, &tree, &symbols](const expr::root_t& r){
-                    if(tree.children.empty())
+                    if(tree.children().empty())
                         return false;
-                    return contains_external_variables(tree.children[0], symbols);
+                    return contains_external_variables(tree.children()[0], symbols);
                 },
                 [this, &tree, &symbols](const expr::operator_t& r){
-                    return std::any_of(tree.children.begin(), tree.children.end(),
+                    return std::any_of(tree.children().begin(), tree.children().end(),
                                        [&](const auto& c){
                                            return contains_external_variables(c, symbols);
                                        });

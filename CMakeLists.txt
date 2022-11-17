@@ -31,7 +31,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
 # TODO: Implement timers/clocks-support
-CPMAddPackage(NAME expr VERSION 2.0.0 GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
+CPMAddPackage(NAME expr GIT_TAG feature/tree_interpreter GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
 CPMAddPackage(NAME argvparse VERSION 1.2.3 GITHUB_REPOSITORY sillydan1/argvparse)
 CPMAddPackage(NAME ctl-expr GIT_TAG main GITHUB_REPOSITORY sillydan1/ctl-expr)
 
@@ -40,7 +40,7 @@ CPMAddPackage("gh:yalibs/yaoverload@1.0.0")
 CPMAddPackage("gh:yalibs/yahashcombine@1.0.0")
 CPMAddPackage("gh:yalibs/yathreadpool@1.0.1")
 CPMAddPackage("gh:yalibs/yagraph@1.0.5")
-CPMAddPackage("gh:yalibs/yatree@1.0.0")
+CPMAddPackage("gh:yalibs/yatree@1.2.0")
 CPMAddPackage("gh:yalibs/yauuid@1.0.1")
 CPMAddPackage("gh:yalibs/yasetwrappers@1.0.0")
 CPMAddPackage("gh:yalibs/yapermutation#main")
