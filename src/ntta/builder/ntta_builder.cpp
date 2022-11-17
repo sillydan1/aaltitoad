@@ -1,3 +1,4 @@
+#include <extensions/exceptions/parse_error.h>
 #include "ntta_builder.h"
 
 namespace aaltitoad {
@@ -5,6 +6,13 @@ namespace aaltitoad {
      : symbols{symbols + external_symbols}, factory{}, empty_guard{}, starting_location{}
     {
         empty_guard = compile_guard("");
+    }
+    auto tta_builder::get_name() -> std::optional<std::string> {
+        return tta_name;
+    }
+    auto tta_builder::set_name(const std::string& name) -> tta_builder& {
+        tta_name = name;
+        return *this;
     }
     auto tta_builder::set_starting_location(const std::string& name) -> tta_builder& {
         starting_location = name;
@@ -54,6 +62,12 @@ namespace aaltitoad {
 
     ntta_builder::ntta_builder() : components{}, symbols{} {
 
+    }
+    auto ntta_builder::add_tta(tta_builder& builder) -> ntta_builder& {
+        if(builder.get_name().has_value())
+            throw parse_error("cannot construct ntta: tta builder does not have a name set");
+        components[builder.get_name().value()] = builder.build();
+        return *this;
     }
     auto ntta_builder::add_tta(const std::string& name, tta_builder& builder) -> ntta_builder& {
         components[name] = builder.build();

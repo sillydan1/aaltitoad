@@ -49,7 +49,7 @@ namespace aaltitoad {
                     continue;
                 }
                 /// Add tock-space states to W
-                spdlog::trace("'{0}' tock values available", sn_tocks.size());
+                spdlog::trace("{0} tock values available", sn_tocks.size());
                 auto sn_it = P.add(s_it, sn);
                 if(check_satisfactions(sn_it))
                     return solutions;

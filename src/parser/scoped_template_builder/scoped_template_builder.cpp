@@ -13,7 +13,7 @@ namespace aaltitoad::huppaal {
         return *this;
     }
 
-    auto scoped_template_builder::instantiate_tta_recursively(const model::tta_instance_t& instance) -> std::vector<tta_t> { // NOLINT(misc-no-recursion)
+    auto scoped_template_builder::instantiate_tta_recursively(const model::tta_instance_t& instance, const std::string& parent_name) -> std::vector<tta_t> { // NOLINT(misc-no-recursion)
         std::vector<tta_t> result{};
         if(!templates.contains(instance.tta_template_name)) {
             spdlog::error("'{0}': no such template", instance.tta_template_name);
@@ -21,12 +21,17 @@ namespace aaltitoad::huppaal {
         }
 
         tta_builder builder{internal_symbols, external_symbols};
+        builder.set_name(parent_name + "." + instance.invocation);
         auto& t = templates.at(instance.tta_template_name);
+
+        // TODO: Check for duplicate Locations (uuids & nicknames)
         for(auto& location : t.locations)
             builder.add_location(location.id);
         builder.set_starting_location(t.initial_location.id);
+
         // TODO: parameterize declarations
-        // TODO: compile declarations - add to current scope (internal only)
+        // TODO: compile declarations
+        // TODO: add to current scope (internal only ('public' variables should be put into the root scope))
 
         for(auto& edge : t.edges) {
             // TODO: parameterize guards & updates
@@ -42,7 +47,7 @@ namespace aaltitoad::huppaal {
 
         result.push_back(builder.build());
         for(auto& i : t.instances) { // TODO: support sequentially composed TTAs
-            auto instances = instantiate_tta_recursively(i);
+            auto instances = instantiate_tta_recursively(i, parent_name + "." + instance.invocation);
             result.insert(result.end(), instances.begin(), instances.end());
         }
         return result;
@@ -52,12 +57,6 @@ namespace aaltitoad::huppaal {
         auto main_it = std::find_if(templates.begin(), templates.end(),[](const auto& t){ return t.second.is_main; });
         if(main_it == templates.end())
             throw parse_error("no main template");
-
-        // TODO: Check for only One Main Component
-        //       Check for duplicate Locations For Each Component
-        //       Check for duplicate Locations
-        //       Check for strongly Connected Component Declarations
-
         ntta_builder builder{};
         // TODO: add Global symbols (when the rest of aaltitoad support expr::tree_interpreter)
         // TODO: extend expr to expose the "access" of a declaration (i.e. public => global, anything else => local)
@@ -68,7 +67,7 @@ namespace aaltitoad::huppaal {
         // TODO: use stl parallel constructs to compile faster
         spdlog::trace("building ntta from main component: '{0}'", main_it->second.name);
         for(auto& instance : main_it->second.instances) {
-            auto tta_instances = instantiate_tta_recursively(instance);
+            auto tta_instances = instantiate_tta_recursively(instance, main_it->second.name);
             for(auto& tta : tta_instances)
                 builder.add_tta(instance.id, tta);
         }

@@ -15,7 +15,7 @@ namespace aaltitoad::huppaal {
         auto add_global_symbols(const std::string& d) -> scoped_template_builder&;
         auto build_heap() -> ntta_t*;
     private:
-        auto instantiate_tta_recursively(const model::tta_instance_t& instance) -> std::vector<tta_t>;
+        auto instantiate_tta_recursively(const model::tta_instance_t& instance, const std::string& parent_name) -> std::vector<tta_t>;
         auto find_instance_sccs() -> std::vector<scc_t<std::string,std::string,std::string>>;
         void throw_if_infinite_recursion_in_dependencies();
     };
