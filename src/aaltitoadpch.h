@@ -44,7 +44,7 @@
 #include <spdlog/spdlog.h>
 
 // Other
-#include <extensions/string_extensions.h>
+#include <util/string_extensions.h>
 
 // Debug files
 #ifndef NDEBUG

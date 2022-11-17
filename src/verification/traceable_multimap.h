@@ -2,8 +2,8 @@
 #define AALTITOAD_TRACEABLE_MULTIMAP_H
 #include <map>
 #include "pick_strategy.h"
-#include "extensions/exceptions/not_implemented_yet_exception.h"
-#include "extensions/random.h"
+#include "util/exceptions/not_implemented_yet_exception.h"
+#include "util/random.h"
 
 namespace aaltitoad {
     template<typename T>

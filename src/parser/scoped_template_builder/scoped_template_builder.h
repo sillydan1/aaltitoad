@@ -2,7 +2,7 @@
 #define AALTITOAD_SCOPED_TEMPLATE_BUILDER_H
 #include "model.h"
 #include <ntta/tta.h>
-#include <extensions/tarjan.h>
+#include <util/tarjan.h>
 
 namespace aaltitoad::huppaal {
     class scoped_template_builder {

@@ -89,8 +89,8 @@ set(${PROJECT_NAME}_SOURCES
         src/verification/forward_reachability.cpp
         src/verification/ctl_sat.cpp
         src/warnings.cpp
-        src/extensions/random.cpp
-        src/extensions/string_extensions.cpp)
+        src/util/random.cpp
+        src/util/string_extensions.cpp)
 
 add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES})
 if(${CODE_COVERAGE})

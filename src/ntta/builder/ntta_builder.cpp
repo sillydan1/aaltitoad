@@ -1,4 +1,4 @@
-#include <extensions/exceptions/parse_error.h>
+#include <util/exceptions/parse_error.h>
 #include "ntta_builder.h"
 
 namespace aaltitoad {

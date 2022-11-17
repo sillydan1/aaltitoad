@@ -1,6 +1,6 @@
 #include "scoped_template_builder.h"
 #include <ntta/builder/ntta_builder.h>
-#include <extensions/exceptions/parse_error.h>
+#include <util/exceptions/parse_error.h>
 
 namespace aaltitoad::huppaal {
     auto scoped_template_builder::add_template(const model::tta_template& t) -> scoped_template_builder& {

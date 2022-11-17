@@ -19,7 +19,7 @@
 #include <aaltitoadpch.h>
 #include <cctype>
 #include <regex>
-#include <extensions/string_extensions.h>
+#include <util/string_extensions.h>
 
 std::vector<std::string> split(const std::string& s, char delimiter)  {
     std::vector<std::string> tokens;

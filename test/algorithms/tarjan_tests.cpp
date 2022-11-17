@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include "extensions/tarjan.h"
+#include "util/tarjan.h"
 
 template<typename T, typename E, typename K>
 bool compare_scc(const scc_t<T,E,K>& actual, const std::vector<T>& expected) {
