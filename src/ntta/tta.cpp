@@ -3,7 +3,7 @@
 #include <setwrappers>
 #include <algorithm>
 #include <spdlog/spdlog.h>
-#include <warnings.h>
+#include <util/warnings.h>
 
 namespace aaltitoad {
     auto ntta_t::state_change_t::operator+=(const choice_t& v) -> state_change_t & {

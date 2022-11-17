@@ -5,7 +5,7 @@
 #include <iostream>
 #include <config.h>
 #include <magic_enum.hpp>
-#include <warnings.h>
+#include <util/warnings.h>
 
 int print_required_args() {
     std::cout << "Required arguments:\n";

@@ -1,7 +1,7 @@
 #ifndef AALTITOAD_CLI_OPTIONS_H
 #define AALTITOAD_CLI_OPTIONS_H
 #include <argvparse.h>
-#include <warnings.h>
+#include <util/warnings.h>
 #include <magic_enum.hpp>
 
 std::vector<option_t> get_options() {

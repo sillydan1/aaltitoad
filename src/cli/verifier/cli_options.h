@@ -5,7 +5,7 @@
 #include <iostream>
 #include <config.h>
 #include <magic_enum.hpp>
-#include <warnings.h>
+#include <util/warnings.h>
 
 std::vector<option_t> get_options() {
     return {

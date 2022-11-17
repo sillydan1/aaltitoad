@@ -87,7 +87,7 @@ set(${PROJECT_NAME}_SOURCES
         src/plugin_system/plugin_system.cpp
         src/verification/forward_reachability.cpp
         src/verification/ctl/ctl_sat.cpp
-        src/warnings.cpp
+        src/util/warnings.cpp
         src/util/random.cpp
         src/util/string_extensions.cpp)
 
