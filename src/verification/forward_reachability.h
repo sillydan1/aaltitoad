@@ -1,6 +1,6 @@
 #ifndef AALTITOAD_FORWARD_REACHABILITY_H
 #define AALTITOAD_FORWARD_REACHABILITY_H
-#include "ctl_sat.h"
+#include "verification/ctl/ctl_sat.h"
 #include "ntta/tta.h"
 #include "traceable_multimap.h"
 #include <ctl_compiler.h>
