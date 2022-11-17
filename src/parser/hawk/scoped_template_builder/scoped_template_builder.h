@@ -4,7 +4,7 @@
 #include <ntta/tta.h>
 #include <util/tarjan.h>
 
-namespace aaltitoad::huppaal {
+namespace aaltitoad::hawk {
     class scoped_template_builder {
         std::unordered_map<std::string, model::tta_template> templates{};
         std::vector<std::string> global_symbol_declarations{};

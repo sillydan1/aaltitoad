@@ -2,7 +2,7 @@
 #include <ntta/builder/ntta_builder.h>
 #include <util/exceptions/parse_error.h>
 
-namespace aaltitoad::huppaal {
+namespace aaltitoad::hawk {
     auto scoped_template_builder::add_template(const model::tta_template& t) -> scoped_template_builder& {
         templates[t.name] = t;
         return *this;

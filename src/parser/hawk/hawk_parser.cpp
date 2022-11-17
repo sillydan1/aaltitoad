@@ -1,12 +1,12 @@
-#include "huppaal_parser.h"
+#include "hawk_parser.h"
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 #include <ntta/builder/ntta_builder_2.h>
-#include "scoped_template_builder/scoped_template_builder.h"
+#include "parser/hawk/scoped_template_builder/scoped_template_builder.h"
 
-namespace aaltitoad::huppaal {
+namespace aaltitoad::hawk {
     auto load(const std::vector<std::string>& filepaths, const std::vector<std::string> &ignore_list) -> aaltitoad::ntta_t* {
         // TODO: use stl parallel constructs to load files faster
         scoped_template_builder builder{};
@@ -61,7 +61,7 @@ namespace aaltitoad::huppaal {
 
 extern "C" {
     const char* get_plugin_name() {
-        return "huppaal_parser";
+        return "hawk_parser";
     }
     const char* get_plugin_version() {
         return "v1.0.0";
@@ -70,6 +70,6 @@ extern "C" {
         return plugin_type::parser;
     }
     aaltitoad::ntta_t* load(const std::vector<std::string>& folders, const std::vector<std::string>& ignore_list) {
-        return aaltitoad::huppaal::load(folders, ignore_list);
+        return aaltitoad::hawk::load(folders, ignore_list);
     }
 }

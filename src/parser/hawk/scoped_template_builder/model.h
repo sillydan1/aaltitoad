@@ -2,7 +2,7 @@
 #define AALTITOAD_MODEL_H
 #include <nlohmann/json.hpp>
 
-namespace aaltitoad::huppaal::model {
+namespace aaltitoad::hawk::model {
     enum class urgency_t {
         normal, urgent, committed, invalid=-1
     };

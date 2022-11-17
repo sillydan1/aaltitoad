@@ -1,7 +1,7 @@
 #include "model.h"
 #include <uuid>
 
-namespace aaltitoad::huppaal::model {
+namespace aaltitoad::hawk::model {
     void from_json(const nlohmann::json& j, urgency_t& e) {
         static const std::pair<urgency_t, nlohmann::json> m[] = {
                 {urgency_t::invalid, nullptr},

@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include <parser/huppaal_parser.h>
+#include <parser/hawk/hawk_parser.h>
 #ifndef AALTITOAD_PROJECT_DIR
 #define AALTITOAD_PROJECT_DIR "."
 #endif
