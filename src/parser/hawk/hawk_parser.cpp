@@ -3,8 +3,7 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
-#include <ntta/builder/ntta_builder_2.h>
-#include "parser/hawk/scoped_template_builder/scoped_template_builder.h"
+#include "scoped_template_builder/scoped_template_builder.h"
 
 namespace aaltitoad::hawk {
     auto load(const std::vector<std::string>& filepaths, const std::vector<std::string> &ignore_list) -> aaltitoad::ntta_t* {

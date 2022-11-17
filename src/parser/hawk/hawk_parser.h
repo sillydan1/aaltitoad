@@ -2,7 +2,6 @@
 #define AALTITOAD_HAWK_PARSER_H
 #include "plugin_system/plugin_system.h"
 #include "ntta/builder/ntta_builder.h"
-#include "ntta/builder/ntta_builder_2.h"
 #include <nlohmann/json.hpp>
 
 namespace aaltitoad::hawk {
