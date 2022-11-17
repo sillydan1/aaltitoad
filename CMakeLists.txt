@@ -82,12 +82,11 @@ include_directories(
 )
 set(${PROJECT_NAME}_SOURCES
         src/ntta/builder/ntta_builder.cpp
-        src/ntta/builder/ntta_builder_2.cpp
         src/ntta/tta.cpp
         src/ntta/interesting_tocker.cpp
         src/plugin_system/plugin_system.cpp
         src/verification/forward_reachability.cpp
-        src/verification/ctl_sat.cpp
+        src/verification/ctl/ctl_sat.cpp
         src/warnings.cpp
         src/util/random.cpp
         src/util/string_extensions.cpp)
