@@ -4,7 +4,7 @@
 #define AALTITOAD_PROJECT_DIR "."
 #endif
 
-SCENARIO("parsing fischer-n suite", "[huppaal_parser]") {
+SCENARIO("parsing fischer-n suite", "[hawk_parser]") {
     spdlog::set_level(spdlog::level::trace);
     std::vector<std::string> folders{}, ignore_list{".*\\.ignore\\.txt"};
     GIVEN("the fischer-2 test set") {

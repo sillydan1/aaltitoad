@@ -24,7 +24,7 @@ set(SPDLOG_BUILD_SHARED)
 set(CONFIG_IN_FILE src/config.h.in)
 set(CONFIG_OUT_FILE config.h)
 include(cmake/CPM.cmake)
-include(cmake/VER.cmake)
+include(cmake/VER.cmake) # TODO: make a yalibs release of this cmake file
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -91,6 +91,7 @@ set(${PROJECT_NAME}_SOURCES
         src/util/random.cpp
         src/util/string_extensions.cpp)
 
+# TODO: split the project up - each folder should have their own CMakeLists file
 add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES})
 if(${CODE_COVERAGE})
     target_link_options(${PROJECT_NAME} PUBLIC --coverage)

@@ -1,6 +1,7 @@
 #include "scoped_template_builder.h"
 #include <ntta/builder/ntta_builder.h>
 #include <util/exceptions/parse_error.h>
+#include <drivers/tree_interpreter.h>
 
 namespace aaltitoad::hawk {
     auto scoped_template_builder::add_template(const model::tta_template& t) -> scoped_template_builder& {
@@ -30,7 +31,18 @@ namespace aaltitoad::hawk {
         builder.set_starting_location(t.initial_location.id);
 
         // TODO: parameterize declarations
-        // TODO: compile declarations
+        // TODO: keep track of the instantiation tree
+        //       (external variables is only a root-node with all the variables in it)
+        expr::symbol_table_tree_t symbol_tree{};
+        // TODO: Write a custom tree_interpreter that separates "public x:=0" from "x:=0"
+        expr::tree_interpreter interpreter{symbol_tree.begin()}; // construct interpreter with parent's scope
+        if(interpreter.parse(t.declarations) != 0) {
+            spdlog::error("error instantiating '{0}.{1}': {2}", parent_name, instance.invocation, interpreter.error);
+            throw parse_error(interpreter.error);
+        }
+        // TODO: Add the global result to the tree-root symbols (ignore re-definitions)
+        symbol_tree.begin()->emplace(interpreter.result); // add the local result as this instance's scope
+
         // TODO: add to current scope (internal only ('public' variables should be put into the root scope))
 
         for(auto& edge : t.edges) {

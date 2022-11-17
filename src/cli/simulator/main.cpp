@@ -50,7 +50,7 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
         ignore_list = cli_arguments["ignore"].as_list();
 
     /// Get the parser
-    auto selected_parser = cli_arguments["parser"].as_string_or_default("huppaal_parser");
+    auto selected_parser = cli_arguments["parser"].as_string_or_default("hawk_parser");
     if(!available_plugins.contains(selected_parser) || available_plugins.at(selected_parser).type != plugin_type::parser) {
         spdlog::critical("No such parser available: '{0}'", selected_parser);
         return;
