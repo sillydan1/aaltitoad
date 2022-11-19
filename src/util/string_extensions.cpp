@@ -51,6 +51,16 @@ std::vector<std::string> regex_split(const std::string& s, const std::string& re
     return tokens;
 }
 
+auto join(const std::string& separator, const std::vector<std::string>& s) -> std::string {
+    std::stringstream ss{};
+    std::string sep{};
+    for(auto& e : s) {
+        ss << sep << e;
+        sep = separator;
+    }
+    return ss.str();
+}
+
 std::string GetFileNameOnly(const std::string& fullpath, char delimiter) {
     auto filenameWithExtension = fullpath.substr(fullpath.find_last_of(delimiter) + 1);
     return filenameWithExtension.substr(0, filenameWithExtension.find_last_of('.'));
@@ -109,6 +119,17 @@ std::string regex_replace_all(const std::string& original, const std::regex& reg
     while(std::regex_match(temp, reg))
         temp = std::regex_replace(temp, reg, replacement);
     return temp;
+}
+
+void lower_case(std::string& s) {
+    for (auto& i : s)
+        i = tolower(i);
+}
+
+auto lower_case(const std::string& s) -> std::string {
+    auto r = s;
+    lower_case(r);
+    return r;
 }
 
 #pragma clang diagnostic push

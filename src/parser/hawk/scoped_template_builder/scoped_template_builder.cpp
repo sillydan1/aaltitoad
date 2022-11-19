@@ -1,4 +1,5 @@
 #include "scoped_template_builder.h"
+#include "scoped_interpreter.h"
 #include <ntta/builder/ntta_builder.h>
 #include <util/exceptions/parse_error.h>
 #include <drivers/tree_interpreter.h>
@@ -14,55 +15,63 @@ namespace aaltitoad::hawk {
         return *this;
     }
 
-    auto scoped_template_builder::instantiate_tta_recursively(const model::tta_instance_t& instance, const std::string& parent_name) -> std::vector<tta_t> { // NOLINT(misc-no-recursion)
-        std::vector<tta_t> result{};
-        if(!templates.contains(instance.tta_template_name)) {
-            spdlog::error("'{0}': no such template", instance.tta_template_name);
+    auto scoped_template_builder::instantiate_tta_recursively(const model::tta_instance_t& instance,
+                                                              const expr::symbol_table_tree_t::_left_df_iterator& root_scope,
+                                                              const expr::symbol_table_tree_t::_left_df_const_iterator& parent_scope,
+                                                              const std::string& parent_name) -> std::vector<tta_t> { // NOLINT(misc-no-recursion)
+        try {
+            std::vector<tta_t> result{};
+            if(!templates.contains(instance.tta_template_name))
+                throw parse_error(instance.tta_template_name + " no such template");
+
+            auto& t = templates.at(instance.tta_template_name);
+
+            // TODO: parameterize declarations
+
+            scoped_interpreter interpreter{parent_scope};
+            if(interpreter.parse(t.declarations) != 0)
+                throw parse_error("parsing declarations: " + interpreter.error);
+            root_scope->node *= interpreter.public_result; // Add the global result to the tree-root symbols (ignore re-definitions)
+            auto my_scope = parent_scope->put(interpreter.result);
+
+            tta_builder builder{internal_symbols, external_symbols}; // TODO: Port everything to use scoped stuff
+            builder.set_name(parent_name + "." + instance.invocation);
+
+            std::vector<std::string> locations{};
+            std::vector<std::string> duplicate_locations{};
+            for(auto& location: t.locations) {
+                if(std::find(locations.begin(), locations.end(), location.id) != locations.end())
+                    duplicate_locations.push_back(location.id);
+                locations.push_back(location.id);
+            }
+            if(!duplicate_locations.empty())
+                throw parse_error("duplicate locations: [" + join(",", duplicate_locations) + "]");
+            builder.add_locations(locations);
+            builder.set_starting_location(t.initial_location.id);
+
+            for(auto& edge: t.edges) {
+                // TODO: parameterize guards & updates
+                std::optional<std::string> guard{};
+                if(!trim_copy(edge.guard).empty())
+                    guard = edge.guard;
+                std::optional<std::string> update{};
+                if(!trim_copy(edge.update).empty())
+                    update = edge.update;
+                builder.add_edge({.source=edge.source, .target=edge.target, .guard=guard, .update=update});
+            }
+
+            result.push_back(builder.build());
+            for(auto& i: t.instances) { // TODO: sequentially composed TTAs
+                auto instances = instantiate_tta_recursively(i,
+                                                             root_scope,
+                                                             my_scope,
+                                                             parent_name + "." + instance.invocation);
+                result.insert(result.end(), instances.begin(), instances.end());
+            }
             return result;
+        } catch (std::logic_error& e) {
+            spdlog::error("error instantiating '{0}.{1}': {2}", parent_name, instance.invocation, e.what());
         }
-
-        tta_builder builder{internal_symbols, external_symbols};
-        builder.set_name(parent_name + "." + instance.invocation);
-        auto& t = templates.at(instance.tta_template_name);
-
-        // TODO: Check for duplicate Locations (uuids & nicknames)
-        for(auto& location : t.locations)
-            builder.add_location(location.id);
-        builder.set_starting_location(t.initial_location.id);
-
-        // TODO: parameterize declarations
-        // TODO: keep track of the instantiation tree
-        //       (external variables is only a root-node with all the variables in it)
-        expr::symbol_table_tree_t symbol_tree{};
-        // TODO: Write a custom tree_interpreter that separates "public x:=0" from "x:=0"
-        expr::tree_interpreter interpreter{symbol_tree.begin()}; // construct interpreter with parent's scope
-        if(interpreter.parse(t.declarations) != 0) {
-            spdlog::error("error instantiating '{0}.{1}': {2}", parent_name, instance.invocation, interpreter.error);
-            throw parse_error(interpreter.error);
-        }
-        // TODO: Add the global result to the tree-root symbols (ignore re-definitions)
-        symbol_tree.begin()->emplace(interpreter.result); // add the local result as this instance's scope
-
-        // TODO: add to current scope (internal only ('public' variables should be put into the root scope))
-
-        for(auto& edge : t.edges) {
-            // TODO: parameterize guards & updates
-            // TODO: compile edges before adding them
-            std::optional<std::string> guard{};
-            if(!trim_copy(edge.guard).empty())
-                guard = edge.guard;
-            std::optional<std::string> update{};
-            if(!trim_copy(edge.update).empty())
-                update = edge.update;
-            builder.add_edge({.source=edge.source, .target=edge.target,.guard=guard,.update=update});
-        }
-
-        result.push_back(builder.build());
-        for(auto& i : t.instances) { // TODO: support sequentially composed TTAs
-            auto instances = instantiate_tta_recursively(i, parent_name + "." + instance.invocation);
-            result.insert(result.end(), instances.begin(), instances.end());
-        }
-        return result;
     }
 
     auto scoped_template_builder::build_heap() -> ntta_t* {
@@ -79,7 +88,8 @@ namespace aaltitoad::hawk {
         // TODO: use stl parallel constructs to compile faster
         spdlog::trace("building ntta from main component: '{0}'", main_it->second.name);
         for(auto& instance : main_it->second.instances) {
-            auto tta_instances = instantiate_tta_recursively(instance, main_it->second.name);
+            auto tta_instances = instantiate_tta_recursively(instance,
+                                                             main_it->second.name);
             for(auto& tta : tta_instances)
                 builder.add_tta(instance.id, tta);
         }

@@ -22,19 +22,22 @@
 #include <string>
 #include <vector>
 
-std::vector<std::string> split(const std::string& s, char delimiter);
-std::vector<std::string> split(const std::string& s, const std::string& delimiter);
-std::vector<std::string> regex_split(const std::string& s, const std::string& regex);
+auto split(const std::string& s, char delimiter) -> std::vector<std::string>;
+auto split(const std::string& s, const std::string& delimiter) -> std::vector<std::string>;
+auto regex_split(const std::string& s, const std::string& regex) -> std::vector<std::string>;
+auto join(const std::string& separator, const std::vector<std::string>& s) -> std::string;
 
 void ltrim(std::string &s);
 void rtrim(std::string &s);
 void trim(std::string &s);
-std::string ltrim_copy(std::string s);
-std::string rtrim_copy(std::string s);
-std::string trim_copy(std::string s);
+auto ltrim_copy(std::string s) -> std::string;
+auto rtrim_copy(std::string s) -> std::string;
+auto trim_copy(std::string s) -> std::string;
 bool contains(const std::string& s, const std::string& substring);
-std::optional<const size_t> containsString(const std::string& s, const std::string& substring);
-std::string regex_replace_all(const std::string& original, const std::regex& reg, const std::string& replacement);
+auto containsString(const std::string& s, const std::string& substring) -> std::optional<const size_t>;
+auto regex_replace_all(const std::string& original, const std::regex& reg, const std::string& replacement) -> std::string;
+void lower_case(std::string& s);
+auto lower_case(const std::string& s) -> std::string;
 
 struct string_builder {
     std::stringstream ss;
@@ -46,7 +49,7 @@ struct string_builder {
     operator std::string() const { return ss.str(); } // NOLINT(google-explicit-constructor)
 };
 
-std::string string_format(const std::string &fmt, ...);
+auto string_format(const std::string &fmt, ...) -> std::string;
 
 
 #endif //AALTITOAD_STRINGEXTENSIONS_H
