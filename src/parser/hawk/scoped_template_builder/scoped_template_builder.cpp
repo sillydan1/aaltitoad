@@ -17,7 +17,7 @@ namespace aaltitoad::hawk {
 
     auto scoped_template_builder::instantiate_tta_recursively(const model::tta_instance_t& instance,
                                                               const expr::symbol_table_tree_t::_left_df_iterator& root_scope,
-                                                              const expr::symbol_table_tree_t::_left_df_const_iterator& parent_scope,
+                                                              const expr::symbol_table_tree_t::_left_df_iterator& parent_scope,
                                                               const std::string& parent_name) -> std::vector<tta_t> { // NOLINT(misc-no-recursion)
         try {
             std::vector<tta_t> result{};
@@ -71,6 +71,7 @@ namespace aaltitoad::hawk {
             return result;
         } catch (std::logic_error& e) {
             spdlog::error("error instantiating '{0}.{1}': {2}", parent_name, instance.invocation, e.what());
+            throw e;
         }
     }
 
