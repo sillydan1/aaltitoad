@@ -15,14 +15,14 @@ namespace aaltitoad::hawk {
         return *this;
     }
 
-    auto scoped_template_builder::instantiate_tta_recursively(const model::tta_instance_t& instance,
+    void scoped_template_builder::instantiate_tta_recursively(const model::tta_instance_t& instance,
                                                               const expr::symbol_table_tree_t::_left_df_iterator& root_scope,
                                                               const expr::symbol_table_tree_t::_left_df_iterator& parent_scope,
-                                                              const std::string& parent_name) -> std::vector<tta_t> { // NOLINT(misc-no-recursion)
+                                                              const std::string& parent_name,
+                                                              ntta_builder& network_builder) { // NOLINT(misc-no-recursion)
         try {
-            std::vector<tta_t> result{};
             if(!templates.contains(instance.tta_template_name))
-                throw parse_error(instance.tta_template_name + " no such template");
+                throw parse_error(instance.tta_template_name + " no such template"); // TODO: Gather errors
 
             auto& t = templates.at(instance.tta_template_name);
 
@@ -34,7 +34,8 @@ namespace aaltitoad::hawk {
             root_scope->node *= interpreter.public_result; // Add the global result to the tree-root symbols (ignore re-definitions)
             auto my_scope = parent_scope->put(interpreter.result);
 
-            tta_builder builder{internal_symbols, external_symbols}; // TODO: Port everything to use scoped stuff
+            // TODO: root_scope is not neccessarily the external variables-set - also, updates that change external vars should result in compiler errors
+            tta_builder builder{my_scope, root_scope};
             builder.set_name(parent_name + "." + instance.invocation);
 
             std::vector<std::string> locations{};
@@ -60,15 +61,15 @@ namespace aaltitoad::hawk {
                 builder.add_edge({.source=edge.source, .target=edge.target, .guard=guard, .update=update});
             }
 
-            result.push_back(builder.build());
+            // TODO: use stl parallel constructs to compile faster
+            network_builder.add_tta(builder);
             for(auto& i: t.instances) { // TODO: sequentially composed TTAs
-                auto instances = instantiate_tta_recursively(i,
-                                                             root_scope,
-                                                             my_scope,
-                                                             parent_name + "." + instance.invocation);
-                result.insert(result.end(), instances.begin(), instances.end());
+                instantiate_tta_recursively(i,
+                                            root_scope,
+                                            my_scope,
+                                            parent_name + "." + instance.invocation,
+                                            network_builder);
             }
-            return result;
         } catch (std::logic_error& e) {
             spdlog::error("error instantiating '{0}.{1}': {2}", parent_name, instance.invocation, e.what());
             throw e;
@@ -85,15 +86,12 @@ namespace aaltitoad::hawk {
 
         throw_if_infinite_recursion_in_dependencies();
 
-        // TODO: instantiate the main component too
-        // TODO: use stl parallel constructs to compile faster
+        expr::symbol_table_tree_t symbolTableTree{};
+        model::tta_instance_t t{.id=main_it->first,
+                                .tta_template_name=main_it->first,
+                                .invocation=main_it->first};
         spdlog::trace("building ntta from main component: '{0}'", main_it->second.name);
-        for(auto& instance : main_it->second.instances) {
-            auto tta_instances = instantiate_tta_recursively(instance,
-                                                             main_it->second.name);
-            for(auto& tta : tta_instances)
-                builder.add_tta(instance.id, tta);
-        }
+        instantiate_tta_recursively(t, symbolTableTree.begin(), symbolTableTree.begin(), "", builder);
         return builder.build_heap();
     }
 

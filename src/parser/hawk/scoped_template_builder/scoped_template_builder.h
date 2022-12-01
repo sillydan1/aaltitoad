@@ -3,6 +3,7 @@
 #include "model.h"
 #include <ntta/tta.h>
 #include <util/tarjan.h>
+#include <ntta/builder/ntta_builder.h>
 
 namespace aaltitoad::hawk {
     class scoped_template_builder {
@@ -15,10 +16,11 @@ namespace aaltitoad::hawk {
         auto add_global_symbols(const std::string& d) -> scoped_template_builder&;
         auto build_heap() -> ntta_t*;
     private:
-        auto instantiate_tta_recursively(const model::tta_instance_t& instance,
+        void instantiate_tta_recursively(const model::tta_instance_t& instance,
                                          const expr::symbol_table_tree_t::_left_df_iterator& root_scope,
                                          const expr::symbol_table_tree_t::_left_df_iterator& parent_scope,
-                                         const std::string& parent_name) -> std::vector<tta_t>;
+                                         const std::string& parent_name,
+                                         ntta_builder& network_builder);
         auto find_instance_sccs() -> std::vector<scc_t<std::string,std::string,std::string>>;
         void throw_if_infinite_recursion_in_dependencies();
     };

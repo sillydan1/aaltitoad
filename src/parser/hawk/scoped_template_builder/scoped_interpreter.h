@@ -4,7 +4,7 @@
 
 namespace aaltitoad::hawk {
     struct scoped_interpreter : public expr::tree_interpreter {
-        explicit scoped_interpreter(const expr::symbol_table_tree_t::_left_df_iterator& it);
+        explicit scoped_interpreter(const expr::symbol_table_tree_t::iterator& it);
         ~scoped_interpreter() override = default;
         void add_tree(const std::string& access_modifier, const std::string& identifier, const expr::syntax_tree_t& tree) override;
         expr::symbol_table_t public_result;
