@@ -2,8 +2,8 @@
 #include "ntta_builder.h"
 
 namespace aaltitoad {
-    tta_builder::tta_builder(expr::symbol_table_t& symbols, expr::symbol_table_t& external_symbols)
-     : symbols{symbols + external_symbols}, factory{}, empty_guard{}, starting_location{}
+    tta_builder::tta_builder(expr::compiler* expression_compiler)
+     : compiler{expression_compiler}, factory{}, empty_guard{}, starting_location{}
     {
         empty_guard = compile_guard("");
     }
@@ -44,20 +44,18 @@ namespace aaltitoad {
     auto tta_builder::compile_guard(const std::optional<std::string>& guard) -> expr::compiler::compiled_expr_t {
         if(!guard.has_value())
             return empty_guard;
-        expr::compiler compiler{symbols};
-        auto res = compiler.parse(guard.value());
+        auto res = compiler->parse(guard.value());
         if(res != 0)
-            throw std::logic_error(compiler.error);
-        return compiler.trees["expression_result"];
+            throw std::logic_error(compiler->error);
+        return compiler->trees["expression_result"];
     }
     auto tta_builder::compile_update(const std::optional<std::string>& update) -> expr::compiler::compiled_expr_collection_t {
         if(!update.has_value())
             return {};
-        expr::compiler compiler{symbols};
-        auto res = compiler.parse(update.value());
+        auto res = compiler->parse(update.value());
         if(res != 0)
-            throw std::logic_error(compiler.error);
-        return compiler.trees;
+            throw std::logic_error(compiler->error);
+        return compiler->trees;
     }
 
     ntta_builder::ntta_builder() : components{}, symbols{} {

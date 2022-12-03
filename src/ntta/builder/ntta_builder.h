@@ -9,7 +9,7 @@ namespace aaltitoad {
             std::string source, target;
             std::optional<std::string> guard, update; // missing: optional identifier
         };
-        tta_builder(expr::symbol_table_t& symbols, expr::symbol_table_t& external_symbols);
+        explicit tta_builder(expr::compiler* expression_compiler);
         auto set_name(const std::string& name) -> tta_builder&;
         auto set_starting_location(const std::string& name) -> tta_builder&;
         auto add_location(const std::string& name) -> tta_builder&;
@@ -21,7 +21,7 @@ namespace aaltitoad {
         auto compile_update(const std::optional<std::string>& update) -> expr::compiler::compiled_expr_collection_t;
         auto get_name() -> std::optional<std::string>;
     private:
-        expr::symbol_table_t symbols;
+        expr::compiler* compiler;
         aaltitoad::tta_t::graph_builder factory;
         expr::compiler::compiled_expr_t empty_guard;
         std::optional<std::string> starting_location;

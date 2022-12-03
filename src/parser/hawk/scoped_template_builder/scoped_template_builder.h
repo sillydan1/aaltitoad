@@ -17,8 +17,6 @@ namespace aaltitoad::hawk {
         auto build_heap() -> ntta_t*;
     private:
         void instantiate_tta_recursively(const model::tta_instance_t& instance,
-                                         const expr::symbol_table_tree_t::_left_df_iterator& root_scope,
-                                         const expr::symbol_table_tree_t::_left_df_iterator& parent_scope,
                                          const std::string& parent_name,
                                          ntta_builder& network_builder);
         auto find_instance_sccs() -> std::vector<scc_t<std::string,std::string,std::string>>;
