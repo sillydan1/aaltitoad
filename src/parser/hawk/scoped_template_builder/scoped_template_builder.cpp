@@ -15,18 +15,72 @@ namespace aaltitoad::hawk {
         return *this;
     }
 
+    // TODO: make this a private member
+    std::regex r{R"(\(.+(,.+)*\))"};
+
+    // TODO: make this a private member
+    std::regex k{R"([\""].*[\""]|[^,]+)"};
+
+    // TODO: make this a private member function
+    auto get_invocation_parameters(const model::tta_instance_t& instance) -> std::vector<std::string> {
+        std::vector<std::string> result{};
+        std::smatch match;
+        if (std::regex_search(instance.tta_template_name.cbegin(), instance.tta_template_name.cend(), match, r)) {
+            auto m = match.str().substr(1, match.str().size() - 2); // remove the parentheses
+            for(auto i = std::sregex_iterator(m.begin(), m.end(), k); i != std::sregex_iterator(); ++i) {
+                if(std::find(result.begin(), result.end(),i->str()) == result.end())
+                    result.push_back(i->str());
+                else
+                    spdlog::error("duplicate template parameters: '{0}' in {1}", i->str(), instance.tta_template_name);
+            }
+        }
+        return result;
+    }
+
+    // TODO: make this a private member function
+    auto get_invocation_arguments(const model::tta_instance_t& instance, expr::interpreter& interpreter) -> std::vector<expr::symbol_value_t> {
+        std::vector<expr::symbol_value_t> result{};
+        std::smatch match;
+        if (std::regex_search(instance.invocation.cbegin(), instance.invocation.cend(), match, r)) {
+            auto m = match.str().substr(1, match.str().size() - 2); // remove the parentheses
+            for(auto i = std::sregex_iterator(m.begin(), m.end(), k); i != std::sregex_iterator(); ++i) {
+                auto res = interpreter.parse(i->str());
+                if(res != 0) {
+                    spdlog::error("could not get parameters of tta invocation '{0}': {1}", instance.invocation, interpreter.error);
+                    throw parse_error(interpreter.error);
+                }
+                result.push_back(interpreter.expression_result);
+            }
+        }
+        return result;
+    }
+
     void scoped_template_builder::instantiate_tta_recursively(const model::tta_instance_t& instance,
                                                               const std::string& parent_name,
                                                               ntta_builder& network_builder) { // NOLINT(misc-no-recursion)
         auto scoped_name = parent_name + "." + instance.invocation;
         try {
+            // TODO: Gather errors and throw one aggregate exception
             if(!templates.contains(instance.tta_template_name))
-                throw parse_error(instance.tta_template_name + " no such template"); // TODO: Gather errors
+                throw parse_error(instance.tta_template_name + ": no such template");
             auto& instance_template = templates.at(instance.tta_template_name);
+            scoped_interpreter interpreter{{internal_symbols, external_symbols}};
+            auto parameters = get_invocation_parameters(instance);
+            auto arguments = get_invocation_arguments(instance, interpreter);
+            if(arguments.size() != parameters.size()) {
+                spdlog::error("{0}: provided arguments {1} does not match parameters {2}", instance.invocation, arguments.size(), parameters.size());
+                throw parse_error(instance.invocation + ": provided arguments does not match parameters");
+            }
+
+            // Fill the argument table
+            expr::symbol_table_t argument_table{};
+            for(auto i = 0; i < parameters.size(); i++)
+                argument_table[parameters[i]] = arguments[i];
 
             // TODO: parameterize declarations
             /*
              * MyInvocation(32, "hello, world!", 12.5f)
+             *   - regex: (*,)
              * MyTemplate(a, b, c)
              *
              * declarations:
@@ -40,7 +94,6 @@ namespace aaltitoad::hawk {
              * */
 
             // Construct the expression compiler
-            scoped_interpreter interpreter{{internal_symbols, external_symbols}};
             if(interpreter.parse(instance_template.declarations) != 0)
                 throw parse_error("parsing declarations: " + interpreter.error);
             internal_symbols *= interpreter.public_result;
