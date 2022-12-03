@@ -7,11 +7,12 @@ SCENARIO("basic reachability", "[frs]") {
     spdlog::set_level(spdlog::level::trace);
     GIVEN("one tta with a simple count-down loop") {
         aaltitoad::ntta_builder builder{};
+        expr::compiler compiler{{builder.symbols, builder.external_symbols}};
         auto n = builder
                 // Add symbols
                 .add_symbols({{"x", 5}})
                 // Add components
-                .add_tta("A", aaltitoad::tta_builder{builder.symbols, builder.external_symbols}
+                .add_tta("A", aaltitoad::tta_builder{&compiler}
                         .add_locations({"L0", "L1"})
                         .set_starting_location("L0")
                         .add_edges({{"L0", "L1", "x > 0", "x := x - 1"}, {"L1", "L0"}}))
@@ -61,10 +62,11 @@ SCENARIO("basic reachability", "[frs]") {
     }
     GIVEN("one looping tta and no symbol manipulation") {
         aaltitoad::ntta_builder builder{};
+        expr::compiler compiler{{builder.symbols, builder.external_symbols}};
         auto n = builder
                 .add_symbol({"x", 0})
                 // Add components
-                .add_tta("A", aaltitoad::tta_builder{builder.symbols, builder.external_symbols}
+                .add_tta("A", aaltitoad::tta_builder{&compiler}
                         .add_location("L0")
                         .set_starting_location("L0")
                         .add_edge({"L0", "L0"}))
@@ -85,11 +87,12 @@ SCENARIO("basic reachability", "[frs]") {
     }
     GIVEN("one tta with an interesting edge from initial location") {
         aaltitoad::ntta_builder builder{};
+        expr::compiler compiler{{builder.symbols, builder.external_symbols}};
         auto n = builder
                 // Add symbols
                 .add_external_symbol({"y", 0})
                         // Add components
-                .add_tta("A", aaltitoad::tta_builder{builder.symbols, builder.external_symbols}
+                .add_tta("A", aaltitoad::tta_builder{&compiler}
                         .add_locations({"L0", "L1"})
                         .set_starting_location("L0")
                         .add_edge({"L0", "L1", "y > 0", ""}))
@@ -111,11 +114,12 @@ SCENARIO("basic reachability", "[frs]") {
     }
     GIVEN("one tta with an interesting edge from somewhere in the middle") {
         aaltitoad::ntta_builder builder{};
+        expr::compiler compiler{{builder.symbols, builder.external_symbols}};
         auto n = builder
                 // Add symbols
                 .add_external_symbol({"y", 0})
                         // Add components
-                .add_tta("A", aaltitoad::tta_builder{builder.symbols, builder.external_symbols}
+                .add_tta("A", aaltitoad::tta_builder{&compiler}
                         .add_locations({"L0", "L1", "L2"})
                         .set_starting_location("L0")
                         .add_edge({"L0", "L1"})
