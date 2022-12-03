@@ -11,6 +11,8 @@ namespace aaltitoad::hawk {
         std::vector<std::string> global_symbol_declarations{};
         expr::symbol_table_t internal_symbols{};
         expr::symbol_table_t external_symbols{};
+        std::regex param_section{R"(\(.+(,.+)*\))"};
+        std::regex arg_split{R"([\""].*[\""]|[^,]+)"};
     public:
         auto add_template(const model::tta_template& t) -> scoped_template_builder&;
         auto add_global_symbols(const std::string& d) -> scoped_template_builder&;
@@ -21,6 +23,8 @@ namespace aaltitoad::hawk {
                                          ntta_builder& network_builder);
         auto find_instance_sccs() -> std::vector<scc_t<std::string,std::string,std::string>>;
         void throw_if_infinite_recursion_in_dependencies();
+        auto get_invocation_arguments(const model::tta_instance_t& instance, expr::interpreter& interpreter) -> std::vector<expr::symbol_value_t>;
+        auto get_invocation_parameters(const model::tta_instance_t& instance) -> std::vector<std::string>;
     };
 }
 

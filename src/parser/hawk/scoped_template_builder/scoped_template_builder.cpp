@@ -15,19 +15,12 @@ namespace aaltitoad::hawk {
         return *this;
     }
 
-    // TODO: make this a private member
-    std::regex r{R"(\(.+(,.+)*\))"};
-
-    // TODO: make this a private member
-    std::regex k{R"([\""].*[\""]|[^,]+)"};
-
-    // TODO: make this a private member function
-    auto get_invocation_parameters(const model::tta_instance_t& instance) -> std::vector<std::string> {
+    auto scoped_template_builder::get_invocation_parameters(const model::tta_instance_t& instance) -> std::vector<std::string> {
         std::vector<std::string> result{};
         std::smatch match;
-        if (std::regex_search(instance.tta_template_name.cbegin(), instance.tta_template_name.cend(), match, r)) {
+        if (std::regex_search(instance.tta_template_name.cbegin(), instance.tta_template_name.cend(), match, param_section)) {
             auto m = match.str().substr(1, match.str().size() - 2); // remove the parentheses
-            for(auto i = std::sregex_iterator(m.begin(), m.end(), k); i != std::sregex_iterator(); ++i) {
+            for(auto i = std::sregex_iterator(m.begin(), m.end(), arg_split); i != std::sregex_iterator(); ++i) {
                 if(std::find(result.begin(), result.end(),i->str()) == result.end())
                     result.push_back(i->str());
                 else
@@ -37,16 +30,15 @@ namespace aaltitoad::hawk {
         return result;
     }
 
-    // TODO: make this a private member function
-    auto get_invocation_arguments(const model::tta_instance_t& instance, expr::interpreter& interpreter) -> std::vector<expr::symbol_value_t> {
+    auto scoped_template_builder::get_invocation_arguments(const model::tta_instance_t& instance, expr::interpreter& interpreter) -> std::vector<expr::symbol_value_t> {
         std::vector<expr::symbol_value_t> result{};
         std::smatch match;
-        if (std::regex_search(instance.invocation.cbegin(), instance.invocation.cend(), match, r)) {
+        if (std::regex_search(instance.invocation.cbegin(), instance.invocation.cend(), match, param_section)) {
             auto m = match.str().substr(1, match.str().size() - 2); // remove the parentheses
-            for(auto i = std::sregex_iterator(m.begin(), m.end(), k); i != std::sregex_iterator(); ++i) {
+            for(auto i = std::sregex_iterator(m.begin(), m.end(), arg_split); i != std::sregex_iterator(); ++i) {
                 auto res = interpreter.parse(i->str());
                 if(res != 0) {
-                    spdlog::error("could not get parameters of tta invocation '{0}': {1}", instance.invocation, interpreter.error);
+                    spdlog::error("{0}: could not get arguments of tta invocation: {1}", instance.invocation, interpreter.error);
                     throw parse_error(interpreter.error);
                 }
                 result.push_back(interpreter.expression_result);
@@ -55,9 +47,7 @@ namespace aaltitoad::hawk {
         return result;
     }
 
-    void scoped_template_builder::instantiate_tta_recursively(const model::tta_instance_t& instance,
-                                                              const std::string& parent_name,
-                                                              ntta_builder& network_builder) { // NOLINT(misc-no-recursion)
+    void scoped_template_builder::instantiate_tta_recursively(const model::tta_instance_t& instance, const std::string& parent_name, ntta_builder& network_builder) { // NOLINT(misc-no-recursion)
         auto scoped_name = parent_name + "." + instance.invocation;
         try {
             // TODO: Gather errors and throw one aggregate exception
