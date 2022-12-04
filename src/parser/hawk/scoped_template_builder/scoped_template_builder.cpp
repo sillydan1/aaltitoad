@@ -144,10 +144,8 @@ namespace aaltitoad::hawk {
         auto template_dependency_graph_builder = ya::graph_builder<std::string,std::string>{};
         for(auto& t : templates) {
             template_dependency_graph_builder.add_node({t.first});
-            for(auto& i : t.second.instances) {
-                std::cout << t.first << " -> " << i.tta_template_name << std::endl;
+            for(auto& i : t.second.instances)
                 template_dependency_graph_builder.add_edge(t.first, i.tta_template_name, ya::uuid_v4());
-            }
         }
         return template_dependency_graph_builder.build();
     }
