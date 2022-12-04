@@ -48,15 +48,15 @@ namespace aaltitoad::hawk {
     }
 
     void scoped_template_builder::instantiate_tta_recursively(const model::tta_instance_t& instance, const std::string& parent_name, ntta_builder& network_builder) { // NOLINT(misc-no-recursion)
-        auto scoped_name = parent_name + "." + instance.invocation;
+        auto scoped_name = (parent_name.empty() ? parent_name : parent_name + ".") + instance.invocation;
         spdlog::trace("{0}: instantiating", scoped_name);
         try {
             // TODO: Gather errors and throw one aggregate exception
-            // TODO: all declarations in the network should be completely loaded before we start compiling edges
             if(!templates.contains(instance.tta_template_name))
                 throw parse_error(instance.tta_template_name + ": no such template");
             auto& instance_template = templates.at(instance.tta_template_name);
             scoped_interpreter interpreter{{internal_symbols, external_symbols}};
+            interpreter.identifier_prefix = scoped_name + ".";
             auto parameters = get_invocation_parameters(instance);
             auto arguments = get_invocation_arguments(instance, interpreter);
             if(arguments.size() != parameters.size()) {
@@ -71,10 +71,17 @@ namespace aaltitoad::hawk {
             // Construct the expression compiler
             if(interpreter.parse(instance_template.declarations) != 0)
                 throw parse_error("parsing declarations: " + interpreter.error);
-            internal_symbols *= interpreter.public_result;
+            internal_symbols += interpreter.public_result;
             auto local_scope_declarations = interpreter.result;
             scoped_compiler c{local_scope_declarations, interpreter.parameters, scoped_name + ".", {internal_symbols, external_symbols}};
-            internal_symbols *= c.get_localized_symbols();
+            internal_symbols += c.get_localized_symbols();
+
+            // Recursively add instances
+            // TODO: use stl parallel constructs to compile faster
+            // TODO: sequentially composed TTAs
+            // TODO: Parameterize instance invocation(s)
+            for(auto& template_instance : instance_template.instances)
+                instantiate_tta_recursively(template_instance, scoped_name, network_builder);
 
             // Construct the tta builder
             tta_builder builder{&c};
@@ -111,13 +118,6 @@ namespace aaltitoad::hawk {
             // Add the tta to the network
             network_builder.add_tta(builder);
 
-            // Recursively add instances
-            // TODO: use stl parallel constructs to compile faster
-            // TODO: sequentially composed TTAs
-            // TODO: Parameterize instance invocation(s)
-            for(auto& template_instance : instance_template.instances)
-                instantiate_tta_recursively(template_instance, scoped_name, network_builder);
-
         } catch (std::logic_error& e) {
             spdlog::error("error instantiating '{0}': {2}", scoped_name, e.what());
             throw e;
@@ -135,6 +135,8 @@ namespace aaltitoad::hawk {
         spdlog::trace("building ntta from main component: '{0}'", main_it->second.name);
         ntta_builder builder{};
         instantiate_tta_recursively(t, "", builder);
+        builder.add_symbols(internal_symbols);
+        builder.add_external_symbols(external_symbols);
         return builder.build_heap();
     }
 
@@ -182,7 +184,6 @@ namespace aaltitoad::hawk {
             }
             spdlog::info("Loop: {0} [\n{1}]", scc.size(), ss.str());
         }
-        throw parse_error("cannot instantiate network due to infinitely recursive instantiation, "
-                          "set verbosity to info or higher for detailed information");
+        throw parse_error("cannot instantiate network due to infinitely recursive instantiation, set verbosity to info or higher for detailed information");
     }
 }
