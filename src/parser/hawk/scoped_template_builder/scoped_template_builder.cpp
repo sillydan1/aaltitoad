@@ -24,7 +24,7 @@ namespace aaltitoad::hawk {
                 if(std::find(result.begin(), result.end(),i->str()) == result.end())
                     result.push_back(i->str());
                 else
-                    spdlog::error("duplicate template parameters: '{0}' in {1}", i->str(), instance.tta_template_name);
+                    spdlog::error("{0}: duplicate template parameters: {1}", instance.tta_template_name, i->str());
             }
         }
         return result;
@@ -62,33 +62,16 @@ namespace aaltitoad::hawk {
                 throw parse_error(instance.invocation + ": provided arguments does not match parameters");
             }
 
-            // Fill the argument table
-            expr::symbol_table_t argument_table{};
+            // Fill the parameter-argument table
             for(auto i = 0; i < parameters.size(); i++)
-                argument_table[parameters[i]] = arguments[i];
-
-            // TODO: parameterize declarations
-            /*
-             * MyInvocation(32, "hello, world!", 12.5f)
-             *   - regex: (*,)
-             * MyTemplate(a, b, c)
-             *
-             * declarations:
-             *   - int someval.a := a
-             *   - int someval.b := 1
-             *   - string someval.c := b
-             * expected outcome:
-             *   - int someval.32 := 32
-             *   - int someval.hello, world! := 1 // compiler error
-             *   - string someval.12.5f := "hello, world!"
-             * */
+                interpreter.parameters[parameters[i]] = arguments[i];
 
             // Construct the expression compiler
             if(interpreter.parse(instance_template.declarations) != 0)
                 throw parse_error("parsing declarations: " + interpreter.error);
             internal_symbols *= interpreter.public_result;
             auto local_scope_declarations = interpreter.result;
-            scoped_compiler c{local_scope_declarations, scoped_name + ".", {internal_symbols, external_symbols}};
+            scoped_compiler c{local_scope_declarations, interpreter.parameters, scoped_name + ".", {internal_symbols, external_symbols}};
             internal_symbols *= c.get_localized_symbols();
 
             // Construct the tta builder
@@ -111,7 +94,6 @@ namespace aaltitoad::hawk {
             builder.set_starting_location(instance_template.initial_location.id);
 
             // Add edges
-            // TODO: parameterize guards & updates
             for(auto& edge : instance_template.edges) {
                 std::optional<std::string> guard{};
                 if(!trim_copy(edge.guard).empty())
@@ -128,6 +110,7 @@ namespace aaltitoad::hawk {
             // Recursively add instances
             // TODO: use stl parallel constructs to compile faster
             // TODO: sequentially composed TTAs
+            // TODO: Parameterize instance invocation(s)
             for(auto& template_instance : instance_template.instances)
                 instantiate_tta_recursively(template_instance, scoped_name, network_builder);
 
