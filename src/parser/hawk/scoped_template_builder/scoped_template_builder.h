@@ -21,7 +21,8 @@ namespace aaltitoad::hawk {
         void instantiate_tta_recursively(const model::tta_instance_t& instance,
                                          const std::string& parent_name,
                                          ntta_builder& network_builder);
-        auto find_instance_sccs() -> std::vector<scc_t<std::string,std::string,std::string>>;
+        auto generate_dependency_graph() -> ya::graph<std::string,std::string,std::string>;
+        auto find_instance_sccs(ya::graph<std::string,std::string,std::string>& g) -> std::vector<scc_t<std::string,std::string,std::string>>;
         void throw_if_infinite_recursion_in_dependencies();
         auto get_invocation_arguments(const model::tta_instance_t& instance, expr::interpreter& interpreter) -> std::vector<expr::symbol_value_t>;
         auto get_invocation_parameters(const model::tta_instance_t& instance) -> std::vector<std::string>;

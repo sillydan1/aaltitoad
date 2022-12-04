@@ -49,8 +49,10 @@ namespace aaltitoad::hawk {
 
     void scoped_template_builder::instantiate_tta_recursively(const model::tta_instance_t& instance, const std::string& parent_name, ntta_builder& network_builder) { // NOLINT(misc-no-recursion)
         auto scoped_name = parent_name + "." + instance.invocation;
+        spdlog::trace("{0}: instantiating", scoped_name);
         try {
             // TODO: Gather errors and throw one aggregate exception
+            // TODO: all declarations in the network should be completely loaded before we start compiling edges
             if(!templates.contains(instance.tta_template_name))
                 throw parse_error(instance.tta_template_name + ": no such template");
             auto& instance_template = templates.at(instance.tta_template_name);
@@ -64,7 +66,7 @@ namespace aaltitoad::hawk {
 
             // Fill the parameter-argument table
             for(auto i = 0; i < parameters.size(); i++)
-                interpreter.parameters[parameters[i]] = arguments[i];
+                interpreter.parameters[trim_copy(parameters[i])] = arguments[i];
 
             // Construct the expression compiler
             if(interpreter.parse(instance_template.declarations) != 0)
@@ -80,6 +82,8 @@ namespace aaltitoad::hawk {
 
             // Look for duplicate locations
             std::vector<std::string> locations{};
+            locations.push_back(instance_template.initial_location.id);
+            locations.push_back(instance_template.final_location.id);
             std::vector<std::string> duplicate_locations{};
             for(auto& location: instance_template.locations) {
                 if(std::find(locations.begin(), locations.end(), location.id) != locations.end())
@@ -134,37 +138,50 @@ namespace aaltitoad::hawk {
         return builder.build_heap();
     }
 
-    auto scoped_template_builder::find_instance_sccs() -> std::vector<scc_t<std::string,std::string,std::string>> {
-        spdlog::trace("looking for infinite recursive structures");
+    auto scoped_template_builder::generate_dependency_graph() -> ya::graph<std::string,std::string,std::string> {
         auto template_dependency_graph_builder = ya::graph_builder<std::string,std::string>{};
         for(auto& t : templates) {
             template_dependency_graph_builder.add_node({t.first});
-            for(auto& i : t.second.instances)
-                template_dependency_graph_builder.add_edge(t.first, i.tta_template_name, " instantiates ");
+            for(auto& i : t.second.instances) {
+                std::cout << t.first << " -> " << i.tta_template_name << std::endl;
+                template_dependency_graph_builder.add_edge(t.first, i.tta_template_name, ya::uuid_v4());
+            }
         }
-        auto g = template_dependency_graph_builder.build();
+        return template_dependency_graph_builder.build();
+    }
+
+    auto scoped_template_builder::find_instance_sccs(ya::graph<std::string,std::string,std::string>& g) -> std::vector<scc_t<std::string,std::string,std::string>> {
+        spdlog::trace("looking for infinite recursive structures");
         return tarjan(g);
     }
 
+    void remove_trivial_sccs(std::vector<scc_t<std::string,std::string,std::string>>& sccs) {
+        sccs.erase(std::remove_if(sccs.begin(), sccs.end(), [](auto& scc){
+            return scc.size() <= 1;
+        }), sccs.end());
+    }
+
     void scoped_template_builder::throw_if_infinite_recursion_in_dependencies() {
-        auto recursive_instantiations = find_instance_sccs();
+        auto dependency_graph = generate_dependency_graph();
+        auto recursive_instantiations = find_instance_sccs(dependency_graph);
+        remove_trivial_sccs(recursive_instantiations);
         if(recursive_instantiations.empty()) {
             spdlog::trace("model doesn't have recursive instantiation");
             return;
         }
-        spdlog::info("SCCs:");
+        spdlog::info("SCCs: {0}", recursive_instantiations.size());
         for(auto& scc : recursive_instantiations) {
             std::stringstream ss{};
-            for(auto& s: scc)
+            for(auto& s: scc) {
                 for(auto& e: s->second.outgoing_edges)
-                    ss << "<"
-                       << e->second.source->second.data
-                       << e->first
-                       << e->second.target->second.data
-                       << ">\n";
-            spdlog::info("\n[\n{0}]", ss.str());
+                    ss << "\t"
+                       << "[" << e->second.source->second.data << "](component:" << e->second.source->second.data << ")"
+                       << " instantiates "
+                       << "[" << e->second.target->second.data << "](component:" << e->second.target->second.data << ")"
+                       << "\n";
+            }
+            spdlog::info("Loop: {0} [\n{1}]", scc.size(), ss.str());
         }
-        // TODO: this might throw all the time (iirc, the tarjan algorithm includes trivial components)
         throw parse_error("cannot instantiate network due to infinitely recursive instantiation, "
                           "set verbosity to info or higher for detailed information");
     }

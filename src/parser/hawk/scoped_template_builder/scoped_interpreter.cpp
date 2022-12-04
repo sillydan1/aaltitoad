@@ -23,15 +23,16 @@ namespace aaltitoad::hawk {
     }
 
     void scoped_interpreter::add_tree(const std::string& access_modifier, const std::string& identifier, const expr::syntax_tree_t& tree) {
-        auto parameterized_identifier = get_parameterized_identifier(identifier, parameters);
-        if(parameterized_identifier.has_value()) {
-            result[parameterized_identifier.value()] = evaluate(tree);
-            return;
-        }
+        auto id = identifier;
+        auto parameterized_identifier = get_parameterized_identifier(id, parameters);
+        if(parameterized_identifier.has_value())
+            id = parameterized_identifier.value();
+
+        spdlog::trace("adding variable {0} {1}", access_modifier, id);
         if(lower_case(access_modifier) == "public")
-            public_result[identifier] = evaluate(tree);
+            public_result[id] = evaluate(tree);
         else
-            expr::interpreter::add_tree(access_modifier, identifier, tree);
+            expr::interpreter::add_tree(access_modifier, id, tree);
     }
 
     auto scoped_interpreter::get_symbol(const std::string& identifier) -> expr::syntax_tree_t {

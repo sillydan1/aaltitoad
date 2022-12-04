@@ -54,7 +54,7 @@ namespace aaltitoad {
         {
             auto it = this->graph->nodes.find(this->initial_location);
             if(it == this->graph->nodes.end())
-                throw std::out_of_range("no such initial location in provided TTA graph");
+                throw std::out_of_range(this->initial_location + ": no such initial location in provided TTA graph");
             current_location = it;
         }
     };

@@ -62,7 +62,7 @@ namespace aaltitoad {
 
     }
     auto ntta_builder::add_tta(tta_builder& builder) -> ntta_builder& {
-        if(builder.get_name().has_value())
+        if(!builder.get_name().has_value())
             throw parse_error("cannot construct ntta: tta builder does not have a name set");
         components[builder.get_name().value()] = builder.build();
         return *this;
