@@ -18,13 +18,16 @@ namespace aaltitoad::hawk {
                     }
 
                     std::ifstream input_filestream(entry.path());
-                    auto json_file = nlohmann::json::parse(input_filestream);
+                    auto json_file = nlohmann::json::parse(input_filestream,
+                            /* callback */ nullptr,
+                            /* allow exceptions */ true,
+                            /* ignore_comments */ true);
                     if(json_file.contains("name")) {
                         spdlog::trace("loading file {0}", entry.path().c_str());
                         builder.add_template(json_file.get<model::tta_template>());
                     } else if(json_file.contains("parts")) {
-                        spdlog::trace("loading file {0}", entry.path().c_str());
-                        builder.add_global_symbols(load_part(json_file));
+                        spdlog::trace("loading parts file {0}", entry.path().c_str());
+                        builder.add_global_symbols(json_file.at("parts").get<std::vector<model::part_t>>());
                     } else
                         spdlog::trace("ignoring file {0} (not a valid model file)", entry.path().c_str());
                 } catch (std::exception &e) {

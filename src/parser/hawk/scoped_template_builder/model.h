@@ -39,11 +39,17 @@ namespace aaltitoad::hawk::model {
         std::vector<tta_instance_t> instances;
     };
 
+    struct part_t {
+        std::string id;
+        std::string value;
+    };
+
     void from_json(const nlohmann::json& j, urgency_t& l);
     void from_json(const nlohmann::json& j, location_t& l);
     void from_json(const nlohmann::json& j, edge_t& e);
     void from_json(const nlohmann::json& j, tta_instance_t& i);
     void from_json(const nlohmann::json& j, tta_template& t);
+    void from_json(const nlohmann::json& j, part_t& p);
 }
 
 #endif //AALTITOAD_MODEL_H

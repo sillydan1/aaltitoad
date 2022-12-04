@@ -60,4 +60,21 @@ namespace aaltitoad::hawk::model {
         j.at("final_location").get_to(t.final_location);
         j.at("sub_components").get_to(t.instances);
     }
+
+    void from_json(const nlohmann::json& j, part_t& p) {
+        j.at("ID").get_to(p.id);
+        if(j.contains("Value")) {
+            p.value = (std::stringstream{} << j.at("Value")).str();
+        } else {
+            auto type = j.at("Type").get<std::string>();
+            if(type == "EMR")                 p.value = "0"; // EMR type is being phased out, but this is fine for now
+            if(type == "Timer")               p.value = "0_ms";
+            if(type == "DigitalOutput")       p.value = "false";
+            if(type == "DigitalInput")        p.value = "false";
+            if(type == "DigitalToggleSwitch") p.value = "false";
+            if(type == "HighSpeedCounter")    p.value = "0";
+            if(type == "AnalogInput")         p.value = "0.0";
+            if(type == "AnalogOutput")        p.value = "0.0";
+        }
+    }
 }

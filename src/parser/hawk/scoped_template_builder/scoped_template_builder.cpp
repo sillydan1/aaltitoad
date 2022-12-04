@@ -47,6 +47,48 @@ namespace aaltitoad::hawk {
         return result;
     }
 
+    void scoped_template_builder::parse_declarations_recursively(const model::tta_instance_t& instance, const std::string& parent_name) {
+        auto scoped_name = (parent_name.empty() ? parent_name : parent_name + ".") + instance.invocation;
+        spdlog::trace("{0}: instantiating", scoped_name);
+        try {
+            // TODO: Gather errors and throw one aggregate exception
+            if(!templates.contains(instance.tta_template_name))
+                throw parse_error(instance.tta_template_name + ": no such template");
+            auto& instance_template = templates.at(instance.tta_template_name);
+            scoped_interpreter interpreter{{internal_symbols, external_symbols}};
+            interpreter.identifier_prefix = scoped_name + ".";
+            auto parameters = get_invocation_parameters(instance);
+            auto arguments = get_invocation_arguments(instance, interpreter);
+            if(arguments.size() != parameters.size()) {
+                spdlog::error("{0}: provided arguments {1} does not match parameters {2}", instance.invocation,
+                              arguments.size(), parameters.size());
+                throw parse_error(instance.invocation + ": provided arguments does not match parameters");
+            }
+
+            // Fill the parameter-argument table
+            for(auto i = 0; i < parameters.size(); i++)
+                interpreter.parameters[trim_copy(parameters[i])] = arguments[i];
+
+            // Construct the expression compiler
+            if(interpreter.parse(instance_template.declarations) != 0)
+                throw parse_error("parsing declarations: " + interpreter.error);
+            internal_symbols += interpreter.public_result;
+            auto local_scope_declarations = interpreter.result;
+            scoped_compiler c{local_scope_declarations, interpreter.parameters, scoped_name + ".",
+                              {internal_symbols, external_symbols}};
+            internal_symbols += c.get_localized_symbols();
+
+            // Recursively parse declarations
+            // TODO: use stl parallel constructs to compile faster
+            for(auto& template_instance: instance_template.instances)
+                parse_declarations_recursively(template_instance, scoped_name);
+
+        } catch (std::exception& e) {
+            spdlog::error("error instantiating '{0}': {2}", scoped_name, e.what());
+            throw e;
+        }
+    }
+
     void scoped_template_builder::instantiate_tta_recursively(const model::tta_instance_t& instance, const std::string& parent_name, ntta_builder& network_builder) { // NOLINT(misc-no-recursion)
         auto scoped_name = (parent_name.empty() ? parent_name : parent_name + ".") + instance.invocation;
         spdlog::trace("{0}: instantiating", scoped_name);
@@ -60,21 +102,14 @@ namespace aaltitoad::hawk {
             auto parameters = get_invocation_parameters(instance);
             auto arguments = get_invocation_arguments(instance, interpreter);
             if(arguments.size() != parameters.size()) {
-                spdlog::error("{0}: provided arguments {1} does not match parameters {2}", instance.invocation, arguments.size(), parameters.size());
+                spdlog::error("{0}: provided arguments {1} does not match parameters {2}", instance.invocation,
+                              arguments.size(), parameters.size());
                 throw parse_error(instance.invocation + ": provided arguments does not match parameters");
             }
 
             // Fill the parameter-argument table
             for(auto i = 0; i < parameters.size(); i++)
                 interpreter.parameters[trim_copy(parameters[i])] = arguments[i];
-
-            // Construct the expression compiler
-            if(interpreter.parse(instance_template.declarations) != 0)
-                throw parse_error("parsing declarations: " + interpreter.error);
-            internal_symbols += interpreter.public_result;
-            auto local_scope_declarations = interpreter.result;
-            scoped_compiler c{local_scope_declarations, interpreter.parameters, scoped_name + ".", {internal_symbols, external_symbols}};
-            internal_symbols += c.get_localized_symbols();
 
             // Recursively add instances
             // TODO: use stl parallel constructs to compile faster
@@ -84,6 +119,9 @@ namespace aaltitoad::hawk {
                 instantiate_tta_recursively(template_instance, scoped_name, network_builder);
 
             // Construct the tta builder
+            if(interpreter.parse(instance_template.declarations) != 0)
+                throw parse_error("parsing declarations: " + interpreter.error);
+            scoped_compiler c{interpreter.result, interpreter.parameters, scoped_name + ".", {internal_symbols, external_symbols}};
             tta_builder builder{&c};
             builder.set_name(scoped_name);
 
@@ -134,6 +172,14 @@ namespace aaltitoad::hawk {
                                 .invocation=main_it->first};
         spdlog::trace("building ntta from main component: '{0}'", main_it->second.name);
         ntta_builder builder{};
+        for(auto& decl : global_symbol_declarations) {
+            expr::interpreter e{};
+            if(e.parse(decl) != 0)
+                spdlog::error(e.error);
+            else
+                external_symbols += e.result;
+        }
+        parse_declarations_recursively(t, "");
         instantiate_tta_recursively(t, "", builder);
         builder.add_symbols(internal_symbols);
         builder.add_external_symbols(external_symbols);
@@ -183,5 +229,12 @@ namespace aaltitoad::hawk {
             spdlog::info("Loop: {0} [\n{1}]", scc.size(), ss.str());
         }
         throw parse_error("cannot instantiate network due to infinitely recursive instantiation, set verbosity to info or higher for detailed information");
+    }
+
+    auto scoped_template_builder::add_global_symbols(const std::vector<model::part_t>& parts) -> scoped_template_builder& {
+        std::stringstream ss{};
+        for(auto& p : parts)
+            ss << p.id << " := " << p.value << ";";
+        return add_global_symbols(ss.str());
     }
 }

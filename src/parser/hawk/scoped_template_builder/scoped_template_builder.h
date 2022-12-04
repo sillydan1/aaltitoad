@@ -15,9 +15,12 @@ namespace aaltitoad::hawk {
         std::regex arg_split{R"([\""].*[\""]|[^,]+)"};
     public:
         auto add_template(const model::tta_template& t) -> scoped_template_builder&;
+        auto add_global_symbols(const std::vector<model::part_t>& parts) -> scoped_template_builder&;
         auto add_global_symbols(const std::string& d) -> scoped_template_builder&;
         auto build_heap() -> ntta_t*;
     private:
+        void parse_declarations_recursively(const model::tta_instance_t& instance,
+                                            const std::string& parent_name);
         void instantiate_tta_recursively(const model::tta_instance_t& instance,
                                          const std::string& parent_name,
                                          ntta_builder& network_builder);
