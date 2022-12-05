@@ -44,6 +44,7 @@ namespace aaltitoad {
     auto tta_builder::compile_guard(const std::optional<std::string>& guard) -> expr::compiler::compiled_expr_t {
         if(!guard.has_value())
             return empty_guard;
+        compiler->trees.erase("expression_result");
         auto res = compiler->parse(guard.value());
         if(res != 0)
             throw std::logic_error(compiler->error);
@@ -52,6 +53,7 @@ namespace aaltitoad {
     auto tta_builder::compile_update(const std::optional<std::string>& update) -> expr::compiler::compiled_expr_collection_t {
         if(!update.has_value())
             return {};
+        compiler->trees = {};
         auto res = compiler->parse(update.value());
         if(res != 0)
             throw std::logic_error(compiler->error);

@@ -28,7 +28,6 @@ namespace aaltitoad::hawk {
         if(parameterized_identifier.has_value())
             id = parameterized_identifier.value();
 
-        spdlog::trace("adding variable {0}", identifier_prefix + id);
         expr::interpreter::add_tree(identifier_prefix + id, tree);
     }
 
@@ -38,7 +37,6 @@ namespace aaltitoad::hawk {
         if(parameterized_identifier.has_value())
             id = parameterized_identifier.value();
 
-        spdlog::trace("adding variable {0} {1}", access_modifier, identifier_prefix + id);
         if(lower_case(access_modifier) == "public")
             public_result[id] = evaluate(tree);
         else

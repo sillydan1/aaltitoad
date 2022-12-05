@@ -47,7 +47,7 @@ namespace aaltitoad::hawk {
         return result;
     }
 
-    void scoped_template_builder::parse_declarations_recursively(const model::tta_instance_t& instance, const std::string& parent_name) {
+    void scoped_template_builder::parse_declarations_recursively(const model::tta_instance_t& instance, const std::string& parent_name) { // NOLINT(misc-no-recursion)
         auto scoped_name = (parent_name.empty() ? parent_name : parent_name + ".") + instance.invocation;
         spdlog::trace("{0}: instantiating", scoped_name);
         try {
@@ -74,8 +74,7 @@ namespace aaltitoad::hawk {
                 throw parse_error("parsing declarations: " + interpreter.error);
             internal_symbols += interpreter.public_result;
             auto local_scope_declarations = interpreter.result;
-            scoped_compiler c{local_scope_declarations, interpreter.parameters, scoped_name + ".",
-                              {internal_symbols, external_symbols}};
+            scoped_compiler c{local_scope_declarations, interpreter.parameters, scoped_name + ".",{internal_symbols, external_symbols}};
             internal_symbols += c.get_localized_symbols();
 
             // Recursively parse declarations
