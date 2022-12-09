@@ -30,7 +30,6 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
-# TODO: Implement timers/clocks-support
 CPMAddPackage(NAME expr GIT_TAG feature/tree_interpreter GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
 CPMAddPackage(NAME argvparse VERSION 1.2.3 GITHUB_REPOSITORY sillydan1/argvparse)
 CPMAddPackage(NAME ctl-expr GIT_TAG main GITHUB_REPOSITORY sillydan1/ctl-expr)
