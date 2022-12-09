@@ -2,6 +2,7 @@
 #define AALTITOAD_WARNINGS_H
 #include <unordered_map>
 #include <string>
+#include <vector>
 
 namespace aaltitoad {
     enum w_t {
@@ -17,6 +18,7 @@ namespace aaltitoad {
         static void disable_all();
         static auto descriptions() -> std::unordered_map<w_t, std::string>;
         static void warn(const w_t& warning, const std::string& msg);
+        static void warn(const w_t& warning, const std::string& msg, const std::vector<std::string>& extra_info_lines);
     };
 }
 

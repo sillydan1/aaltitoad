@@ -60,12 +60,20 @@ namespace aaltitoad {
         external_symbols.overwrite_elements(symbol_changes);
     }
 
+    auto conflict_string(const expr::symbol_table_t& a, const expr::symbol_table_t& b) -> std::string {
+        std::stringstream ss{};
+        for(auto& v : b)
+            if(b.contains(v.first) && std::get<bool>(b.get(v.first) != v.second))
+                ss << v.first << " (' " << b.get(v.first) << "' / '" << v.second << "')\n";
+        return ss.str();
+    }
+
     void ntta_t::apply(const std::vector<expr::symbol_table_t>& symbol_change_list) {
         expr::symbol_table_t combined_changes{};
         for(auto& changes : symbol_change_list) {
             if(combined_changes.is_overlapping_and_not_idempotent(changes))
-                // TODO: Also provide the data if high verbosity
-                warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tocker-change application, will overwrite depending on the order");
+                warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tocker-change application, will overwrite depending on the order",
+                               {conflict_string(combined_changes, changes)});
             combined_changes += changes;
         }
         apply(combined_changes);
@@ -102,8 +110,8 @@ namespace aaltitoad {
                 if (it1 == it2)
                     continue;
                 if (it1->second.symbol_changes.is_overlapping_and_not_idempotent(it2->second.symbol_changes)) {
-                    // TODO: Also provide the data if high verbosity
-                    warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tick-change calculation");
+                    warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tick-change calculation",
+                                   {conflict_string(it1->second.symbol_changes, it2->second.symbol_changes)});
                     edge_dependency_graph_builder.add_edge(it1->first, it2->first, uniqueness_counter++);
                 }
             }

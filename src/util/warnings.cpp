@@ -36,4 +36,16 @@ namespace aaltitoad {
         if(is_enabled(warning))
             spdlog::warn("[{0}]: {1}", magic_enum::enum_name(warning), msg);
     }
+
+    void warnings::warn(const aaltitoad::w_t& warning, const std::string& msg, const std::vector<std::string>& extra_info_lines) {
+        if(!is_enabled(warning))
+            return;
+
+        std::stringstream ss{}; ss << msg << "\n";
+        if(spdlog::get_level() <= spdlog::level::debug) {
+            for(auto& line: extra_info_lines)
+                ss << line << "\n";
+        }
+        warn(warning, ss.str());
+    }
 }
