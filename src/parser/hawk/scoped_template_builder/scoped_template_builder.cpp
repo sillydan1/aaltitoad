@@ -110,8 +110,6 @@ namespace aaltitoad::hawk {
                 interpreter.parameters[trim_copy(parameters[i])] = arguments[i];
 
             // Recursively add instances
-            // TODO: sequentially composed TTAs
-            // TODO: Parameterize instance invocation(s)
             for(auto& template_instance : instance_template.instances)
                 instantiate_tta_recursively(template_instance, scoped_name, network_builder);
 
