@@ -7,7 +7,6 @@
 
 namespace aaltitoad::hawk {
     auto load(const std::vector<std::string>& filepaths, const std::vector<std::string> &ignore_list) -> aaltitoad::ntta_t* {
-        // TODO: use stl parallel constructs to load files faster
         scoped_template_builder builder{};
         for(const auto& filepath : filepaths) {
             for(const auto &entry: std::filesystem::directory_iterator(filepath)) {

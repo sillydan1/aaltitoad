@@ -78,7 +78,6 @@ namespace aaltitoad::hawk {
             internal_symbols += c.get_localized_symbols();
 
             // Recursively parse declarations
-            // TODO: use stl parallel constructs to compile faster
             for(auto& template_instance: instance_template.instances)
                 parse_declarations_recursively(template_instance, scoped_name);
 
@@ -111,7 +110,6 @@ namespace aaltitoad::hawk {
                 interpreter.parameters[trim_copy(parameters[i])] = arguments[i];
 
             // Recursively add instances
-            // TODO: use stl parallel constructs to compile faster
             // TODO: sequentially composed TTAs
             // TODO: Parameterize instance invocation(s)
             for(auto& template_instance : instance_template.instances)
