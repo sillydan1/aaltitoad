@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
         auto results = frs.is_reachable(*n, queries);
         spdlog::debug("reachability search took {0}ms", t.milliseconds_elapsed());
 
-        // TODO: gather and return results
+        // gather and return results
         for(auto& result : results) {
             std::cout << result.query << ": " << std::boolalpha << result.solution.has_value() << "\n";
             if(result.solution.has_value())
