@@ -83,7 +83,7 @@ namespace aaltitoad {
         symbols += symbol_changes;
     }
 
-    auto should_create_dependency_edge(const tta_t::graph_edge_iterator_t& e1, const tta_t::graph_edge_iterator_t& e2, expr::interpreter& i) -> bool {
+    auto ntta_t::should_create_dependency_edge(const tta_t::graph_edge_iterator_t& e1, const tta_t::graph_edge_iterator_t& e2, expr::interpreter& i) const -> bool {
         if(e1->second.source == e2->second.source)
             return true;
         auto changes1 = i.evaluate(e1->second.data.updates);
@@ -102,7 +102,6 @@ namespace aaltitoad {
         uint32_t unique_counter = 0;
         for(auto component_it = components.begin(); component_it != components.end(); component_it++) {
             for(auto& edge : component_it->second.current_location->second.outgoing_edges) {
-                i.expression_result = {};
                 if(!std::get<bool>(i.evaluate(edge->second.data.guard)))
                     continue;
                 for(auto& n : graph_builder.nodes)
