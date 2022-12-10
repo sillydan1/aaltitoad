@@ -21,7 +21,7 @@ namespace aaltitoad {
     }
 
     auto ntta_t::tick() -> std::vector<state_change_t> {
-        auto problem = generate_enabled_choice_dependency_graph();
+        auto problem = calculate_edge_dependency_graph();
         auto solutions = tick_resolver{problem.dependency_graph}.solve();
         std::vector<state_change_t> result{};
         result.reserve(solutions.size());
@@ -83,9 +83,45 @@ namespace aaltitoad {
         symbols += symbol_changes;
     }
 
+    auto should_create_dependency_edge(const tta_t::graph_edge_iterator_t& e1, const tta_t::graph_edge_iterator_t& e2, expr::interpreter& i) -> bool {
+        if(e1->second.source == e2->second.source)
+            return true;
+        auto changes1 = i.evaluate(e1->second.data.updates);
+        auto changes2 = i.evaluate(e2->second.data.updates);
+        if(changes1.is_overlapping_and_not_idempotent(changes2)) {
+            warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tick-change calculation", {conflict_string(changes1, changes2)});
+            return true;
+        }
+        return false;
+    }
+
+    auto ntta_t::calculate_edge_dependency_graph() -> tick_resolver::choice_dependency_problem {
+        expr::interpreter i{{symbols, external_symbols}};
+        tick_resolver::graph_type_builder graph_builder{};
+        std::unordered_map<std::string, choice_t> all_enabled_choices{};
+        uint32_t unique_counter = 0;
+        for(auto component_it = components.begin(); component_it != components.end(); component_it++) {
+            for(auto& edge : component_it->second.current_location->second.outgoing_edges) {
+                i.expression_result = {};
+                if(!std::get<bool>(i.evaluate(edge->second.data.guard)))
+                    continue;
+                for(auto& n : graph_builder.nodes)
+                    if(should_create_dependency_edge(edge, n.data, i))
+                        graph_builder.add_edge(edge->first.identifier, n.data->first.identifier, unique_counter++);
+
+                graph_builder.add_node({edge->first.identifier, edge});
+                all_enabled_choices.insert({edge->first.identifier, choice_t{edge,{component_it,edge->second.target}, i.evaluate(edge->second.data.updates)}});
+            }
+        }
+        try {
+            return { graph_builder.validate().optimize().build(), all_enabled_choices };
+        } catch (std::exception& e) {
+            spdlog::critical("unable to generate enabled choice dependency graph: '{0}' please report this as an issue on github.com/sillydan1/AALTITOAD", e.what());
+            throw e;
+        }
+    }
+
     auto ntta_t::generate_enabled_choice_dependency_graph() -> tick_resolver::choice_dependency_problem {
-        // TODO: Implement the optimized version of this (see notes)
-        // Build dependency graph and collect choices
         auto all_symbols = symbols + external_symbols;
         expr::interpreter i{all_symbols};
         tick_resolver::graph_type_builder edge_dependency_graph_builder{};
