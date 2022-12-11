@@ -1,6 +1,7 @@
 #ifndef AALTITOAD_SCOPED_TEMPLATE_BUILDER_H
 #define AALTITOAD_SCOPED_TEMPLATE_BUILDER_H
 #include "model.h"
+#include "scoped_interpreter.h"
 #include <ntta/tta.h>
 #include <util/tarjan.h>
 #include <ntta/builder/ntta_builder.h>
@@ -19,11 +20,9 @@ namespace aaltitoad::hawk {
         auto add_global_symbols(const std::string& d) -> scoped_template_builder&;
         auto build_heap() -> ntta_t*;
     private:
-        void parse_declarations_recursively(const model::tta_instance_t& instance,
-                                            const std::string& parent_name);
-        void instantiate_tta_recursively(const model::tta_instance_t& instance,
-                                         const std::string& parent_name,
-                                         ntta_builder& network_builder);
+        auto construct_interpreter_from_scope(const model::tta_instance_t& instance, const std::string& scoped_name) -> scoped_interpreter;
+        void parse_declarations_recursively(const model::tta_instance_t& instance, const std::string& parent_name);
+        void instantiate_tta_recursively(const model::tta_instance_t& instance, const std::string& parent_name, ntta_builder& network_builder);
         auto generate_dependency_graph() -> ya::graph<std::string,std::string,std::string>;
         auto find_instance_sccs(ya::graph<std::string,std::string,std::string>& g) -> std::vector<scc_t<std::string,std::string,std::string>>;
         void throw_if_infinite_recursion_in_dependencies();

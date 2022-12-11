@@ -31,7 +31,7 @@ namespace aaltitoad::hawk {
                         spdlog::trace("ignoring file {0} (not a valid model file)", entry.path().c_str());
                 } catch (std::exception &e) {
                     spdlog::error("unable to parse json file {0}: {1}", entry.path().c_str(), e.what());
-                    throw e; // todo: accumulate errors and throw in the end
+                    throw e;
                 }
             }
         }

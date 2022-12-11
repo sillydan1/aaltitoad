@@ -47,29 +47,35 @@ namespace aaltitoad::hawk {
         return result;
     }
 
+    auto scoped_template_builder::construct_interpreter_from_scope(const model::tta_instance_t& instance, const std::string& scoped_name) -> scoped_interpreter {
+        // Interpret arguments and check for matching parameters
+        scoped_interpreter interpreter{{internal_symbols, external_symbols}};
+        interpreter.identifier_prefix = scoped_name + ".";
+        auto parameters = get_invocation_parameters(instance);
+        auto arguments = get_invocation_arguments(instance, interpreter);
+        if(arguments.size() != parameters.size()) {
+            std::stringstream ss{}; ss << "provided arguments (" << arguments.size() << ") does not match parameters (" << parameters.size() << ")";
+            throw parse_error(ss.str());
+        }
+
+        // Fill the parameter-argument table
+        for(auto i = 0; i < parameters.size(); i++)
+            interpreter.parameters[trim_copy(parameters[i])] = arguments[i];
+
+        return interpreter;
+    }
+
     void scoped_template_builder::parse_declarations_recursively(const model::tta_instance_t& instance, const std::string& parent_name) { // NOLINT(misc-no-recursion)
         auto scoped_name = (parent_name.empty() ? parent_name : parent_name + ".") + instance.invocation;
-        spdlog::trace("{0}: instantiating", scoped_name);
+        spdlog::trace("{0}: parsing declarations", scoped_name);
         try {
-            // TODO: Gather errors and throw one aggregate exception
+            // Does the template exist?
             if(!templates.contains(instance.tta_template_name))
                 throw parse_error(instance.tta_template_name + ": no such template");
             auto& instance_template = templates.at(instance.tta_template_name);
-            scoped_interpreter interpreter{{internal_symbols, external_symbols}};
-            interpreter.identifier_prefix = scoped_name + ".";
-            auto parameters = get_invocation_parameters(instance);
-            auto arguments = get_invocation_arguments(instance, interpreter);
-            if(arguments.size() != parameters.size()) {
-                spdlog::error("{0}: provided arguments {1} does not match parameters {2}", instance.invocation,
-                              arguments.size(), parameters.size());
-                throw parse_error(instance.invocation + ": provided arguments does not match parameters");
-            }
-
-            // Fill the parameter-argument table
-            for(auto i = 0; i < parameters.size(); i++)
-                interpreter.parameters[trim_copy(parameters[i])] = arguments[i];
 
             // Construct the expression compiler
+            auto interpreter = construct_interpreter_from_scope(instance, scoped_name);
             if(interpreter.parse(instance_template.declarations) != 0)
                 throw parse_error("parsing declarations: " + interpreter.error);
             internal_symbols += interpreter.public_result;
@@ -77,13 +83,14 @@ namespace aaltitoad::hawk {
             scoped_compiler c{local_scope_declarations, interpreter.parameters, scoped_name + ".",{internal_symbols, external_symbols}};
             internal_symbols += c.get_localized_symbols();
 
-            // Recursively parse declarations
-            for(auto& template_instance: instance_template.instances)
-                parse_declarations_recursively(template_instance, scoped_name);
+            // Recurse
+            call_func_aggregate_errors(instance_template.instances, [this, &scoped_name](auto& template_instance){
+               parse_declarations_recursively(template_instance, scoped_name);
+            });
 
         } catch (std::exception& e) {
-            spdlog::error("error instantiating '{0}': {2}", scoped_name, e.what());
-            throw e;
+            spdlog::error("instantiating '{0}': {1}", scoped_name, e.what());
+            throw;
         }
     }
 
@@ -91,29 +98,18 @@ namespace aaltitoad::hawk {
         auto scoped_name = (parent_name.empty() ? parent_name : parent_name + ".") + instance.invocation;
         spdlog::trace("{0}: instantiating", scoped_name);
         try {
-            // TODO: Gather errors and throw one aggregate exception
+            // Does the template exist?
             if(!templates.contains(instance.tta_template_name))
                 throw parse_error(instance.tta_template_name + ": no such template");
             auto& instance_template = templates.at(instance.tta_template_name);
-            scoped_interpreter interpreter{{internal_symbols, external_symbols}};
-            interpreter.identifier_prefix = scoped_name + ".";
-            auto parameters = get_invocation_parameters(instance);
-            auto arguments = get_invocation_arguments(instance, interpreter);
-            if(arguments.size() != parameters.size()) {
-                spdlog::error("{0}: provided arguments {1} does not match parameters {2}", instance.invocation,
-                              arguments.size(), parameters.size());
-                throw parse_error(instance.invocation + ": provided arguments does not match parameters");
-            }
-
-            // Fill the parameter-argument table
-            for(auto i = 0; i < parameters.size(); i++)
-                interpreter.parameters[trim_copy(parameters[i])] = arguments[i];
 
             // Recursively add instances
-            for(auto& template_instance : instance_template.instances)
+            call_func_aggregate_errors(instance_template.instances, [this, &scoped_name, &network_builder](auto& template_instance){
                 instantiate_tta_recursively(template_instance, scoped_name, network_builder);
+            });
 
             // Construct the tta builder
+            auto interpreter = construct_interpreter_from_scope(instance, scoped_name);
             if(interpreter.parse(instance_template.declarations) != 0)
                 throw parse_error("parsing declarations: " + interpreter.error);
             scoped_compiler c{interpreter.result, interpreter.parameters, scoped_name + ".", {internal_symbols, external_symbols}};
@@ -138,7 +134,7 @@ namespace aaltitoad::hawk {
             builder.set_starting_location(instance_template.initial_location.id);
 
             // Add edges
-            for(auto& edge : instance_template.edges) {
+            call_func_aggregate_errors(instance_template.edges, [&builder](auto& edge){
                 std::optional<std::string> guard{};
                 if(!trim_copy(edge.guard).empty())
                     guard = edge.guard;
@@ -146,14 +142,14 @@ namespace aaltitoad::hawk {
                 if(!trim_copy(edge.update).empty())
                     update = edge.update;
                 builder.add_edge({.source=edge.source, .target=edge.target, .guard=guard, .update=update});
-            }
+            });
 
             // Add the tta to the network
             network_builder.add_tta(builder);
 
-        } catch (std::logic_error& e) {
-            spdlog::error("error instantiating '{0}': {2}", scoped_name, e.what());
-            throw e;
+        } catch (std::exception& e) {
+            spdlog::error("instantiating '{0}': {1}", scoped_name, e.what());
+            throw;
         }
     }
 
