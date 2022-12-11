@@ -2,12 +2,6 @@
 #include "verification/ctl/ctl_sat.h"
 
 namespace aaltitoad {
-    // TODO: <feature request> todo: add a new issue on github
-    //       Max search time? / max explosion allowed? - could be done with sizeof(s0) / GiB/MiB
-    //       we could do a prompt: "reached RAM limit with xxx states remaining, continue?"
-    //       With that, we could also do a Waiting-list velocity calculation. Maybe even output
-    //       waiting-list size to a CSV file, so it could be graphed! (very useful for papers)
-    //       This behavior can be embedded into a specialization of traceable_multimap<T>
     forward_reachability_searcher::forward_reachability_searcher(const aaltitoad::pick_strategy& strategy)
      : W{}, P{}, solutions{}, strategy{strategy} {
 
