@@ -1,21 +1,19 @@
-# Copyright (C) 2022 Asger Gitz-Johansen
-# This file is part of aaltitoad.
+# aaltitoad - a verification engine for tick tock automata models
+# Copyright (C) 2023 Asger Gitz-Johansen
 #
-#  aaltitoad is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
 #
-#  aaltitoad is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with aaltitoad.  If not, see <https://www.gnu.org/licenses/>.
-# TODO: Add license header to all source files
-# 3.16+ because of target_precompiled_header
-cmake_minimum_required(VERSION 3.16)
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+cmake_minimum_required(VERSION 3.16) # 3.16+ because of target_precompiled_header
 project(aaltitoad VERSION 1.0.0)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_CXX_STANDARD 20)
