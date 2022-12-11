@@ -19,10 +19,7 @@ SCENARIO("basic reachability", "[frs]") {
                 // Add tockers
                 .build_with_interesting_tocker();
         GIVEN("a simple reachability query 'can x reach zero?'") {
-            // TODO: ctl::compiler should be able to have more than one symbol table to lookup in, that way we wont need
-            //       to manually have a copy of the symbol table on the stack to avoid invalid memory access...
-            auto s = n.symbols + n.external_symbols;
-            auto query = ctl::compiler{{s}}.compile("E F x == 0");
+            auto query = ctl::compiler{{n.symbols, n.external_symbols}}.compile("E F x == 0");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{};
                 auto results = frs.is_reachable(n, query);
