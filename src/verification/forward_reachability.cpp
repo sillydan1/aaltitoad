@@ -82,6 +82,8 @@ namespace aaltitoad {
     }
 
     auto forward_reachability_searcher::check_satisfactions(const solution_t& s) -> bool {
+        // TODO: With AG queries, they are always "true" until you find a counter-example, then they are "false", but with a solution
+        //       right now, we are doing the opposite
         for(auto& solution : solutions) {
             if(solution.solution.has_value()) continue;
             if(is_satisfied(solution.query, s->second.data))
