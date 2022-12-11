@@ -71,10 +71,8 @@ namespace aaltitoad {
         apply_internal(changes.symbol_changes);
     }
 
-    void ntta_t::apply(const expr::symbol_table_t &symbol_changes) {
-        if(symbol_changes.get_delay_amount().has_value())
-            symbols.delay(symbol_changes.get_delay_amount().value());
-        external_symbols.overwrite_elements(symbol_changes);
+    void ntta_t::apply(const expr::symbol_table_t& symbol_changes) {
+        apply_internal(symbol_changes);
     }
 
     auto conflict_string(const expr::symbol_table_t& a, const expr::symbol_table_t& b) -> std::string {
@@ -97,7 +95,10 @@ namespace aaltitoad {
     }
 
     void ntta_t::apply_internal(const expr::symbol_table_t &symbol_changes) {
-        symbols += symbol_changes;
+        // apply changes to internal and external symbols (overwrite, dont insert)
+        // TODO: This could be done in a more sophisticated manner.
+        symbols *= symbol_changes;
+        external_symbols *= symbol_changes;
     }
 
     auto ntta_t::should_create_dependency_edge(const tta_t::graph_edge_iterator_t& e1, const tta_t::graph_edge_iterator_t& e2, expr::interpreter& i) const -> bool {
