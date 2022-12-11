@@ -1,27 +1,22 @@
 [
   {
-    "query": "A G ! (counter > 1)",
-    "comment": "",
+    "query": "E F ctr == 1",
+    "comment": "Should be reachable",
     "is_periodic": false
   },
   {
-    "query": "A G ! (counter < 0)",
-    "comment": "",
+    "query": "A G ctr < 0 ",
+    "comment": "No counter-example should be found",
     "is_periodic": false
   },
   {
-    "query": "E F counter == 1",
-    "comment": "",
+    "query": "E F ctr < 0",
+    "comment": "Should be unreachable",
     "is_periodic": false
   },
   {
-    "query": "A G ! deadlock",
-    "comment": "",
-    "is_periodic": false
-  },
-  {
-    "query": "A G !(Main€FischerA(1).L6 && Main€FischerB(2).L6)",
-    "comment": "",
+    "query": "E F pid == 2 && ctr == 1",
+    "comment": "Should be reachable",
     "is_periodic": false
   }
 ]

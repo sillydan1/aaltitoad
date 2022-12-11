@@ -1,7 +1,22 @@
 [
   {
-    "query": "E F counter \u003d\u003d 1",
-    "comment": "Can any processes get to CS?",
+    "query": "E F ctr == 1",
+    "comment": "Should be reachable",
+    "is_periodic": false
+  },
+  {
+    "query": "A G ctr < 0 ",
+    "comment": "No counter-example should be found",
+    "is_periodic": false
+  },
+  {
+    "query": "E F ctr < 0",
+    "comment": "Should be unreachable",
+    "is_periodic": false
+  },
+  {
+    "query": "E F pid == 2 && ctr == 1",
+    "comment": "Should be reachable",
     "is_periodic": false
   }
 ]
