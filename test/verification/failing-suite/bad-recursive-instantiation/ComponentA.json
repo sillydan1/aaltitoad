@@ -1,0 +1,53 @@
+{
+  "name": "ComponentA",
+  "declarations": "",
+  "locations": [],
+  "initial_location": {
+    "id": "L16",
+    "nickname": "",
+    "invariant": "",
+    "type": "INITIAL",
+    "urgency": "NORMAL",
+    "x": 20.0,
+    "y": 20.0,
+    "color": "2",
+    "nickname_x": 30.0,
+    "nickname_y": -10.0,
+    "invariant_x": 30.0,
+    "invariant_y": 10.0
+  },
+  "final_location": {
+    "id": "L17",
+    "nickname": "",
+    "invariant": "",
+    "type": "FINAl",
+    "urgency": "NORMAL",
+    "x": 430.0,
+    "y": 260.0,
+    "color": "2",
+    "nickname_x": 30.0,
+    "nickname_y": -10.0,
+    "invariant_x": 30.0,
+    "invariant_y": 10.0
+  },
+  "jorks": [],
+  "sub_components": [
+    {
+      "component": "ComponentB",
+      "identifier": "B",
+      "x": 100.0,
+      "y": 80.0,
+      "width": 240.0,
+      "height": 120.0
+    }
+  ],
+  "edges": [],
+  "main": false,
+  "description": "",
+  "x": 5.0,
+  "y": 5.0,
+  "width": 450.0,
+  "height": 280.0,
+  "color": "2",
+  "include_in_periodic_check": true
+}
