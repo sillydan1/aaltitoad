@@ -46,12 +46,13 @@ namespace aaltitoad::hawk {
                         builder.add_global_symbols(json_file.at("parts").get<std::vector<model::part_t>>());
                     } else
                         spdlog::trace("ignoring file {0} (not a valid model file)", entry.path().c_str());
-                } catch (std::exception &e) {
+                } catch (std::exception& e) {
                     spdlog::error("unable to parse json file {0}: {1}", entry.path().c_str(), e.what());
-                    throw e;
+                    throw;
                 }
             }
         }
+        spdlog::trace("building the ntta_t");
         return builder.build_heap();
     }
 
@@ -62,18 +63,6 @@ namespace aaltitoad::hawk {
 
     auto should_ignore(const std::filesystem::directory_entry& entry, const std::string& ignore_regex) -> bool {
         return std::regex_match(entry.path().c_str(), std::regex{ignore_regex});
-    }
-
-    auto load_part(const nlohmann::json& json_file) -> std::string {
-        spdlog::trace("loading parts file");
-        std::stringstream ss{};
-        if(json_file.at("SpecificType").contains("Variable"))
-            ss << (std::string)json_file.at("PartName") << " := " << json_file.at("SpecificType").at("Variable").at("Value");
-        else if(json_file.at("SpecificType").contains("Timer"))
-            ss << (std::string)json_file.at("PartName") << " := " << json_file.at("SpecificType").at("Timer").at("Value") << "_ms";
-        else
-            throw std::logic_error("invalid piece of json: "+to_string(json_file));
-        return ss.str();
     }
 }
 

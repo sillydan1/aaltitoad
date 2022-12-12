@@ -38,10 +38,10 @@ namespace aaltitoad::hawk {
         if (std::regex_search(instance.tta_template_name.cbegin(), instance.tta_template_name.cend(), match, param_section)) {
             auto m = match.str().substr(1, match.str().size() - 2); // remove the parentheses
             for(auto i = std::sregex_iterator(m.begin(), m.end(), arg_split); i != std::sregex_iterator(); ++i) {
-                if(std::find(result.begin(), result.end(),i->str()) == result.end())
-                    result.push_back(i->str());
-                else
-                    spdlog::error("{0}: duplicate template parameters: {1}", instance.tta_template_name, i->str());
+                auto s = trim_copy(i->str());
+                if(std::find(result.begin(), result.end(), s) != result.end())
+                    throw parse_error(instance.tta_template_name + ": duplicate template parameters: " + s);
+                result.push_back(s);
             }
         }
         return result;
@@ -53,11 +53,8 @@ namespace aaltitoad::hawk {
         if (std::regex_search(instance.invocation.cbegin(), instance.invocation.cend(), match, param_section)) {
             auto m = match.str().substr(1, match.str().size() - 2); // remove the parentheses
             for(auto i = std::sregex_iterator(m.begin(), m.end(), arg_split); i != std::sregex_iterator(); ++i) {
-                auto res = interpreter.parse(i->str());
-                if(res != 0) {
-                    spdlog::error("{0}: could not get arguments of tta invocation: {1}", instance.invocation, interpreter.error);
-                    throw parse_error(interpreter.error);
-                }
+                if(interpreter.parse(trim_copy(i->str())) != 0)
+                    throw parse_error(instance.invocation + ": could not get arguments of tta invocation: " + interpreter.error);
                 result.push_back(interpreter.expression_result);
             }
         }
@@ -200,7 +197,8 @@ namespace aaltitoad::hawk {
             for(auto& i : t.second.instances)
                 template_dependency_graph_builder.add_edge(t.first, i.tta_template_name, ya::uuid_v4());
         }
-        return template_dependency_graph_builder.build();
+        spdlog::trace("building instantiation dependency graph");
+        return template_dependency_graph_builder.validate().build();
     }
 
     auto scoped_template_builder::find_instance_sccs(ya::graph<std::string,std::string,std::string>& g) -> std::vector<scc_t<std::string,std::string,std::string>> {
