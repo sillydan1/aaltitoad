@@ -183,9 +183,8 @@ namespace aaltitoad::hawk {
         for(auto& decl : global_symbol_declarations) {
             expr::interpreter e{};
             if(e.parse(decl) != 0)
-                spdlog::error(e.error);
-            else
-                external_symbols += e.result;
+                throw parse_error("global declarations error: " + e.error);
+            external_symbols += e.result;
         }
         parse_declarations_recursively(t, "");
         instantiate_tta_recursively(t, "", builder);
