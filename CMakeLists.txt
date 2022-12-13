@@ -102,6 +102,12 @@ add_subdirectory(src/cli/verifier)
 add_subdirectory(src/parser)
 add_subdirectory(test)
 
+install(TARGETS ${PROJECT_NAME}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES src/cli/verifier/man/tta.7
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/man/man7)
+
 if(NOT WIN32)
     target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
 endif()
