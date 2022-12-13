@@ -19,11 +19,37 @@ aaltitoad - a verification engine for tick tock automata models
 
 ![logo](.github/resources/AALTITOAD_LOGO_SMALLER.png)
 
-**Aal**borg **Ti**ck T**o**ck **A**utomata Vali**d**ator is a verification engine and simulator for Tick Tock Automata. 
+**Aal**borg **Ti**ck **To**ck **A**utomata Vali**d**ator is a verification engine, simulator and general library for Tick Tock Automata. 
 
-TTA's (Tick Tock Automatas) are an Automata based theory. [This](.github/resources/SW10__Tick_Tock_Automata.pdf) paper describes the Tick Tock Automata theory, and [this](.github/resources/SW9__AALTITOAD.pdf) paper describes the tool and presents test case results.
+## What is a Tick Tock Automata?
+TTA's (Tick Tock Automata) are an Automata based theory that can model business logic for all kinds of automation systems.
+A TTA consists of a set of locations and transitions between them. 
+Each transition can be guarded by a _boolean expression_ and have a set of _variable assignments_ as a "consequence" of _taking_ the transition.
 
-The TTA parser assumes models modelled in the [H-UPPAAL](https://github.com/DEIS-Tools/H-Uppaal) tool.  
+A good analogy to TTA is a _statemachine_, where a system can transition from one state to another. 
+Below is an example of a simple TTA that controls a light based on a button input.
+
+![simple_tta](.github/resources/simple_tta.svg)
+
+Starting in the OFF location, there's only one outgoing edge with the guard that checks if `btn_is_pressed` is _true_.
+If it is, we move to the ON location and set the variable `light` to _true_ as a consequence of _taking_ the edge/transition.
+Then, when the button is released we return to the OFF locaiton and `light` is set to _false_ again. 
+
+What makes TTAs different from any other transition system is that the `btn_is_pressed` variable is an _external_ variable, 
+meaning that it cannot be assigned to any value by the transition system, it can only change based on an external input.
+External inputs are read when we are not taking transitions.
+This split of the semantics is where the name Tick Tock Automata comes from:
+ - Tick-step: evaluate guards, apply updates, change locations
+ - Tock-step: read external inputs, write external outputs
+
+Taking the syntax one step further, you can have many of these TTAs running in parallel, sharing the same pool of internal and external variables.
+Such a network is called simply a **n**etwork of **t**ick **t**ock **a**utomata (NTTA).
+
+### Further Reading
+ - [This](.github/resources/SW10__Tick_Tock_Automata.pdf) paper describes the base Tick Tock Automata theory
+ - [This(wip)]() paper describes in detail the newest iteration of the tool (v1.0.0+)
+ - [This](.github/resources/SW9__AALTITOAD.pdf) paper describes the first iteration of the tool (v0.10.x)
+ - Take a look at [H-UPPAAL](https://github.com/DEIS-Tools/H-Uppaal) if you want to create some TTAs yourself
 
 ## Compile (Linux)
 Aaltitoad is built using cmake. You must have a C++20 compatible compiler, `flex`, `bison` version 3.5+ and the standard template library installed.
@@ -46,14 +72,30 @@ make aaltitoad_tests
 ```
 If you want to include code-coverage stats, provide the `-DCODE_COVERAGE=ON` cmake flag.
 
+## How To Use
+Aaltitoad provides three primary compilation targets. All commandline interfaces have a help page that you can summon with the `--help` argument.
+ - `verifier`: A verification engine command line interface
+   - use this if you want to analyze your NTTA
+ - `simulator`: A runtime command line interface
+   - use this if you want to execute your NTTA and link with your custom tockers (see below)
+ - `aaltitoad`: A library with all things aaltitoad
+   - use this to create your own NTTA-based applications e.g. another verifier, runtime or even compiler
+
 ## Tocker plugins
 Aaltitoad supports third party "tocker" libraries, so you can inject custom integrations directly into the runtime.
 This repository provides an example tocker called `pipe_tocker` in the `tocker_plugins` directory to serve as an example project.
 A "tocker" must define the following symbols:
 ```c++
-const char* get_plugin_name(); // Return value of this func dictates the name the next two funcs
-tocker_t* create_TOCKER_NAME(const std::string& argument, const ntta_t& ntta);
-void destroy_TOCKER_NAME(tocker_t* tocker);
+#include <plugin_system.h> // aaltitoad::* typedefs
+
+extern "C" {
+    const char* get_plugin_name(); // Return value of this func dictates the name the next two funcs
+    aaltitoad::tocker_t* create_TOCKER_NAME(const std::string& argument, const aaltitoad::ntta_t& ntta);
+    void destroy_TOCKER_NAME(tocker_t* tocker);
+    plugin_type get_plugin_type() {
+        return plugin_type::tocker;
+    }
+}
 ```
 The `TOCKER_NAME` refers to the C-String provided by the `get_plugin_name` function. 
 The function names MUST match, otherwise the plugin will not load.
@@ -82,7 +124,21 @@ In contrast, the asynchronous tocker will not block tick execution, but start a 
 When implementing your tocker, you should consider if you want to block the TTA from executing or not.
 If you choose to implement an asynchronous tocker, be aware that the input environment can have changed since the tock was issued. 
 
-### Timers
-TODO: Think about timers in the context of custom tockers
+## Parser Plugins
+If you don't want to use the included parser, you can always supply your own. 
+As long as you provide the following symbols (remember `extern "C"`):
 
-If you have any questions, you are welcome to reach out to [me](https://github.com/sillydan1) directly.
+```c++
+#include <plugin_system.h> // aaltitoad::* typedefs 
+
+extern "C" {
+    const char* get_plugin_name();
+    const char* get_plugin_version();
+    aaltitoad::ntta_t* load(const std::vector<std::string>& folders, const std::vector<std::string>& ignore_list);
+    plugin_type get_plugin_type() {
+        return plugin_type::parser;
+    }
+}
+```
+
+To make it a bit easier constructing the `aaltitoad::ntta_t` object, we provide some builder classes: `aaltitoad::tta_builder` and `aaltitoad::ntta_builder`
