@@ -27,9 +27,14 @@ A TTA consists of a set of locations and transitions between them.
 Each transition can be guarded by a _boolean expression_ and have a set of _variable assignments_ as a "consequence" of _taking_ the transition.
 
 A good analogy to TTA is a _statemachine_, where a system can transition from one state to another. 
-Below is an example of a simple TTA that controls a light based on a button input.
+Below is an example of a simple TTA that controls a light based on a button input. (if you cant see the example in your editor, [here](.github/resources/simple_tta.svg) is an SVG version of it)
 
-![simple_tta](.github/resources/simple_tta.svg)
+```mermaid
+graph LR
+    OFF((OFF)) --> | btn_is_pressed<br/>light := true | ON((ON))
+    ON((ON)) --> | !btn_is_pressed<br/>light := false | OFF((OFF))
+
+```
 
 Starting in the OFF location, there's only one outgoing edge with the guard that checks if `btn_is_pressed` is _true_.
 If it is, we move to the ON location and set the variable `light` to _true_ as a consequence of _taking_ the edge/transition.
