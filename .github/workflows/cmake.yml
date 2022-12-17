@@ -1,4 +1,4 @@
-name: AALTITOAD CMake Pipeline
+name: aaltitoad build
 
 on: 
   pull_request:
@@ -8,63 +8,44 @@ on:
     branches: 
       - master
 
+# TODO: matrix this
 env:
   BUILD_TYPE: Release
-  GIT_SUBMODULE_STRATEGY: recursive
 
 jobs:
   build-linux:
     if: ${{ github.event.pull_request.draft == false }}
-    name: Build For Linux Systems
+    name: build (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Repository
+    - name: checkout repository
       uses: actions/checkout@v2
-    - name: Initialize Submodules
-      uses: snickerbockers/submodules-init@v4
-    - name: Install dependencies
-      run: sudo apt-get install -y flex bison make
-    - name: Create Build Environment
-      run: cmake -E make_directory ${{github.workspace}}/build
-    - name: Configure CMake
+    - name: install dependencies
+      run: sudo apt-get install -y flex bison make m4 cmake
+    - name: create build environment
+      run: cmake -E make_directory ${{ github.workspace }}/build
+    - name: configure
       shell: bash
-      working-directory: ${{github.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-    - name: Build
-      working-directory: ${{github.workspace}}/build
+      working-directory: ${{ github.workspace }}/build
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
+    - name: build
+      working-directory: ${{ github.workspace }}/build
       shell: bash
-      # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: cmake --build . --config $BUILD_TYPE -j$(nproc)
-    - name: Upload Artifact
+      run: cmake --build . --config $BUILD_TYPE --target all -j$(nproc)
+    - name: install
+      shell: bash
+      run: cmake --install . --config $BUILD_TYPE --prefix ${{ github.workspace }}/install
+    - name: upload artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: executable
-        path: ${{ github.workspace }}/build/aaltitoad
-  verification-tests:
-    runs-on: ubuntu-latest
-    needs: build-linux
-    name: Verification Tests
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-      - name: Download executable
-        uses: actions/download-artifact@v2
-        with:
-          name: executable
-      - name: Make executable executable
-        run: sudo chmod +x aaltitoad
-      - name: fischer-2 
-        working-directory: ${{ github.workspace }}/test/verification
-        run: |
-          ${{ github.workspace }}/aaltitoad -i ./fischer-2 -q ./fischer-2/Queries.json -o ./fischer-2/results.txt -v 6
-          diff fischer-2/results.txt fischer-2/expected_results.ignore.txt
-      - name: fischer-5
-        working-directory: ${{ github.workspace }}/test/verification
-        run: |
-          ${{ github.workspace }}/aaltitoad -i ./fischer-5 -q ./fischer-5/Queries.json -o ./fischer-5/results.txt -v 6
-          diff fischer-5/results.txt fischer-5/expected_results.ignore.txt
-      - name: fischer-10
-        working-directory: ${{ github.workspace }}/test/verification
-        run: |
-          ${{ github.workspace }}/aaltitoad -i ./fischer-10 -q ./fischer-10/Queries.json -o ./fischer-10/results.txt -v 6
-          diff fischer-10/results.txt fischer-10/expected_results.ignore.txt
+        name: aaltitoad
+        path: ${{ github.workspace }}/install/
+
+# TODO: Run catch2 unit tests with coverage and submit coverage reports
+# - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(pwd)/install
+# - cmake --build . --config Release --target all -j 5
+# - cmake --install . --prefix $(pwd)/install --config Release
+# - cd install
+# - cp lib/* bin
+# - cd bin
+# - ./verifier --help

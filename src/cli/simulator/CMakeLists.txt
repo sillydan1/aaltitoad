@@ -21,8 +21,5 @@ target_link_libraries(${PROJECT_NAME} aaltitoad argvparse)
 if(TARGET default_plugins)
     add_dependencies(${PROJECT_NAME} default_plugins)
 endif()
-install(TARGETS ${PROJECT_NAME}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-#install(FILES man/simulator.1
-#        DESTINATION ${CMAKE_INSTALL_PREFIX}/man/man1)
+install(TARGETS ${PROJECT_NAME})
+#install(FILES man/simulator.1 DESTINATION /man/man1)

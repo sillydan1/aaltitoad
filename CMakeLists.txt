@@ -26,6 +26,8 @@ include(cmake/VER.cmake) # TODO: make a yalibs release of this cmake file
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_MACOSX_RPATH 1)
+list(APPEND CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib)
 
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
 CPMAddPackage(NAME expr VERSION 2.2.0 GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
@@ -36,7 +38,7 @@ CPMAddPackage("gh:yalibs/yatimer@1.0.0")
 CPMAddPackage("gh:yalibs/yaoverload@1.0.0")
 CPMAddPackage("gh:yalibs/yahashcombine@1.0.0")
 CPMAddPackage("gh:yalibs/yathreadpool@1.0.1")
-CPMAddPackage("gh:yalibs/yagraph#main")#@1.0.5")
+CPMAddPackage("gh:yalibs/yagraph@1.0.5")
 CPMAddPackage("gh:yalibs/yatree@1.2.1")
 CPMAddPackage("gh:yalibs/yauuid@1.0.1")
 CPMAddPackage("gh:yalibs/yasetwrappers@1.0.0")
@@ -47,9 +49,28 @@ CPMAddPackage("gh:nlohmann/json@3.10.5")
 CPMAddPackage("gh:neargye/magic_enum@0.8.1")
 
 CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.5")
-cpm_licenses_create_disclaimer_target(write-licenses "${CMAKE_CURRENT_BINARY_DIR}/third_party.txt" "${CPM_PACKAGES}")
+cpm_licenses_create_disclaimer_target(write_licenses "${CMAKE_BINARY_DIR}/third_party.txt" "${CPM_PACKAGES}")
 
-include_directories(
+set(${PROJECT_NAME}_SOURCES
+        src/ntta/builder/ntta_builder.cpp
+        src/ntta/tta.cpp
+        src/ntta/interesting_tocker.cpp
+        src/plugin_system/plugin_system.cpp
+        src/verification/forward_reachability.cpp
+        src/verification/ctl/ctl_sat.cpp
+        src/util/warnings.cpp
+        src/util/random.cpp
+        src/util/string_extensions.cpp)
+
+# TODO: split the project up - each folder should have their own CMakeLists file
+add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES})
+if(${CODE_COVERAGE})
+    target_link_options(${PROJECT_NAME} PUBLIC --coverage)
+    target_compile_options(${PROJECT_NAME} PUBLIC --coverage)
+endif()
+add_dependencies(${PROJECT_NAME} write_licenses)
+target_link_libraries(${PROJECT_NAME} expr dl pthread ctl)
+target_include_directories(${PROJECT_NAME} PUBLIC
         ${CMAKE_BINARY_DIR}
         ${CMAKE_CURRENT_BINARY_DIR}
         ${argvparse_SOURCE_DIR}/include
@@ -77,36 +98,17 @@ include_directories(
         ${yasetwrappers_SOURCE_DIR}/include
         src
 )
-set(${PROJECT_NAME}_SOURCES
-        src/ntta/builder/ntta_builder.cpp
-        src/ntta/tta.cpp
-        src/ntta/interesting_tocker.cpp
-        src/plugin_system/plugin_system.cpp
-        src/verification/forward_reachability.cpp
-        src/verification/ctl/ctl_sat.cpp
-        src/util/warnings.cpp
-        src/util/random.cpp
-        src/util/string_extensions.cpp)
 
-# TODO: split the project up - each folder should have their own CMakeLists file
-add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES})
-if(${CODE_COVERAGE})
-    target_link_options(${PROJECT_NAME} PUBLIC --coverage)
-    target_compile_options(${PROJECT_NAME} PUBLIC --coverage)
-endif()
-target_link_libraries(${PROJECT_NAME} expr dl pthread ctl)
 add_compile_definitions(ENABLE_Z3)
-
 add_subdirectory(src/cli/simulator)
 add_subdirectory(src/cli/verifier)
 add_subdirectory(src/parser)
 add_subdirectory(test)
 
-install(TARGETS ${PROJECT_NAME}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-install(FILES src/cli/verifier/man/tta.7
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/man/man7)
+install(TARGETS ${PROJECT_NAME} expr ctl)
+install(FILES src/man/tta.7 DESTINATION man/man7)
+install(FILES ${CMAKE_BINARY_DIR}/libz3.dylib DESTINATION bin)
+install(DIRECTORY src/ntta src/plugin_system src/util DESTINATION include FILES_MATCHING PATTERN "*.h")
 
 if(NOT WIN32)
     target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
