@@ -28,9 +28,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
-CPMAddPackage(NAME expr VERSION 2.1.1 GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
-CPMAddPackage(NAME argvparse VERSION 1.2.3 GITHUB_REPOSITORY sillydan1/argvparse)
-CPMAddPackage(NAME ctl-expr VERSION 1.1.1 GITHUB_REPOSITORY sillydan1/ctl-expr)
+CPMAddPackage(NAME expr VERSION 2.2.0 GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
+CPMAddPackage("gh:sillydan1/argvparse@1.2.3")
+CPMAddPackage("gh:sillydan1/ctl-expr@1.1.2")
 
 CPMAddPackage("gh:yalibs/yatimer@1.0.0")
 CPMAddPackage("gh:yalibs/yaoverload@1.0.0")

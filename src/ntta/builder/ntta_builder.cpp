@@ -56,23 +56,21 @@ namespace aaltitoad {
     auto tta_builder::build() -> tta_t {
         if(!starting_location.has_value())
             throw std::logic_error("no starting location provided");
-        return {std::move(factory.build_heap()), starting_location.value()};
+        return { std::move(factory.build_heap()), starting_location.value() };
     }
     auto tta_builder::compile_guard(const std::optional<std::string>& guard) -> expr::compiler::compiled_expr_t {
         if(!guard.has_value())
             return empty_guard;
         compiler->trees.erase("expression_result");
-        auto res = compiler->parse(guard.value());
-        if(res != 0)
+        if(compiler->parse(guard.value()) != 0)
             throw std::logic_error(compiler->error);
         return compiler->trees["expression_result"];
     }
     auto tta_builder::compile_update(const std::optional<std::string>& update) -> expr::compiler::compiled_expr_collection_t {
         if(!update.has_value())
             return {};
-        compiler->trees = {};
-        auto res = compiler->parse(update.value());
-        if(res != 0)
+        compiler->trees.clear();
+        if(compiler->parse(update.value()) != 0)
             throw std::logic_error(compiler->error);
         return compiler->trees;
     }
