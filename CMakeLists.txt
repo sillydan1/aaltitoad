@@ -107,8 +107,18 @@ add_subdirectory(test)
 
 install(TARGETS ${PROJECT_NAME} expr ctl)
 install(FILES src/man/tta.7 DESTINATION man/man7)
-install(FILES ${CMAKE_BINARY_DIR}/libz3.dylib DESTINATION bin)
-install(DIRECTORY src/ntta src/plugin_system src/util DESTINATION include FILES_MATCHING PATTERN "*.h")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    install(FILES ${CMAKE_BINARY_DIR}/libz3.so DESTINATION lib)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    install(FILES ${CMAKE_BINARY_DIR}/libz3.dll DESTINATION lib)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    install(FILES ${CMAKE_BINARY_DIR}/libz3.dylib DESTINATION lib)
+else()
+    message(WARNING "unknown system ${CMAKE_SYSTEM_NAME}")
+endif()
+
+# TODO: determine required header files for plugins and add them to the install target
+#       install(DIRECTORY src/ntta src/plugin_system src/util DESTINATION include FILES_MATCHING PATTERN "*.h")
 
 if(NOT WIN32)
     target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
