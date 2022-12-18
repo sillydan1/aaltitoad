@@ -24,7 +24,7 @@ namespace aaltitoad {
     struct tta_builder {
         struct edge_construction_element {
             std::string source, target;
-            std::optional<std::string> guard, update; // missing: optional identifier
+            std::optional<std::string> guard, update;
         };
         explicit tta_builder(expr::compiler* expression_compiler);
         auto set_name(const std::string& name) -> tta_builder&;
