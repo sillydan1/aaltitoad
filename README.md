@@ -15,26 +15,52 @@ aaltitoad - a verification engine for tick tock automata models
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 --->
-# AALTITOAD
 
-![logo](.github/resources/AALTITOAD_LOGO_SMALLER.png)
+<!---
+Do it like tailwind css are doing it:
+<p align="center">
+  <a href="https://tailwindcss.com" target="_blank">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/tailwindlabs/tailwindcss/HEAD/.github/logo-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/tailwindlabs/tailwindcss/HEAD/.github/logo-light.svg">
+      <img alt="Tailwind CSS" src="https://raw.githubusercontent.com/tailwindlabs/tailwindcss/HEAD/.github/logo-light.svg" width="350" height="70" style="max-width: 100%;">
+    </picture>
+  </a>
+</p>
+<p align="center">
+   <img alt="aaltitoad" src="https://raw.githubusercontent.com/sillydan1/AALTITOAD/major/reimplementation/.github/resources/AALTITOAD_LOGO_README.png"/>
+</p>
+--->
 
-**Aal**borg **Ti**ck **To**ck **A**utomata Vali**d**ator is a verification engine, simulator and general library for Tick Tock Automata. 
+<p align="center">
+   <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/sillydan1/AALTITOAD/major/reimplementation/.github/resources/logo/toad_title_darkmode.svg">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/sillydan1/AALTITOAD/major/reimplementation/.github/resources/logo/toad_title_lightmode.svg">
+      <img alt="aaltitoad" width="256" src="https://raw.githubusercontent.com/sillydan1/AALTITOAD/major/reimplementation/.github/resources/toad_title_darkmode.svg" style="max-width: 100%;">
+   </picture>
+</p>
+
+<p align="center">
+   <b>Aal</b>borg <b>Ti</b>ck <b>To</b>ck <b>A</b>utomata Vali<b>d</b>ator - an extendable verification engine and simulator for Tick Tock Automata. 
+</p>
+
+------
 
 ## What is a Tick Tock Automata?
-TTA's (Tick Tock Automata) are an Automata based theory that can model business logic for all kinds of automation systems.
+TTA's (Tick Tock Automata) are an Automata based theory that can model parallel business logic for all kinds of automation systems.
 A TTA consists of a set of locations and transitions between them. 
 Each transition can be guarded by a _boolean expression_ and have a set of _variable assignments_ as a "consequence" of _taking_ the transition.
 
 A good analogy to TTA is a _statemachine_, where a system can transition from one state to another. 
-Below is an example of a simple TTA that controls a light based on a button input. (if you cant see the example in your editor, [here](.github/resources/simple_tta.svg) is an SVG version of it)
+Below is an example of a simple TTA that controls a light based on a button input.
 
-```mermaid
-graph LR
-    OFF((OFF)) --> | btn_is_pressed<br/>light := true | ON((ON))
-    ON((ON)) --> | !btn_is_pressed<br/>light := false | OFF((OFF))
-
-```
+<p align="center">
+   <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/sillydan1/AALTITOAD/major/reimplementation/.github/resources/docs/simple_tta_darkmode.svg">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/sillydan1/AALTITOAD/major/reimplementation/.github/resources/docs/simple_tta_lightmode.svg">
+      <img alt="simple tta" src="https://raw.githubusercontent.com/sillydan1/AALTITOAD/major/reimplementation/.github/resources/simple_tta_darkmode.svg" style="max-width: 100%;">
+   </picture>
+</p>
 
 Starting in the OFF location, there's only one outgoing edge with the guard that checks if `btn_is_pressed` is _true_.
 If it is, we move to the ON location and set the variable `light` to _true_ as a consequence of _taking_ the edge/transition.
@@ -51,10 +77,12 @@ Taking the syntax one step further, you can have many of these TTAs running in p
 Such a network is called simply a **n**etwork of **t**ick **t**ock **a**utomata (NTTA).
 
 ### Further Reading
- - [This](.github/resources/SW10__Tick_Tock_Automata.pdf) paper describes the base Tick Tock Automata theory
+ - [This](.github/resources/docs/SW10__Tick_Tock_Automata.pdf) paper describes the base Tick Tock Automata theory
  - [This(wip)]() paper describes in detail the newest iteration of the tool (v1.0.0+)
- - [This](.github/resources/SW9__AALTITOAD.pdf) paper describes the first iteration of the tool (v0.10.x)
+ - [This](.github/resources/docs/SW9__AALTITOAD.pdf) paper describes the first iteration of the tool (v0.10.x)
  - Take a look at [H-UPPAAL](https://github.com/DEIS-Tools/H-Uppaal) if you want to create some TTAs yourself
+
+------
 
 ## Compile (Linux)
 Aaltitoad is built using cmake. You must have a C++20 compatible compiler, `flex`, `bison` version 3.5+ and the standard template library installed.
@@ -85,6 +113,8 @@ Aaltitoad provides three primary compilation targets. All commandline interfaces
    - use this if you want to execute your NTTA and link with your custom tockers (see below)
  - `aaltitoad`: A library with all things aaltitoad
    - use this to create your own NTTA-based applications e.g. another verifier, runtime or even compiler
+
+------
 
 ## Tocker plugins
 Aaltitoad supports third party "tocker" libraries, so you can inject custom integrations directly into the runtime.
@@ -128,6 +158,8 @@ In contrast, the asynchronous tocker will not block tick execution, but start a 
 
 When implementing your tocker, you should consider if you want to block the TTA from executing or not.
 If you choose to implement an asynchronous tocker, be aware that the input environment can have changed since the tock was issued. 
+
+------
 
 ## Parser Plugins
 If you don't want to use the included parser, you can always supply your own. 
