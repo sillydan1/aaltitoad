@@ -68,7 +68,6 @@ if(${CODE_COVERAGE})
     target_link_options(${PROJECT_NAME} PUBLIC --coverage)
     target_compile_options(${PROJECT_NAME} PUBLIC --coverage)
 endif()
-add_dependencies(${PROJECT_NAME} write_licenses)
 target_link_libraries(${PROJECT_NAME} expr dl pthread ctl)
 target_include_directories(${PROJECT_NAME} PUBLIC
         ${CMAKE_BINARY_DIR}

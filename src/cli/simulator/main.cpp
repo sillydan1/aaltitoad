@@ -41,12 +41,11 @@ int main(int argc, char** argv) {
         return print_help(argv[0], options);
     if(!is_required_provided(cli_arguments, options))
         return print_required_args();
-    spdlog::trace("Welcome to {0} v{1}", PROJECT_NAME, PROJECT_VER);
-
     if(cli_arguments["no-warn"])
         aaltitoad::warnings::disable_all();
     disable_warnings(cli_arguments["disable-warn"].as_list_or_default({}));
 
+    spdlog::trace("welcome to {0} v{1}", PROJECT_NAME, PROJECT_VER);
     parse_and_execute_simulator(cli_arguments);
     return 0;
 }
@@ -55,48 +54,43 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
     /// Load plugins
     auto available_plugins = load_plugins(cli_arguments);
     if(cli_arguments["list-plugins"]) {
-        auto ss = std::stringstream{} << available_plugins;
-        spdlog::info("Available plugins:\n{0}", ss.str());
+        std::cout << "available plugins:\n" << available_plugins;
         return;
     }
 
     /// Parser related arguments
-    ya::timer<unsigned int> t{};
-    std::vector<std::string> ignore_list{};
-    if(cli_arguments["ignore"])
-        ignore_list = cli_arguments["ignore"].as_list();
+    auto ignore_list = cli_arguments["ignore"].as_list_or_default({});
 
     /// Get the parser
     auto selected_parser = cli_arguments["parser"].as_string_or_default("hawk_parser");
     if(!available_plugins.contains(selected_parser) || available_plugins.at(selected_parser).type != plugin_type::parser) {
-        spdlog::critical("No such parser available: '{0}'", selected_parser);
+        spdlog::error("no such parser available: '{0}'", selected_parser);
         return;
     }
 
     /// Parse provided model
-    spdlog::info("Parsing with {0} plugin", selected_parser);
+    spdlog::trace("parsing with {0} plugin", selected_parser);
     auto parser = std::get<parser_func_t>(available_plugins.at(selected_parser).function);
-    t.start();
+    ya::timer<unsigned int> t{};
     auto automata = std::unique_ptr<aaltitoad::ntta_t>(parser(cli_arguments["input"].as_list(), ignore_list));
-    spdlog::info("Model parsing took {0}ms", t.milliseconds_elapsed());
+    spdlog::trace("model parsing took {0}ms", t.milliseconds_elapsed());
 
     /// Inject tockers - CLI Format: "name(argument)"
-    automata->add_tocker(std::make_shared<aaltitoad::interesting_tocker>());
-    // for(auto& arg : cli_arguments["tocker"].as_list_or_default({})) {
-    //     auto tocker = instantiate_tocker(arg, available_plugins, *automata);
-    //     if(tocker.has_value())
-    //         automata->tockers.emplace_back(tocker.value());
-    // }
+    for(auto& arg : cli_arguments["tocker"].as_list_or_default({})) {
+        auto tocker = instantiate_tocker(arg, available_plugins, *automata);
+        if(tocker.has_value())
+            automata->tockers.emplace_back(tocker.value());
+    }
 
     /// Run
     t.start();
-    auto x = cli_arguments["ticks"].as_integer_or_default(-1);
-    spdlog::info("Simulating...");
+    auto maxTicks = cli_arguments["ticks"].as_integer_or_default(-1);
+    spdlog::trace("simulating...");
     unsigned int i = 0;
 #ifdef NDEBUG
     try {
 #endif
-        for (; i < x || x < 0; i++) {
+        for (; i < maxTicks || maxTicks < 0; i++) {
             if(spdlog::get_level() <= spdlog::level::trace) {
                 std::stringstream ss{};
                 ss << "state:\n" << *automata;
@@ -111,10 +105,10 @@ void parse_and_execute_simulator(std::map<std::string, argument_t>& cli_argument
         }
 #ifdef NDEBUG
     } catch (std::exception& e) {
-        spdlog::error(e.what());
+        spdlog::critical(e.what());
     }
 #endif
-    spdlog::info("{0} ticks took {1}ms", i, t.milliseconds_elapsed());
+    spdlog::trace("{0} ticks took {1}ms", i, t.milliseconds_elapsed());
 }
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t {
@@ -145,7 +139,7 @@ auto instantiate_tocker(const std::string& arg, const plugin_map_t& available_pl
         auto tocker_ctor = std::get<tocker_ctor_t>(available_plugins.at(s[0]).function);
         return tocker_ctor(s[1].substr(0, s[1].size() - 1), automata);
     } catch (std::exception& e) {
-        spdlog::error("Error during tocker instantiation: {0}", e.what());
+        spdlog::error("tocker instantiation failed: {0}", e.what());
         return {};
     }
 }
