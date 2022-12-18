@@ -134,45 +134,6 @@ namespace aaltitoad {
         }
     }
 
-    auto ntta_t::generate_enabled_choice_dependency_graph() -> tick_resolver::choice_dependency_problem {
-        auto all_symbols = symbols + external_symbols;
-        expr::interpreter i{all_symbols};
-        tick_resolver::graph_type_builder edge_dependency_graph_builder{};
-        std::unordered_map<std::string, choice_t> all_enabled_choices{};
-        uint32_t uniqueness_counter = 0;
-        for (auto component_it = components.begin(); component_it != components.end(); component_it++) {
-            std::vector<std::string_view> enabled_edges{};
-            for (auto edge : component_it->second.current_location->second.outgoing_edges) {
-                if (!std::get<bool>(i.evaluate(edge->second.data.guard)))
-                    continue;
-                edge_dependency_graph_builder.add_node({edge->first.identifier, edge});
-                for (auto& choice : enabled_edges)
-                    edge_dependency_graph_builder.add_edge(edge->first.identifier, std::string{choice}, uniqueness_counter++);
-                enabled_edges.push_back(edge->first.identifier);
-                all_enabled_choices.insert({edge->first.identifier, choice_t{edge,{component_it,edge->second.target},
-                                                                       i.evaluate(edge->second.data.updates)}});
-            }
-        }
-        // Add overlapping non-idempotent edges to the dependency graph
-        for (auto it1 = all_enabled_choices.begin(); it1 != all_enabled_choices.end(); it1++) {
-            for (auto it2 = it1; it2 != all_enabled_choices.end(); it2++) {
-                if (it1 == it2)
-                    continue;
-                if (it1->second.symbol_changes.is_overlapping_and_not_idempotent(it2->second.symbol_changes)) {
-                    warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tick-change calculation",
-                                   {conflict_string(it1->second.symbol_changes, it2->second.symbol_changes)});
-                    edge_dependency_graph_builder.add_edge(it1->first, it2->first, uniqueness_counter++);
-                }
-            }
-        }
-        try {
-            return { edge_dependency_graph_builder.validate().optimize().build(), all_enabled_choices };
-        } catch (std::exception& e) {
-            spdlog::critical("unable to generate enabled choice dependency graph: '{0}' please report this as an issue on github.com/sillydan1/AALTITOAD", e.what());
-            throw e;
-        }
-    }
-
     ntta_t::tick_resolver::tick_resolver(const graph_type& G) : G{G} {
         for(auto& n : G.nodes)
             N.insert(n.first);

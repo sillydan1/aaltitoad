@@ -141,7 +141,6 @@ namespace aaltitoad {
             set N;
         };
         auto calculate_edge_dependency_graph() -> tick_resolver::choice_dependency_problem;
-        auto generate_enabled_choice_dependency_graph() -> tick_resolver::choice_dependency_problem;
         auto should_create_dependency_edge(const tta_t::graph_edge_iterator_t& e1, const tta_t::graph_edge_iterator_t& e2, expr::interpreter& i) const -> bool;
         static auto eval_updates(expr::interpreter& i, const expr::compiler::compiled_expr_collection_t& t) -> expr::symbol_table_t;
         static auto eval_guard(expr::interpreter& i, const expr::compiler::compiled_expr_t& e) -> expr::symbol_value_t;
