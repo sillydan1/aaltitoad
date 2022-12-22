@@ -130,7 +130,7 @@ namespace aaltitoad {
             return { graph_builder.validate().optimize().build(), all_enabled_choices };
         } catch (std::exception& e) {
             spdlog::critical("unable to generate enabled choice dependency graph: '{0}' please report this as an issue on github.com/sillydan1/AALTITOAD", e.what());
-            throw e;
+            throw;
         }
     }
 

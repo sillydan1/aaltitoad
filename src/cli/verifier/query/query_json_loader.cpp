@@ -33,7 +33,7 @@ namespace aaltitoad {
             return result;
         } catch (std::exception &e) {
             spdlog::error("unable to parse json file {0}: {1}", json_file, e.what());
-            throw e;
+            throw;
         }
     }
 }

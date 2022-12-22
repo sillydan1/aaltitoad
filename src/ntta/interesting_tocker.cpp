@@ -25,25 +25,21 @@ namespace aaltitoad {
             return {};
         auto it = elements.begin();
         auto expression = **it;
-        if(elements.size() > 1) {
-            it++;
-            for(; it != elements.end(); it++) {
+        if(elements.size() > 1)
+            for(it++; it != elements.end(); it++)
                 expression = expr::syntax_tree_t{expr::operator_t{expr::operator_type_t::_and}}
                         .concat(expression)
                         .concat(**it);
-            }
-        }
         try {
             d.result = {};
             d.add_tree(expression);
-            if (d.result.empty() && !d.result.get_delay_amount().has_value())
-                return {};
-            return std::optional{d.result};
+            if (!d.result.empty() || d.result.get_delay_amount().has_value())
+                return std::optional{d.result};
         } catch(std::domain_error& e) {
             std::stringstream ss{}; ss << expression;
             spdlog::trace("'{0}' for '{1}'", e.what(), ss.str());
         } catch(std::exception& e) {
-            spdlog::warn("error during tock step evaluation: '{0}'", e.what());
+            spdlog::error("error during tock step evaluation: '{0}'", e.what());
         }
         return {};
     }
@@ -54,8 +50,9 @@ namespace aaltitoad {
             // If this is slow, we should investigate maintaining a cache to avoid iteration
             std::vector<expr::syntax_tree_t> interesting_guards{};
             for(auto& edge : component.second.current_location->second.outgoing_edges) {
-                if(contains_external_variables(edge->second.data.guard, state.external_symbols)
-                || contains_timer_variables(edge->second.data.guard, state.symbols)) {
+                auto is_interesting = contains_external_variables(edge->second.data.guard, state.external_symbols) ||
+                                      contains_timer_variables(edge->second.data.guard, state.symbols);
+                if(is_interesting) {
                     interesting_guards.push_back(edge->second.data.guard);
                     interesting_guards.push_back(expr::syntax_tree_t{expr::operator_t{expr::operator_type_t::_not}}.concat(edge->second.data.guard));
                 }
