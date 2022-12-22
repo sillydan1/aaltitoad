@@ -21,6 +21,8 @@
 
 namespace aaltitoad {
     auto load_query_json_file(const std::string& json_file, std::initializer_list<expr::symbol_table_ref_t> environments) -> std::vector<ctl::compiler::compiled_expr_t>;
+    auto is_query_searchable(const ctl::compiler::compiled_expr_t& q) -> bool;
+    auto is_query_trivial(const ctl::compiler::compiled_expr_t& q) -> bool;
 }
 
 #endif //AALTITOAD_QUERY_JSON_LOADER_H

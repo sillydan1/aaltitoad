@@ -46,6 +46,7 @@ namespace aaltitoad {
         return {
             {w_t::overlap_idem, "warnings about overlapping non-idempotent symbol table changes"},
             {w_t::plugin_load_failed, "warnings about plugins failing to load"},
+            {w_t::unsupported_query, "warnings about unsupported CTL query formats"},
         };
     }
 

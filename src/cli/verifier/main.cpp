@@ -79,7 +79,6 @@ int main(int argc, char** argv) {
             auto json_queries = aaltitoad::load_query_json_file(f, {n->symbols, n->external_symbols});
             queries.insert(queries.end(), json_queries.begin(), json_queries.end());
         }
-        // TODO: filter unsupported queries out
         spdlog::debug("query parsing took {0}ms", t.milliseconds_elapsed());
 
         n->add_tocker(std::make_unique<aaltitoad::interesting_tocker>());

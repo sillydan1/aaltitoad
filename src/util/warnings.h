@@ -24,7 +24,8 @@
 namespace aaltitoad {
     enum w_t {
         overlap_idem,
-        plugin_load_failed
+        plugin_load_failed,
+        unsupported_query
     };
 
     class warnings {
