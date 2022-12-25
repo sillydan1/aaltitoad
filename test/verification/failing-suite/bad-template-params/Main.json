@@ -1,0 +1,53 @@
+{
+  "name": "Main",
+  "declarations": "public bool action := false;",
+  "locations": [],
+  "initial_location": {
+    "id": "L0",
+    "nickname": "",
+    "invariant": "",
+    "type": "INITIAL",
+    "urgency": "NORMAL",
+    "x": 20.0,
+    "y": 20.0,
+    "color": "7",
+    "nickname_x": 30.0,
+    "nickname_y": -10.0,
+    "invariant_x": 30.0,
+    "invariant_y": 10.0
+  },
+  "final_location": {
+    "id": "L1",
+    "nickname": "",
+    "invariant": "",
+    "type": "FINAl",
+    "urgency": "NORMAL",
+    "x": 240.0,
+    "y": 140.0,
+    "color": "7",
+    "nickname_x": 30.0,
+    "nickname_y": -10.0,
+    "invariant_x": 30.0,
+    "invariant_y": 10.0
+  },
+  "jorks": [],
+  "sub_components": [
+    {
+      "component": "Parameterized(id, id)",
+      "identifier": "p(1,1)",
+      "x": 10.0,
+      "y": 30.0,
+      "width": 240.0,
+      "height": 120.0
+    }
+  ],
+  "edges": [],
+  "main": true,
+  "description": "",
+  "x": 5.0,
+  "y": 5.0,
+  "width": 260.0,
+  "height": 160.0,
+  "color": "7",
+  "include_in_periodic_check": true
+}

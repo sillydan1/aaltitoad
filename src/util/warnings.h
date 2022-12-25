@@ -15,38 +15,29 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-//// PCH = Precompiled Header.
-//// This speeds up compile time by ~75%.
-//// Dont overdo it though. Only put things here that are being used (included) across the entire codebase
-#ifndef AALTITOAD_AALTITOADPCH_H
-#define AALTITOAD_AALTITOADPCH_H
-
-// General purpose STL things
-#include <iostream>
-#include <algorithm>
-#include <functional>
-#include <memory>
-#include <utility>
-#include <fstream>
-#include <sstream>
-#include <filesystem>
-#include <type_traits>
-#include <map>
+#ifndef AALTITOAD_WARNINGS_H
+#define AALTITOAD_WARNINGS_H
+#include <unordered_map>
 #include <string>
 #include <vector>
-#include <unordered_map>
-#include <unordered_set>
-#include <optional>
-#include <variant>
 
-// Extra "big" libraries that are used everywhere
-#include <spdlog/spdlog.h>
+namespace aaltitoad {
+    enum w_t {
+        overlap_idem,
+        plugin_load_failed,
+        unsupported_query
+    };
 
-// Other
-#include <util/string_extensions.h>
+    class warnings {
+    public:
+        static auto is_enabled(const w_t& warning_name) -> bool;
+        static void disable_warning(const w_t& warning_name);
+        static void enable_all();
+        static void disable_all();
+        static auto descriptions() -> std::unordered_map<w_t, std::string>;
+        static void warn(const w_t& warning, const std::string& msg);
+        static void warn(const w_t& warning, const std::string& msg, const std::vector<std::string>& extra_info_lines);
+    };
+}
 
-// Debug files
-#ifndef NDEBUG
-#endif // NDEBUG
-
-#endif
+#endif //AALTITOAD_WARNINGS_H

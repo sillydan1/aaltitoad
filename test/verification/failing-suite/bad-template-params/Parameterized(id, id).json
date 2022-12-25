@@ -1,0 +1,63 @@
+{
+  "name": "Parameterized(id, id)",
+  "declarations": "int my_var.id := key;\n",
+  "locations": [],
+  "initial_location": {
+    "id": "L4",
+    "nickname": "",
+    "invariant": "",
+    "type": "INITIAL",
+    "urgency": "NORMAL",
+    "x": 20.0,
+    "y": 20.0,
+    "color": "3",
+    "nickname_x": 30.0,
+    "nickname_y": -10.0,
+    "invariant_x": 30.0,
+    "invariant_y": 10.0
+  },
+  "final_location": {
+    "id": "L5",
+    "nickname": "",
+    "invariant": "",
+    "type": "FINAl",
+    "urgency": "NORMAL",
+    "x": 180.0,
+    "y": 110.0,
+    "color": "3",
+    "nickname_x": 30.0,
+    "nickname_y": -10.0,
+    "invariant_x": 30.0,
+    "invariant_y": 10.0
+  },
+  "jorks": [],
+  "sub_components": [],
+  "edges": [
+    {
+      "uuid": "4883e5a7-4649-4a58-8aa3-279a35e98e01",
+      "source_location": "L4",
+      "target_location": "L5",
+      "select": "",
+      "guard": "my_var.id == key",
+      "update": "",
+      "sync": "",
+      "nails": [
+        {
+          "x": 20.0,
+          "y": 110.0,
+          "property_type": "GUARD",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    }
+  ],
+  "main": false,
+  "description": "",
+  "x": 5.0,
+  "y": 5.0,
+  "width": 200.0,
+  "height": 130.0,
+  "color": "3",
+  "include_in_periodic_check": true
+}

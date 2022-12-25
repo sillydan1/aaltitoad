@@ -1,0 +1,75 @@
+.TH tta 7 2022-09-23 "version v1.0.0" AALTITOAD
+
+.SH NAME
+tta \- tick tock automata introduction
+
+.SH THE BASICS
+TTA's (Tick Tock Automata) are an Automata based theory
+that can model business logic for all kinds of automation
+systems. A TTA consists of a set of locations and transitions
+between them. Each transition can be guarded by a boolean
+expression and have a set of variable assignments as a
+"consequence" of taking the transition.
+
+A good analogy to TTA is a statemachine, where a system
+can transition from one state to another. Below is an
+example of a simple TTA that controls a light based on
+a button input.
+
+              \fBbtn_is_pressed       light\fR := \fItrue\fR
+         ___  --------------------------------->  ___
+   ---> |OFF|                                    |ON |
+         ---  <---------------------------------  ---
+              \fBlight\fR := \fIfalse\fR     \fB!btn_is_pressed\fR
+
+Starting in the OFF location, there's only one outgoing edge
+with the guard that checks if \fBbtn_is_pressed\fR is
+\fItrue\fR. If it is, we move to the ON location and set the
+variable \fBlight\fR to \fItrue\fR as a consequence of taking
+the edge/transition. Then, when the button is released we
+return to the OFF locaiton and \fBlight\fR is set to \fIfalse\fR again.
+
+What makes TTAs different from any other transition system is
+that the \fBbtn_is_pressed\fR variable is an external
+variable, meaning that it cannot be assigned to any value by
+the transition system, it can only change based on an external
+input. External inputs are read when we are not taking transitions.
+This split of the semantics is where the name Tick Tock Automata comes from:
+
+.RS
+.IP \fITick-step\fP
+evaluate guards, apply updates, change locations
+.IP \fITock-step\fP
+read external inputs, write external outputs
+.RE
+
+Taking the syntax one step further, you can have many of
+these TTAs running in parallel, sharing the same pool of
+internal and external variables. Such a network is called
+simply a network of tick tock automata (NTTA).
+
+.SH FORMALISATION
+For a more detailed formal mathematical description of TTAs and networks
+of TTAs, please refer to the aaltitoad related papers.
+
+.SH AUTHOR
+Asger Gitz\-Johansen <asger.gitz@hotmail.com>.
+
+.SH COPYRIGHT
+            Copyright (C) 2022  Asger Gitz-Johansen
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+.SH SEE ALSO
+simulator(1), verifier(1)

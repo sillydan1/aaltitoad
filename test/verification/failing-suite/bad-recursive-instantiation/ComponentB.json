@@ -1,0 +1,53 @@
+{
+  "name": "ComponentB",
+  "declarations": "int my_var.id := key;",
+  "locations": [],
+  "initial_location": {
+    "id": "L4",
+    "nickname": "",
+    "invariant": "",
+    "type": "INITIAL",
+    "urgency": "NORMAL",
+    "x": 20.0,
+    "y": 20.0,
+    "color": "6",
+    "nickname_x": 30.0,
+    "nickname_y": -10.0,
+    "invariant_x": 30.0,
+    "invariant_y": 10.0
+  },
+  "final_location": {
+    "id": "L5",
+    "nickname": "",
+    "invariant": "",
+    "type": "FINAl",
+    "urgency": "NORMAL",
+    "x": 410.0,
+    "y": 330.0,
+    "color": "6",
+    "nickname_x": 30.0,
+    "nickname_y": -10.0,
+    "invariant_x": 30.0,
+    "invariant_y": 10.0
+  },
+  "jorks": [],
+  "sub_components": [
+    {
+      "component": "ComponentA",
+      "identifier": "A",
+      "x": 90.0,
+      "y": 110.0,
+      "width": 240.0,
+      "height": 120.0
+    }
+  ],
+  "edges": [],
+  "main": false,
+  "description": "",
+  "x": 5.0,
+  "y": 5.0,
+  "width": 430.0,
+  "height": 350.0,
+  "color": "6",
+  "include_in_periodic_check": true
+}

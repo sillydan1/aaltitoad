@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.1//EN'
+  'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'>
+<svg height="170px" version="1.1" viewBox="-0.5 -0.5 301 151" width="453px" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<defs/>
+	<g>
+		<path d="M 75 30 L 208.63 30" fill="none" pointer-events="stroke" stroke="rgb(255, 255, 255)" stroke-miterlimit="10"/>
+		<path d="M 213.88 30 L 206.88 33.5 L 208.63 30 L 206.88 26.5 Z" fill="none" pointer-events="all" stroke="rgb(255, 255, 255)" stroke-miterlimit="10"/>
+		<ellipse cx="45" cy="30" fill="none" pointer-events="all" rx="30" ry="30" stroke="rgb(255, 255, 255)"/>
+		<ellipse cx="45" cy="30" fill="none" pointer-events="all" rx="26" ry="26" stroke="rgb(255, 255, 255)"/>
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject height="100%" pointer-events="none" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;" width="100%">
+					<div style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 1px; height: 1px; padding-top: 30px; margin-left: 45px;" xmlns="http://www.w3.org/1999/xhtml">
+						<div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(255,255,255); line-height: 1.2; pointer-events: all; white-space: nowrap;">OFF</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle" x="45" y="34">OFF</text>
+			</switch>
+		</g>
+		<path d="M 245 60 L 245 120 L 45 120 L 45 66.37" fill="none" pointer-events="stroke" stroke="rgb(255, 255, 255)" stroke-miterlimit="10"/>
+		<path d="M 45 61.12 L 48.5 68.12 L 45 66.37 L 41.5 68.12 Z" fill="none" pointer-events="all" stroke="rgb(255, 255, 255)" stroke-miterlimit="10"/>
+		<ellipse cx="245" cy="30" fill="none" pointer-events="all" rx="30" ry="30" stroke="rgb(255, 255, 255)"/>
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject height="100%" pointer-events="none" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;" width="100%">
+					<div style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 1px; height: 1px; padding-top: 30px; margin-left: 245px;" xmlns="http://www.w3.org/1999/xhtml">
+						<div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(255,255,255); line-height: 1.2; pointer-events: all; white-space: nowrap;">ON</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle" x="245" y="34">ON</text>
+			</switch>
+		</g>
+		<rect fill="none" height="30" pointer-events="all" stroke="none" width="100" x="75" y="30"/>
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject height="100%" pointer-events="none" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;" width="100%">
+					<div style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 1px; height: 1px; padding-top: 45px; margin-left: 125px;" xmlns="http://www.w3.org/1999/xhtml">
+						<div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(255,255,255); line-height: 1.2; pointer-events: all; white-space: nowrap;">btn_is_pressed</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle" x="125" y="49">btn_is_pressed</text>
+			</switch>
+		</g>
+		<rect fill="none" height="30" pointer-events="all" stroke="none" width="80" x="135" y="0"/>
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject height="100%" pointer-events="none" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;" width="100%">
+					<div style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 1px; height: 1px; padding-top: 15px; margin-left: 175px;" xmlns="http://www.w3.org/1999/xhtml">
+						<div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(255,255,255); line-height: 1.2; pointer-events: all; white-space: nowrap;">light := true</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle" x="175" y="19">light := true</text>
+			</switch>
+		</g>
+		<rect fill="none" height="30" pointer-events="all" stroke="none" width="110" x="190" y="120"/>
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject height="100%" pointer-events="none" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;" width="100%">
+					<div style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 1px; height: 1px; padding-top: 135px; margin-left: 245px;" xmlns="http://www.w3.org/1999/xhtml">
+						<div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(255,255,255); line-height: 1.2; pointer-events: all; white-space: nowrap;">!btn_is_pressed</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle" x="245" y="139">!btn_is_pressed</text>
+			</switch>
+		</g>
+		<rect fill="none" height="30" pointer-events="all" stroke="none" width="90" x="0" y="120"/>
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject height="100%" pointer-events="none" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;" width="100%">
+					<div style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 1px; height: 1px; padding-top: 135px; margin-left: 45px;" xmlns="http://www.w3.org/1999/xhtml">
+						<div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(255,255,255); line-height: 1.2; pointer-events: all; white-space: nowrap;">light := false</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle" x="45" y="139">light := false</text>
+			</switch>
+		</g>
+	</g>
+	<switch>
+		<g requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"/>
+		<a target="_blank" transform="translate(0,-5)" xlink:href="https://www.diagrams.net/doc/faq/svg-export-text-problems">
+			<text font-size="10px" text-anchor="middle" x="50%" y="100%">Text is not SVG - cannot display</text>
+		</a>
+	</switch>
+</svg>

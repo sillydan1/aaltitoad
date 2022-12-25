@@ -1,5 +1,0 @@
-A G ! (counter > 1) : true
-A G ! (counter < 0) : true
-E F counter == 1 : true
-A G ! deadlock : true
-A G ! (Main€FischerA(1).L6 && Main€FischerB(2).L6) : true
