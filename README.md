@@ -18,9 +18,9 @@ aaltitoad - a verification engine for tick tock automata models
 
 <p align="center">
    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/sillydan1/AALTITOAD/major/reimplementation/.github/resources/logo/toad_title_darkmode.svg">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/sillydan1/AALTITOAD/major/reimplementation/.github/resources/logo/toad_title_lightmode.svg">
-      <img alt="aaltitoad" width="256" src="https://raw.githubusercontent.com/sillydan1/AALTITOAD/major/reimplementation/.github/resources/toad_title_darkmode.svg" style="max-width: 100%;">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/sillydan1/AALTITOAD/master/.github/resources/logo/toad_title_darkmode.svg">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/sillydan1/AALTITOAD/master/.github/resources/logo/toad_title_lightmode.svg">
+      <img alt="aaltitoad" width="256" src="https://raw.githubusercontent.com/sillydan1/AALTITOAD/master/.github/resources/toad_title_darkmode.svg" style="max-width: 100%;">
    </picture>
 </p>
 
@@ -40,9 +40,9 @@ Below is an example of a simple TTA that controls a light based on a button inpu
 
 <p align="center">
    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/sillydan1/AALTITOAD/major/reimplementation/.github/resources/docs/simple_tta_darkmode.svg">
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/sillydan1/AALTITOAD/major/reimplementation/.github/resources/docs/simple_tta_lightmode.svg">
-      <img alt="simple tta" src="https://raw.githubusercontent.com/sillydan1/AALTITOAD/major/reimplementation/.github/resources/simple_tta_darkmode.svg" style="max-width: 100%;">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/sillydan1/AALTITOAD/master/.github/resources/docs/simple_tta_darkmode.svg">
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/sillydan1/AALTITOAD/master/.github/resources/docs/simple_tta_lightmode.svg">
+      <img alt="simple tta" src="https://raw.githubusercontent.com/sillydan1/AALTITOAD/master/.github/resources/simple_tta_darkmode.svg" style="max-width: 100%;">
    </picture>
 </p>
 
