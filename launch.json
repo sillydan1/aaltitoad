@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Verifier",
+            "type": "codelldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/Debug/verifier",
+            "args": [ 
+                "-f", "../test/verification/fischer-suite/fischer-2/",
+                "-q", "../test/verification/fischer-suite/fischer-2/Queries.json",
+                "-i", ".*\\.ignore.*"
+            ],
+            "cwd": "${workspaceFolder}/Debug"
+        }
+    ]
+}
