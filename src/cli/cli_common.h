@@ -26,14 +26,14 @@
 
 int print_required_args() {
     std::cout << "Required arguments:\n";
-    std::cout << " --input\n";
+    std::cout << " --input / -f\n";
     return 1;
 }
 
 int print_help(const std::string& program_name, const std::vector<option_t>& options) {
     std::cout << get_license() << std::endl;
     std::cout << PROJECT_NAME << " v" << PROJECT_VER << std::endl;
-    std::cout << "USAGE: " << program_name << " -i /path/to/tta/dir [OPTIONS] \n" << std::endl;
+    std::cout << "USAGE: " << program_name << " -f /path/to/tta/dir [OPTIONS] \n" << std::endl;
     std::cout << "OPTIONS: " << std::endl;
     print_argument_help(options);
     return 0;
