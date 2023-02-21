@@ -27,9 +27,13 @@ std::vector<option_t> get_options() {
             {"parser",        'p', argument_requirement::REQUIRE_ARG,  "Specify the parser to use"},
             {"plugin-dir",    'P', argument_requirement::REQUIRE_ARG,  "Specify directories to look for parser plugins"},
             {"instance",      'n', argument_requirement::REQUIRE_ARG,  "Specify tta instances to check"},
-            {"list-instances",'N', argument_requirement::NO_ARG,       "List available instances and exit"},
+            {"instance-file", 'N', argument_requirement::REQUIRE_ARG,  "Specify a json-encoded file containing tta instances to check"},
+            {"list-instances",'L', argument_requirement::NO_ARG,       "List available instances and exit"},
+
             {"known",         'k', argument_requirement::REQUIRE_ARG,  "Specify known symbol declarations"},
+            {"known-file",    'K', argument_requirement::REQUIRE_ARG,  "Specify a json-encoded file containing known symbol declarations"},
             {"condition",     'c', argument_requirement::REQUIRE_ARG,  "Specify a condition. This will be added to all bool checks"},
+            {"condition-file",'C', argument_requirement::REQUIRE_ARG,  "Specify a json-encoded file containing extra conditions"},
     };
 }
 

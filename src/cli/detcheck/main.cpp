@@ -104,6 +104,7 @@ auto get_mentioned_symbols(const expr::syntax_tree_t& expression, const expr::sy
 
 void find_deadlocks(const std::unique_ptr<aaltitoad::ntta_t>& ntta, std::map<std::string, argument_t>& cli_arguments) {
     ya::timer<unsigned int> t{};
+    // TODO: Also check for --condition-file
     std::vector<expr::syntax_tree_t> extra_conditions{};
     for(auto& condition : cli_arguments["condition"].as_list_or_default({})) {
         expr::compiler c{{ntta->symbols, ntta->external_symbols}};
@@ -116,6 +117,7 @@ void find_deadlocks(const std::unique_ptr<aaltitoad::ntta_t>& ntta, std::map<std
     }
     spdlog::trace("parsing extra {0} conditions took {1}ms", extra_conditions.size(), t.milliseconds_elapsed());
 
+    // TODO: also check for --known-file
     t.start();
     expr::interpreter i{};
     expr::symbol_table_t known_symbols{};
@@ -128,6 +130,7 @@ void find_deadlocks(const std::unique_ptr<aaltitoad::ntta_t>& ntta, std::map<std
     }
     spdlog::trace("parsing {0} known symbols took {1}ms", known_symbols.size(), t.milliseconds_elapsed());
 
+    // TODO: also check for --instance-file
     t.start();
     expr::symbol_table_t unknown_symbols{};
     auto instances = cli_arguments["instance"].as_list_or_default({});
