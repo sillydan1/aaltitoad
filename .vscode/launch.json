@@ -2,8 +2,25 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch detcheck",
+            "type": "cppdbg",
+            "request": "launch",
+            "osx": {
+                "type": "codelldb"
+            },
+            "program": "${workspaceFolder}/Debug/detcheck",
+            "args": [ 
+                "-f", "../test/verification/fischer-suite/fischer-2/",
+                "-i", ".*\\.ignore.*"
+            ],
+            "cwd": "${workspaceFolder}/Debug"
+        },
+        {
             "name": "Launch Verifier",
-            "type": "codelldb",
+            "type": "cppdbg",
+            "osx": {
+                "type": "codelldb"
+            },
             "request": "launch",
             "program": "${workspaceFolder}/Debug/verifier",
             "args": [ 
