@@ -14,7 +14,7 @@ namespace expr {
 
 namespace aaltitoad {
     struct language_result {
-        std::map<std::string, expr::syntax_tree_t> declarations;
+        expr::syntax_tree_collection_t declarations;
         std::optional<expr::syntax_tree_t> expression;
         auto get_symbol_table() -> expr::symbol_table_t {
             expr::symbol_operator op{};

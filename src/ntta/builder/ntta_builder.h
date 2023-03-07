@@ -17,8 +17,10 @@
  */
 #ifndef AALTITOAD_NTTA_BUILDER_H
 #define AALTITOAD_NTTA_BUILDER_H
+#include "expr-wrappers/interpreter.h"
 #include "ntta/tta.h"
 #include "ntta/interesting_tocker.h"
+#include "symbol_table.h"
 
 namespace aaltitoad {
     struct tta_builder {
@@ -26,7 +28,7 @@ namespace aaltitoad {
             std::string source, target;
             std::optional<std::string> guard, update;
         };
-        explicit tta_builder(expr::compiler* expression_compiler);
+        explicit tta_builder(expression_driver* expression_compiler);
         auto set_name(const std::string& name) -> tta_builder&;
         auto set_starting_location(const std::string& name) -> tta_builder&;
         auto add_location(const std::string& name) -> tta_builder&;
@@ -34,13 +36,13 @@ namespace aaltitoad {
         auto add_edge(const edge_construction_element& e) -> tta_builder&;
         auto add_edges(const std::vector<edge_construction_element>& es) -> tta_builder&;
         auto build() -> tta_t;
-        auto compile_guard(const std::optional<std::string>& guard) -> expr::compiler::compiled_expr_t;
-        auto compile_update(const std::optional<std::string>& update) -> expr::compiler::compiled_expr_collection_t;
+        auto compile_guard(const std::optional<std::string>& guard) -> expr::syntax_tree_t;
+        auto compile_update(const std::optional<std::string>& update) -> expr::syntax_tree_collection_t;
         auto get_name() -> std::optional<std::string>;
     private:
-        expr::compiler* compiler;
+        expression_driver* compiler;
         aaltitoad::tta_t::graph_builder factory;
-        expr::compiler::compiled_expr_t empty_guard;
+        expr::syntax_tree_t empty_guard;
         std::optional<std::string> starting_location;
         std::optional<std::string> tta_name;
     };
