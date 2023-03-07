@@ -30,9 +30,9 @@ set(CMAKE_MACOSX_RPATH 1)
 list(APPEND CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib)
 
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
-CPMAddPackage(NAME expr VERSION 2.2.0 GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
+CPMAddPackage(NAME expr GIT_TAG feature/cpp-parsers GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
 CPMAddPackage("gh:sillydan1/argvparse@1.2.3")
-CPMAddPackage("gh:sillydan1/ctl-expr@1.1.2")
+CPMAddPackage("gh:sillydan1/ctl-expr#feat/cpp-parser")
 
 CPMAddPackage("gh:yalibs/yatimer@1.0.0")
 CPMAddPackage("gh:yalibs/yaoverload@1.0.0")
