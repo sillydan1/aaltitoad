@@ -17,10 +17,9 @@
  */
 #ifndef AALTITOAD_TTA_H
 #define AALTITOAD_TTA_H
+#include "expr-wrappers/interpreter.h"
 #include <string>
 #include <graph>
-#include <drivers/compiler.h>
-#include <drivers/interpreter.h>
 #include <symbol_table.h>
 #include <hashcombine>
 #include <utility>
@@ -37,8 +36,8 @@ namespace aaltitoad {
 
     struct edge_t {
         std::string identifier{ya::uuid_v4_custom("E", "")};
-        expr::compiler::compiled_expr_t guard{};
-        expr::compiler::compiled_expr_collection_t updates{};
+        expr::syntax_tree_t guard{};
+        expr::syntax_tree_collection_t updates{};
         auto operator==(const edge_t& other) const -> bool {
             return identifier == other.identifier;
         }
@@ -141,9 +140,9 @@ namespace aaltitoad {
             set N;
         };
         auto calculate_edge_dependency_graph() -> tick_resolver::choice_dependency_problem;
-        auto should_create_dependency_edge(const tta_t::graph_edge_iterator_t& e1, const tta_t::graph_edge_iterator_t& e2, expr::interpreter& i) const -> bool;
-        static auto eval_updates(expr::interpreter& i, const expr::compiler::compiled_expr_collection_t& t) -> expr::symbol_table_t;
-        static auto eval_guard(expr::interpreter& i, const expr::compiler::compiled_expr_t& e) -> expr::symbol_value_t;
+        auto should_create_dependency_edge(const tta_t::graph_edge_iterator_t& e1, const tta_t::graph_edge_iterator_t& e2, expression_driver& i) const -> bool;
+        static auto eval_updates(expression_driver& i, const expr::syntax_tree_collection_t& t) -> expr::symbol_table_t;
+        static auto eval_guard(expression_driver& i, const expr::syntax_tree_t& e) -> expr::symbol_value_t;
     };
 
     struct tocker_t {

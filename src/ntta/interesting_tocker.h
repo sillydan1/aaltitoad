@@ -17,8 +17,8 @@
  */
 #ifndef AALTITOAD_INTERESTING_TOCKER_H
 #define AALTITOAD_INTERESTING_TOCKER_H
+#include "expr-wrappers/interpreter.h"
 #include "tta.h"
-#include <drivers/z3_driver.h>
 #include <unordered_map>
 
 namespace aaltitoad {
@@ -30,7 +30,7 @@ namespace aaltitoad {
     private:
         [[nodiscard]] auto contains_timer_variables(const expr::syntax_tree_t& tree, const expr::symbol_table_t& symbols) const -> bool;
         [[nodiscard]] auto contains_external_variables(const expr::syntax_tree_t& tree, const expr::symbol_table_t& symbols) const -> bool;
-        static auto find_solution(expr::z3_driver& d, const ya::combiner_iterator_list_t<expr::syntax_tree_t>& elements) -> std::optional<expr::symbol_table_t>;
+        static auto find_solution(expression_driver& d, const ya::combiner_iterator_list_t<expr::syntax_tree_t>& elements) -> std::optional<expr::symbol_table_t>;
         std::unordered_map<std::string, tta_t::graph_edge_iterator_t> edge_cache;
     };
 }

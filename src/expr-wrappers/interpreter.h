@@ -8,6 +8,10 @@
 #include <driver/evaluator.h>
 #include <expr-parser.hpp>
 
+namespace expr {
+    using syntax_tree_collection_t = std::map<std::string, expr::syntax_tree_t>;
+}
+
 namespace aaltitoad {
     struct language_result {
         std::map<std::string, expr::syntax_tree_t> declarations;
@@ -25,50 +29,30 @@ namespace aaltitoad {
     class expression_driver {
     public:
         expression_driver(const std::string& environment, const std::string& unknown) : known_environment{}, unknown_environment{} {
-            known_environment = parse_expressions(environment).get_symbol_table();
-            unknown_environment = parse_expressions(unknown).get_symbol_table();
+            known_environment = parse(environment).get_symbol_table();
+            unknown_environment = parse(unknown).get_symbol_table();
         }
+        
+        expression_driver(const expr::symbol_table_t& known, const expr::symbol_table_t& unknown) : known_environment{known}, unknown_environment{unknown} {}
 
-        void evaluate(const language_result& result) {
+        auto evaluate(const language_result& result) -> expr::symbol_table_t {
             expr::symbol_operator op{};
-            expr::evaluator e{{known_environment}, op};
+            expr::evaluator e{{known_environment}, op}; // TODO: environment(s) should be injected directly instead of through the ctor
             expr::symbol_table_t env{};
             for(auto& r : result.declarations)
                 env[r.first] = e.evaluate(r.second);
-            std::cout << " evaluated: \n";
-            for(auto& s : env)
-                std::cout << "\t" << s.first << " :-> " << s.second << "\n";
-            if(result.expression)
-                std::cout << "\t" << e.evaluate(result.expression.value()) << "\n";
+            return env;
         }
 
-        void compile(const language_result& result) {
-            std::cout << " result: \n";
-            for(auto& r : result.declarations)
-                std::cout << "\t" << r.first << " :=> " << r.second << "\n";
-            if(result.expression)
-                std::cout << "\t expression = " << result.expression.value() << "\n";
-        }
-
-#ifdef ENABLE_Z3
-        void sat_check(const language_result& result) {
-            std::cout << " sat check: \n";
+        auto sat_check(const expr::syntax_tree_t& expression) -> expr::symbol_table_t { // TODO: This could return an optional instead
             expr::z3_driver z{known_environment, unknown_environment};
-            if(result.expression) {
-                auto sol =  z.find_solution(result.expression.value());
-                if(!sol)
-                    std::cout << "\tunsat\n";
-                else {
-                    if(sol.value().empty())
-                        std::cout << "\t already satisfied\n";
-                    else
-                        std::cout << "\t" << sol.value() << "\n";
-                }
-            }
+            auto sol = z.find_solution(expression);
+            if(sol)
+                return sol.value();
+            return {};
         }
-#endif
 
-        auto parse_expressions(const std::string& s) -> language_result {
+        auto parse(const std::string& s) -> language_result {
             std::istringstream iss{s};
             expr::ast_factory factory{};
             expr::declaration_tree_builder builder{};
@@ -87,7 +71,7 @@ namespace aaltitoad {
         }
 
     public:
-        expr::symbol_table_t known_environment{};
+        expr::symbol_table_t known_environment{}; // TODO: These environments are only used for z3
         expr::symbol_table_t unknown_environment{};
     };
 }
