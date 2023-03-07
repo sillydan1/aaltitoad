@@ -37,7 +37,7 @@ enum class plugin_type : unsigned int {
     tocker = 0,
     parser
 };
-const char* plugin_type_name(const plugin_type& t) {
+inline const char* plugin_type_name(const plugin_type& t) {
     switch (t) {
         case plugin_type::tocker: return "tocker";
         case plugin_type::parser: return "parser";
