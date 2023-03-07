@@ -8,6 +8,7 @@
             "osx": {
                 "type": "codelldb"
             },
+            "request": "launch",
             "program": "${workspaceFolder}/Debug/detcheck",
             "args": [ 
                 "-f", "../test/verification/fischer-suite/fischer-2/",
