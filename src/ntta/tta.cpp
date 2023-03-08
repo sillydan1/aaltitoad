@@ -16,7 +16,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "tta.h"
-#include "drivers/z3_driver.h"
+#include "expr-wrappers/interpreter.h"
+#include "symbol_table.h"
 #include <setwrappers>
 #include <algorithm>
 #include <spdlog/spdlog.h>
@@ -29,11 +30,11 @@ namespace aaltitoad {
         return *this;
     }
 
-    auto ntta_t::eval_updates(expr::interpreter &i, const expr::compiler::compiled_expr_collection_t &t) -> expr::symbol_table_t {
+    auto ntta_t::eval_updates(expression_driver& i, const expr::syntax_tree_collection_t& t) -> expr::symbol_table_t {
         return i.evaluate(t);
     }
 
-    auto ntta_t::eval_guard(expr::interpreter &i, const expr::compiler::compiled_expr_t &e) -> expr::symbol_value_t {
+    auto ntta_t::eval_guard(expression_driver& i, const expr::syntax_tree_t& e) -> expr::symbol_value_t {
         return i.evaluate(e);
     }
 
@@ -97,7 +98,7 @@ namespace aaltitoad {
         apply(combined_changes);
     }
 
-    auto ntta_t::should_create_dependency_edge(const tta_t::graph_edge_iterator_t& e1, const tta_t::graph_edge_iterator_t& e2, expr::interpreter& i) const -> bool {
+    auto ntta_t::should_create_dependency_edge(const tta_t::graph_edge_iterator_t& e1, const tta_t::graph_edge_iterator_t& e2, expression_driver& i) const -> bool {
         if(e1->second.source == e2->second.source)
             return true;
         auto changes1 = i.evaluate(e1->second.data.updates);
@@ -110,7 +111,7 @@ namespace aaltitoad {
     }
 
     auto ntta_t::calculate_edge_dependency_graph() -> tick_resolver::choice_dependency_problem {
-        expr::interpreter i{{symbols, external_symbols}};
+        expression_driver i{symbols, external_symbols}; // BUG: external_symbols are not looked at yet
         tick_resolver::graph_type_builder graph_builder{};
         std::unordered_map<std::string, choice_t> all_enabled_choices{};
         uint32_t unique_counter = 0;

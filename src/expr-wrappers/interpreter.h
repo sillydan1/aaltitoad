@@ -2,9 +2,10 @@
 #define AALTITOAD_EXPR_WRAPPER_INTERPRETER_H
 #include <symbol_table.h>
 #include <driver/z3/z3-driver.h>
-#include "../expr-src/src/lang/ast-factory.h"
-#include "../expr-src/src/lang/language-builder.h"
-#include "lang/expr-scanner.hpp"
+#include "expr-lang/ast-factory.h"
+#include "expr-lang/language-builder.h"
+#include "expr-lang/expr-scanner.hpp"
+#include "operations/symbol-operator.h"
 #include <driver/evaluator.h>
 #include <expr-parser.hpp>
 
@@ -35,13 +36,19 @@ namespace aaltitoad {
         
         expression_driver(const expr::symbol_table_t& known, const expr::symbol_table_t& unknown) : known_environment{known}, unknown_environment{unknown} {}
 
-        auto evaluate(const language_result& result) -> expr::symbol_table_t {
+        auto evaluate(const expr::syntax_tree_collection_t& declarations) -> expr::symbol_table_t {
             expr::symbol_operator op{};
-            expr::evaluator e{{known_environment}, op}; // TODO: environment(s) should be injected directly instead of through the ctor
-            expr::symbol_table_t env{};
-            for(auto& r : result.declarations)
-                env[r.first] = e.evaluate(r.second);
-            return env;
+            expr::evaluator e{{known_environment}, op};// TODO: environment(s) should be injected directly instead of through the ctor
+            expr::symbol_table_t result{};
+            for(auto& decl : declarations)
+                result[decl.first] = e.evaluate(decl.second);
+            return result;
+        }
+
+        auto evaluate(const expr::syntax_tree_t& expression) -> expr::symbol_value_t {
+            expr::symbol_operator op{};
+            expr::evaluator e{{known_environment}, op};// TODO: environment(s) should be injected directly instead of through the ctor
+            return e.evaluate(expression);
         }
 
         auto sat_check(const expr::syntax_tree_t& expression) -> expr::symbol_table_t { // TODO: This could return an optional instead

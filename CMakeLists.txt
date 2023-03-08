@@ -68,7 +68,7 @@ if(${CODE_COVERAGE})
     target_link_options(${PROJECT_NAME} PUBLIC --coverage)
     target_compile_options(${PROJECT_NAME} PUBLIC --coverage)
 endif()
-target_link_libraries(${PROJECT_NAME} expr dl pthread ctl)
+target_link_libraries(${PROJECT_NAME} expr_lang dl pthread ctl_lang)
 target_include_directories(${PROJECT_NAME} PUBLIC
         ${CMAKE_BINARY_DIR}
         ${CMAKE_CURRENT_BINARY_DIR}
@@ -105,7 +105,7 @@ add_subdirectory(src/cli/detcheck)
 add_subdirectory(src/parser)
 add_subdirectory(test)
 
-install(TARGETS ${PROJECT_NAME} expr ctl)
+install(TARGETS ${PROJECT_NAME} expr_lang ctl_lang)
 install(FILES src/man/tta.7 DESTINATION man/man7)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     install(FILES ${CMAKE_BINARY_DIR}/libz3.so DESTINATION lib)
