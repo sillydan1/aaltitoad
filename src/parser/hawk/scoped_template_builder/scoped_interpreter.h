@@ -17,23 +17,22 @@
  */
 #ifndef AALTITOAD_SCOPED_INTERPRETER_H
 #define AALTITOAD_SCOPED_INTERPRETER_H
+#include "expr-wrappers/interpreter.h"
 #include <symbol_table.h>
 
 namespace aaltitoad::hawk {
     struct scoped_interpreter {
-        scoped_interpreter(std::initializer_list<std::reference_wrapper<expr::symbol_table_t>> environments);
-        void add_tree(const std::string& identifier, const expr::syntax_tree_t& tree);
-        void add_tree(const std::string& access_modifier, const std::string& identifier, const expr::syntax_tree_t& tree);
-        auto get_symbol(const std::string& identifier) -> expr::syntax_tree_t;
+        scoped_interpreter(std::initializer_list<std::reference_wrapper<expr::symbol_table_t>> environments, const std::string& prefix);
+        auto parse(const std::string& expression) -> expr::symbol_value_t;
+        void add_parameter(const std::string& key, const expr::symbol_value_t& value);
         expr::symbol_table_t public_result;
         expr::symbol_table_t parameters{};
         std::string identifier_prefix{};
     };
 
-    struct scoped_compiler {
+    struct scoped_compiler : public expression_driver {
         scoped_compiler(expr::symbol_table_t local_symbols, expr::symbol_table_t parameters, std::string local_prefix, std::initializer_list<std::reference_wrapper<expr::symbol_table_t>> environments);
-        void add_tree(const std::string& identifier, const expr::syntax_tree_t& tree);
-        auto get_symbol(const std::string &identifier) -> expr::syntax_tree_t;
+        auto parse(const std::string& expression) -> language_result override;
         auto get_localized_symbols() -> expr::symbol_table_t;
 
     private:

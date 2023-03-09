@@ -16,10 +16,11 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "scoped_template_builder.h"
+#include "expr-wrappers/interpreter.h"
 #include "scoped_interpreter.h"
+#include "util/string_extensions.h"
 #include <ntta/builder/ntta_builder.h>
 #include <util/exceptions/parse_error.h>
-#include <drivers/tree_interpreter.h>
 
 namespace aaltitoad::hawk {
     auto scoped_template_builder::add_template(const model::tta_template& t) -> scoped_template_builder& {
@@ -47,24 +48,20 @@ namespace aaltitoad::hawk {
         return result;
     }
 
-    auto scoped_template_builder::get_invocation_arguments(const model::tta_instance_t& instance, expr::interpreter& interpreter) -> std::vector<expr::symbol_value_t> {
+    auto scoped_template_builder::get_invocation_arguments(const model::tta_instance_t& instance, scoped_interpreter& interpreter) -> std::vector<expr::symbol_value_t> {
         std::vector<expr::symbol_value_t> result{};
         std::smatch match;
         if (std::regex_search(instance.invocation.cbegin(), instance.invocation.cend(), match, param_section)) {
             auto m = match.str().substr(1, match.str().size() - 2); // remove the parentheses
-            for(auto i = std::sregex_iterator(m.begin(), m.end(), arg_split); i != std::sregex_iterator(); ++i) {
-                if(interpreter.parse(trim_copy(i->str())) != 0)
-                    throw parse_error(instance.invocation + ": could not get arguments of tta invocation: " + interpreter.error);
-                result.push_back(interpreter.expression_result);
-            }
+            for(auto i = std::sregex_iterator(m.begin(), m.end(), arg_split); i != std::sregex_iterator(); ++i)
+                result.push_back(interpreter.parse(trim_copy(i->str())));
         }
         return result;
     }
 
     auto scoped_template_builder::construct_interpreter_from_scope(const model::tta_instance_t& instance, const std::string& scoped_name) -> scoped_interpreter {
         // Interpret arguments and check for matching parameters
-        scoped_interpreter interpreter{{internal_symbols, external_symbols}};
-        interpreter.identifier_prefix = scoped_name + ".";
+        scoped_interpreter interpreter{{internal_symbols, external_symbols}, scoped_name + "."};
         auto parameters = get_invocation_parameters(instance);
         auto arguments = get_invocation_arguments(instance, interpreter);
         if(arguments.size() != parameters.size()) {
@@ -74,7 +71,7 @@ namespace aaltitoad::hawk {
 
         // Fill the parameter-argument table
         for(auto i = 0; i < parameters.size(); i++)
-            interpreter.parameters[trim_copy(parameters[i])] = arguments[i];
+            interpreter.add_parameter(trim_copy(parameters[i]), arguments[i]);
 
         return interpreter;
     }
@@ -90,10 +87,8 @@ namespace aaltitoad::hawk {
 
             // Construct the expression compiler
             auto interpreter = construct_interpreter_from_scope(instance, scoped_name);
-            if(interpreter.parse(instance_template.declarations) != 0)
-                throw parse_error("parsing declarations: " + interpreter.error);
+            auto local_scope_declarations = interpreter.parse(instance_template.declarations);
             internal_symbols += interpreter.public_result;
-            auto local_scope_declarations = interpreter.result;
             scoped_compiler c{local_scope_declarations, interpreter.parameters, scoped_name + ".",{internal_symbols, external_symbols}};
             internal_symbols += c.get_localized_symbols();
 
@@ -124,9 +119,8 @@ namespace aaltitoad::hawk {
 
             // Construct the tta builder
             auto interpreter = construct_interpreter_from_scope(instance, scoped_name);
-            if(interpreter.parse(instance_template.declarations) != 0)
-                throw parse_error("parsing declarations: " + interpreter.error);
-            scoped_compiler c{interpreter.result, interpreter.parameters, scoped_name + ".", {internal_symbols, external_symbols}};
+            auto result = interpreter.parse(instance_template.declarations);
+            scoped_compiler c{result, interpreter.parameters, scoped_name + ".", {internal_symbols, external_symbols}};
             tta_builder builder{&c};
             builder.set_name(scoped_name);
 
@@ -177,12 +171,8 @@ namespace aaltitoad::hawk {
                                 .invocation=main_it->first};
         spdlog::trace("building ntta from main component: '{0}'", main_it->second.name);
         ntta_builder builder{};
-        for(auto& decl : global_symbol_declarations) {
-            expr::interpreter e{};
-            if(e.parse(decl) != 0)
-                throw parse_error("global declarations error: " + e.error);
-            external_symbols += e.result;
-        }
+        for(auto& decl : global_symbol_declarations)
+            external_symbols += expression_driver{}.parse(decl).get_symbol_table();
         parse_declarations_recursively(t, "");
         instantiate_tta_recursively(t, "", builder);
         builder.add_symbols(internal_symbols);

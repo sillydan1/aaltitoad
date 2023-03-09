@@ -39,6 +39,7 @@ namespace aaltitoad {
         expression_driver(const expr::symbol_table_t& known, const expr::symbol_table_t& unknown) : known_environment{known}, unknown_environment{unknown} {}
         expression_driver(const expr::symbol_table_t& known) : known_environment{known}, unknown_environment{} {}
         expression_driver() : known_environment{}, unknown_environment{} {}
+        virtual ~expression_driver() = default;
 
         auto evaluate(const expr::syntax_tree_collection_t& declarations) -> expr::symbol_table_t {
             expr::symbol_operator op{};
@@ -63,7 +64,7 @@ namespace aaltitoad {
             return {};
         }
 
-        auto parse(const std::string& s) -> language_result {
+        virtual auto parse(const std::string& s) -> language_result {
             std::istringstream iss{s};
             expr::ast_factory factory{};
             expr::declaration_tree_builder builder{};

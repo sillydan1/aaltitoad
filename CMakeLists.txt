@@ -29,6 +29,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_MACOSX_RPATH 1)
 list(APPEND CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib)
 
+find_package(BISON REQUIRED)
+find_package(FLEX REQUIRED)
+
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
 CPMAddPackage(NAME expr GIT_TAG feature/cpp-parsers GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
 CPMAddPackage("gh:sillydan1/argvparse@1.2.3")
@@ -96,6 +99,9 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         ${yapermutation_SOURCE_DIR}/include
         ${yasetwrappers_SOURCE_DIR}/include
         src
+        # strictly not required, but it helps my clangd lsp setup and it doesn't hurt
+        ${FLEX_INCLUDE_DIRS}
+        ${BISON_INCLUDE_DIRS}
 )
 
 add_compile_definitions(ENABLE_Z3)
