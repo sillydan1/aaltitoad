@@ -19,8 +19,8 @@
 #include <plugin_system/plugin_system.h>
 #include <aaltitoadpch.h>
 #include <timer>
-#include <drivers/z3_driver.h>
 #include "cli_options.h"
+#include "expr-wrappers/interpreter.h"
 
 auto get_ntta(std::map<std::string, argument_t>& cli_arguments) -> std::unique_ptr<aaltitoad::ntta_t>;
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
@@ -107,27 +107,21 @@ void find_deadlocks(const std::unique_ptr<aaltitoad::ntta_t>& ntta, std::map<std
     // TODO: Also check for --condition-file
     std::vector<expr::syntax_tree_t> extra_conditions{};
     for(auto& condition : cli_arguments["condition"].as_list_or_default({})) {
-        expr::compiler c{{ntta->symbols, ntta->external_symbols}};
-        if(c.parse(condition) == 0) {
-            if(c.trees.contains("expression_result"))
-                extra_conditions.push_back(c.trees["expression_result"]); // TODO: type-check
-            else
-                spdlog::error("only raw expressions will be used for extra conditions");
-        }
+        aaltitoad::expression_driver c{ntta->symbols, ntta->external_symbols};
+        auto result = c.parse(condition);
+        if(!result.expression)
+            spdlog::error("only raw expressions will be used for extra conditions");
+        else
+            extra_conditions.push_back(result.expression.value());
     }
     spdlog::trace("parsing extra {0} conditions took {1}ms", extra_conditions.size(), t.milliseconds_elapsed());
 
     // TODO: also check for --known-file
     t.start();
-    expr::interpreter i{};
+    aaltitoad::expression_driver i{};
     expr::symbol_table_t known_symbols{};
-    for(auto& k : cli_arguments["known"].as_list_or_default({})) {
-        i.result = {};
-        if(i.parse(k) == 0)
-            known_symbols += i.result;
-        else
-            spdlog::error(i.error);
-    }
+    for(auto& k : cli_arguments["known"].as_list_or_default({}))
+        known_symbols += i.parse(k).get_symbol_table();
     spdlog::trace("parsing {0} known symbols took {1}ms", known_symbols.size(), t.milliseconds_elapsed());
 
     // TODO: also check for --instance-file
@@ -146,7 +140,7 @@ void find_deadlocks(const std::unique_ptr<aaltitoad::ntta_t>& ntta, std::map<std
     for(auto& known : known_symbols)
         unknown_symbols.erase(known.first);
 
-    expr::z3_driver d{known_symbols, unknown_symbols};
+    aaltitoad::expression_driver d{known_symbols, unknown_symbols};
     for(auto& instance : instances) {
         spdlog::trace("looking for '{0}' in components", instance);
         for(auto& location : ntta->components.at(instance).graph->nodes) {
@@ -163,13 +157,11 @@ void find_deadlocks(const std::unique_ptr<aaltitoad::ntta_t>& ntta, std::map<std
                         .concat(not_all_expr)
                         .concat(condition);
             try {
-                d.result = {};
-                d.add_tree(not_all_expr);
-                if(!d.result.empty() || d.result.get_delay_amount().has_value()) {
+                auto result = d.sat_check(not_all_expr);
+                if(!result.empty() || result.get_delay_amount().has_value())
                     std::cout << "[possible deadlock in " << instance << "](location:"
                               << location.second.data.identifier << ") in case:\n"
-                              << d.result << "\n";
-                }
+                              << result << "\n";
             } catch (std::domain_error& e) {
                 spdlog::trace(std::string{"domain error: "} + e.what());
             }

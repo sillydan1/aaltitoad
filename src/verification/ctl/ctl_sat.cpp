@@ -16,15 +16,17 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "ctl_sat.h"
+#include "expr-wrappers/interpreter.h"
+#include <ctl_syntax_tree.h>
 
 namespace aaltitoad {
-    auto is_satisfied(const ctl::compiler::compiled_expr_t& ast, const ntta_t& state) -> bool {
+    auto is_satisfied(const ctl::syntax_tree_t& ast, const ntta_t& state) -> bool {
         // TODO: This does not work if the ast is more complex than E F predicate
         auto value = false;
         std::visit(ya::overload(
                 [&](const expr::syntax_tree_t& v)   {
                     auto s = state.symbols + state.external_symbols;
-                    value = std::get<bool>(expr::interpreter{s}.evaluate(v));
+                    value = std::get<bool>(expression_driver{s}.evaluate(v));
                     },
                 [&](const ctl::location_t &v)       {
                     for(auto& component : state.components) {
@@ -39,14 +41,14 @@ namespace aaltitoad {
                         case ctl::modal_op_t::A: value = is_satisfied(ast.children()[0], state); break;
                         case ctl::modal_op_t::E: value = is_satisfied(ast.children()[0], state); break;
                     }},
-                [&](const ctl::quantifier_t &v)     {
+                [&](const ctl::quantifier_op_t &v)     {
                     switch(v) {
-                        case ctl::quantifier_t::X: value = is_satisfied(ast.children()[0], state); break;
-                        case ctl::quantifier_t::F: value = is_satisfied(ast.children()[0], state); break;
-                        case ctl::quantifier_t::G: value = is_satisfied(ast.children()[0], state); break;
+                        case ctl::quantifier_op_t::X: value = is_satisfied(ast.children()[0], state); break;
+                        case ctl::quantifier_op_t::F: value = is_satisfied(ast.children()[0], state); break;
+                        case ctl::quantifier_op_t::G: value = is_satisfied(ast.children()[0], state); break;
                         // TODO: actual modal/quantifier interpretation (U & W have 2 children btw)
-                        case ctl::quantifier_t::U: value = is_satisfied(ast.children()[0], state); break;
-                        case ctl::quantifier_t::W: value = is_satisfied(ast.children()[0], state); break;
+                        case ctl::quantifier_op_t::U: value = is_satisfied(ast.children()[0], state); break;
+                        case ctl::quantifier_op_t::W: value = is_satisfied(ast.children()[0], state); break;
                     }},
                 [&](const expr::operator_t& v)      {
                     switch(v.operator_type) {
@@ -67,3 +69,4 @@ namespace aaltitoad {
         return value;
     }
 }
+

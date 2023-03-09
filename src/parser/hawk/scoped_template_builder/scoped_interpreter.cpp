@@ -33,10 +33,9 @@ namespace aaltitoad::hawk {
         return {};
     }
 
-    scoped_interpreter::scoped_interpreter(std::initializer_list<expr::symbol_table_ref_t> environments)
-            : expr::interpreter{environments} {
-
-    }
+    scoped_interpreter::scoped_interpreter(std::initializer_list<std::reference_wrapper<expr::symbol_table_t>> environments)
+            //: expr::interpreter{environments} {
+    {}
 
     void scoped_interpreter::add_tree(const std::string& identifier, const expr::syntax_tree_t& tree) {
         auto id = identifier;

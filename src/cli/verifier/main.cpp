@@ -16,14 +16,15 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <aaltitoadpch.h>
+#include <ctl_syntax_tree.h>
 #include <ntta/tta.h>
 #include <timer>
 #include <plugin_system/plugin_system.h>
-#include <ctl_compiler.h>
 #include <verification/forward_reachability.h>
 #include <ntta/interesting_tocker.h>
 #include "cli_options.h"
 #include "../cli_common.h"
+#include "expr-wrappers/interpreter.h"
 #include "query/query_json_loader.h"
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
@@ -68,8 +69,8 @@ int main(int argc, char** argv) {
         spdlog::debug("model parsing took {0}ms", t.milliseconds_elapsed());
 
         t.start();
-        std::vector<ctl::compiler::compiled_expr_t> queries{};
-        ctl::compiler ctl_compiler{{n->symbols, n->external_symbols}};
+        std::vector<ctl::syntax_tree_t> queries{};
+        aaltitoad::ctl_interpreter ctl_compiler{n->symbols, n->external_symbols};
         for(auto& q : cli_arguments["query"].as_list_or_default({})) {
             spdlog::trace("compiling query '{0}'", q);
             queries.emplace_back(ctl_compiler.compile(q));

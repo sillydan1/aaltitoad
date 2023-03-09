@@ -1,5 +1,7 @@
 #ifndef AALTITOAD_EXPR_WRAPPER_INTERPRETER_H
 #define AALTITOAD_EXPR_WRAPPER_INTERPRETER_H
+#include <ctl_syntax_tree.h>
+#include <stdexcept>
 #include <symbol_table.h>
 #include <driver/z3/z3-driver.h>
 #include "expr-lang/ast-factory.h"
@@ -33,8 +35,10 @@ namespace aaltitoad {
             known_environment = parse(environment).get_symbol_table();
             unknown_environment = parse(unknown).get_symbol_table();
         }
-        
+        // TODO: we shouldn't copy the environments!
         expression_driver(const expr::symbol_table_t& known, const expr::symbol_table_t& unknown) : known_environment{known}, unknown_environment{unknown} {}
+        expression_driver(const expr::symbol_table_t& known) : known_environment{known}, unknown_environment{} {}
+        expression_driver() : known_environment{}, unknown_environment{} {}
 
         auto evaluate(const expr::syntax_tree_collection_t& declarations) -> expr::symbol_table_t {
             expr::symbol_operator op{};
@@ -80,6 +84,19 @@ namespace aaltitoad {
     public:
         expr::symbol_table_t known_environment{}; // TODO: These environments are only used for z3
         expr::symbol_table_t unknown_environment{};
+    };
+
+    class ctl_interpreter {
+    public:
+        ctl_interpreter(const expr::symbol_table_t& env1, const expr::symbol_table_t& env2);
+        ctl_interpreter(const expr::symbol_table_t& env1); 
+        ctl_interpreter(const std::initializer_list<std::reference_wrapper<expr::symbol_table_t>>& environments) : environments{environments} {}
+        auto compile(const std::string& expression) -> ctl::syntax_tree_t {
+            // TODO: implement this
+            throw std::logic_error("not implemented yet");
+        }
+    private:
+        std::vector<std::reference_wrapper<expr::symbol_table_t>> environments;
     };
 }
 

@@ -20,7 +20,7 @@
 #include "verification/ctl/ctl_sat.h"
 #include "ntta/tta.h"
 #include "traceable_multimap.h"
-#include <ctl_compiler.h>
+#include <ctl_syntax_tree.h>
 #include <vector>
 #include <utility>
 
@@ -28,7 +28,7 @@ namespace aaltitoad {
     class forward_reachability_searcher {
     public:
         using solution_t = traceable_multimap<ntta_t>::iterator_t;
-        using compiled_query_t = ctl::compiler::compiled_expr_t;
+        using compiled_query_t = ctl::syntax_tree_t;
         struct query_solution_t {
             compiled_query_t query;
             std::optional<solution_t> solution;
