@@ -27,6 +27,11 @@ namespace aaltitoad {
                 env[r.first] = e.evaluate(r.second);
             return env;
         }
+        auto get_symbol_value() -> expr::symbol_value_t {
+            expr::symbol_operator op{};
+            expr::evaluator e{{}, op};
+            return e.evaluate(expression.value());
+        }
     };
 
     class expression_driver {

@@ -46,6 +46,10 @@ namespace aaltitoad::hawk {
     auto scoped_interpreter::parse(const std::string &expression) -> expr::symbol_value_t { 
         return {}; // TODO: implement this
     }
+
+    auto scoped_interpreter::parse_table(const std::string &expression) -> expr::symbol_table_t { 
+        return {}; // TODO: implement this
+    }
 /* Old functionality:
     void scoped_interpreter::add_tree(const std::string& identifier, const expr::syntax_tree_t& tree) {
         auto id = identifier;

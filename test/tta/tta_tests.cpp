@@ -32,8 +32,8 @@ SCENARIO("constructing networks of TTAs", "[ntta_t-construction]") {
     spdlog::set_level(spdlog::level::trace);
     aaltitoad::ntta_t::tta_map_t component_map{};
     expr::symbol_table_t symbols{};
-    expr::compiler compiler{symbols};
-    auto compile_update = [&compiler](const std::string& updates) { compiler.trees = {}; compiler.parse(updates); return compiler.trees; };
+    aaltitoad::expression_driver compiler{symbols};
+    auto compile_update = [&compiler](const std::string& updates) { return compiler.parse(updates).get_symbol_table(); };
     auto compile_guard = [&compiler](const std::string& guard) { compiler.trees = {}; compiler.parse(guard); return compiler.trees["expression_result"]; };
     auto empty_guard = compile_guard("");
     GIVEN("two TTAs with no enabled edges") {
