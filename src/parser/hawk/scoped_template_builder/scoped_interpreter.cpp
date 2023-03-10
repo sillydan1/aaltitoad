@@ -16,6 +16,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "scoped_interpreter.h"
+#include "expr-wrappers/interpreter.h"
+#include "symbol_table.h"
 #include <utility>
 
 namespace aaltitoad::hawk {
@@ -33,16 +35,24 @@ namespace aaltitoad::hawk {
         return {};
     }
 
-    scoped_interpreter::scoped_interpreter(std::initializer_list<std::reference_wrapper<expr::symbol_table_t>> environments)
-            //: expr::interpreter{environments} {
-    {}
+    scoped_interpreter::scoped_interpreter(std::initializer_list<std::reference_wrapper<expr::symbol_table_t>> environments, const std::string& prefix)
+     : public_result{}, parameters{}, identifier_prefix{prefix} {
+    }
 
+    void scoped_interpreter::add_parameter(const std::string &key, const expr::symbol_value_t &value) {
+        parameters[key] = value;
+    }
+
+    auto scoped_interpreter::parse(const std::string &expression) -> expr::symbol_value_t { 
+        return {}; // TODO: implement this
+    }
+/* Old functionality:
     void scoped_interpreter::add_tree(const std::string& identifier, const expr::syntax_tree_t& tree) {
         auto id = identifier;
         auto parameterized_identifier = get_parameterized_identifier(id, parameters);
         if(parameterized_identifier.has_value())
             id = parameterized_identifier.value();
-
+        
         expr::interpreter::add_tree(identifier_prefix + id, tree);
     }
 
@@ -64,12 +74,23 @@ namespace aaltitoad::hawk {
             return expr::syntax_tree_t{env_it->second};
         return expr::interpreter::get_symbol(identifier);
     }
-
-    scoped_compiler::scoped_compiler(expr::symbol_table_t local_symbols, expr::symbol_table_t parameters, std::string local_prefix, std::initializer_list<expr::symbol_table_ref_t> environments)
-     : expr::compiler{environments}, local_symbols{std::move(local_symbols)}, parameters{std::move(parameters)}, local_prefix{std::move(local_prefix)} {
+*/
+    scoped_compiler::scoped_compiler(const expr::symbol_table_t& local_symbols, const expr::symbol_table_t& parameters, const std::string& local_prefix, const std::initializer_list<std::reference_wrapper<expr::symbol_table_t>>& environments)
+     : local_symbols{local_symbols}, parameters{parameters}, local_prefix{local_prefix} {
 
     }
 
+    auto scoped_compiler::parse(const std::string &expression) -> language_result {
+        // TODO: implement this!
+    }
+
+    auto scoped_compiler::get_localized_symbols() -> expr::symbol_table_t {
+        expr::symbol_table_t localized_symbols{};
+        for(auto& s : local_symbols)
+            localized_symbols[s.first] = s.second;
+        return localized_symbols;
+    }
+/*
     auto scoped_compiler::get_symbol(const std::string& identifier) -> expr::syntax_tree_t {
         // are we looking up a parameterized identifier?
         // e.g. guard: "somevar.foo > bar" => "somevar.30 > bar" where 'foo' is a parameter with the argument 30
@@ -106,11 +127,5 @@ namespace aaltitoad::hawk {
 
         expr::compiler::add_tree(id, tree);
     }
-
-    auto scoped_compiler::get_localized_symbols() -> expr::symbol_table_t {
-        expr::symbol_table_t localized_symbols{};
-        for(auto& s : local_symbols)
-            localized_symbols[s.first] = s.second;
-        return localized_symbols;
-    }
+*/
 }

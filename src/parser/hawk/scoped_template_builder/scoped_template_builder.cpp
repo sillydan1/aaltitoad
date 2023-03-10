@@ -87,7 +87,7 @@ namespace aaltitoad::hawk {
 
             // Construct the expression compiler
             auto interpreter = construct_interpreter_from_scope(instance, scoped_name);
-            auto local_scope_declarations = interpreter.parse(instance_template.declarations);
+            auto local_scope_declarations = interpreter.parse_table(instance_template.declarations);
             internal_symbols += interpreter.public_result;
             scoped_compiler c{local_scope_declarations, interpreter.parameters, scoped_name + ".",{internal_symbols, external_symbols}};
             internal_symbols += c.get_localized_symbols();
@@ -119,7 +119,7 @@ namespace aaltitoad::hawk {
 
             // Construct the tta builder
             auto interpreter = construct_interpreter_from_scope(instance, scoped_name);
-            auto result = interpreter.parse(instance_template.declarations);
+            auto result = interpreter.parse_table(instance_template.declarations);
             scoped_compiler c{result, interpreter.parameters, scoped_name + ".", {internal_symbols, external_symbols}};
             tta_builder builder{&c};
             builder.set_name(scoped_name);
