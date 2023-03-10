@@ -15,6 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include "expr-wrappers/interpreter.h"
+#include "symbol_table.h"
 #include <ntta/interesting_tocker.h>
 #include <ntta/async_tocker.h>
 #include <catch2/catch_test_macros.hpp>
@@ -23,8 +25,8 @@ SCENARIO("interesting tocker", "[interesting-tocker]") {
     spdlog::set_level(spdlog::level::trace);
     aaltitoad::ntta_t::tta_map_t component_map{};
     expr::symbol_table_t external_symbols{};
-    expr::compiler compiler{external_symbols};
-    auto compile_guard = [&compiler](const std::string& guard) { compiler.trees = {}; compiler.parse(guard); return compiler.trees["expression_result"]; };
+    aaltitoad::expression_driver compiler{external_symbols};
+    auto compile_guard = [&compiler](const std::string& guard) -> expr::syntax_tree_t { return compiler.parse(guard).expression.value(); };
     GIVEN("two external symbols and two TTA with edges guarding the respective external symbols") {
         external_symbols["x"] = false;
         external_symbols["y"] = false;
@@ -180,8 +182,8 @@ SCENARIO("dummy asynchronous tocker", "[dummy-async-tocker]") {
     spdlog::set_level(spdlog::level::trace);
     aaltitoad::ntta_t::tta_map_t component_map{};
     expr::symbol_table_t external_symbols{};
-    expr::compiler compiler{external_symbols};
-    auto compile_guard = [&compiler](const std::string& guard) { compiler.trees = {}; compiler.parse(guard); return compiler.trees["expression_result"]; };
+    aaltitoad::expression_driver compiler{external_symbols};
+    auto compile_guard = [&compiler](const std::string& guard) -> expr::syntax_tree_t { return compiler.parse(guard).expression.value(); };
     GIVEN("a manually controllable dummy async tocker and one irrelevant TTA") {
         expr::symbol_table_t symbols{};
         symbols["x"] = false;

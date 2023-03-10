@@ -15,27 +15,30 @@ namespace expr {
     using syntax_tree_collection_t = std::map<std::string, expr::syntax_tree_t>;
 }
 
-namespace aaltitoad {
-    struct language_result {
-        expr::syntax_tree_collection_t declarations;
-        std::optional<expr::syntax_tree_t> expression;
-        auto get_symbol_table() -> expr::symbol_table_t {
-            expr::symbol_operator op{};
-            expr::evaluator e{{}, op};
-            expr::symbol_table_t env{};
-            for(auto& r : declarations)
-                env[r.first] = e.evaluate(r.second);
-            return env;
-        }
-        auto get_symbol_value() -> expr::symbol_value_t {
-            expr::symbol_operator op{};
-            expr::evaluator e{{}, op};
-            return e.evaluate(expression.value());
-        }
-    };
+namespace ctl {
+    using syntax_tree_collection_t = std::map<std::string, ctl::syntax_tree_t>;
+}
 
+namespace aaltitoad {
     class expression_driver {
     public:
+        struct language_result {
+            expr::syntax_tree_collection_t declarations;
+            std::optional<expr::syntax_tree_t> expression;
+            auto get_symbol_table() -> expr::symbol_table_t {
+                expr::symbol_operator op{};
+                expr::evaluator e{{}, op};
+                expr::symbol_table_t env{};
+                for(auto& r : declarations)
+                    env[r.first] = e.evaluate(r.second);
+                return env;
+            }
+            auto get_symbol_value() -> expr::symbol_value_t {
+                expr::symbol_operator op{};
+                expr::evaluator e{{}, op};
+                return e.evaluate(expression.value());
+            }
+        };
         expression_driver(const std::string& environment, const std::string& unknown) : known_environment{}, unknown_environment{} {
             known_environment = parse(environment).get_symbol_table();
             unknown_environment = parse(unknown).get_symbol_table();
@@ -94,10 +97,18 @@ namespace aaltitoad {
 
     class ctl_interpreter {
     public:
+        struct language_result {
+            ctl::syntax_tree_collection_t declarations;
+            std::optional<ctl::syntax_tree_t> expression;
+        };
         ctl_interpreter(const expr::symbol_table_t& env1, const expr::symbol_table_t& env2);
         ctl_interpreter(const expr::symbol_table_t& env1); 
         ctl_interpreter(const std::initializer_list<std::reference_wrapper<expr::symbol_table_t>>& environments) : environments{environments} {}
         auto compile(const std::string& expression) -> ctl::syntax_tree_t {
+            // TODO: implement this
+            throw std::logic_error("not implemented yet");
+        }
+        auto parse(const std::string& expression) -> language_result {
             // TODO: implement this
             throw std::logic_error("not implemented yet");
         }

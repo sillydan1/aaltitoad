@@ -15,6 +15,9 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include "driver/evaluator.h"
+#include "expr-wrappers/interpreter.h"
+#include "symbol_table.h"
 #include <ntta/tta.h>
 #include <catch2/catch_test_macros.hpp>
 #include <utility>
@@ -33,8 +36,8 @@ SCENARIO("constructing networks of TTAs", "[ntta_t-construction]") {
     aaltitoad::ntta_t::tta_map_t component_map{};
     expr::symbol_table_t symbols{};
     aaltitoad::expression_driver compiler{symbols};
-    auto compile_update = [&compiler](const std::string& updates) { return compiler.parse(updates).get_symbol_table(); };
-    auto compile_guard = [&compiler](const std::string& guard) { compiler.trees = {}; compiler.parse(guard); return compiler.trees["expression_result"]; };
+    auto compile_update = [&compiler](const std::string& updates) -> expr::syntax_tree_collection_t { return compiler.parse(updates).declarations; };
+    auto compile_guard = [&compiler](const std::string& guard) -> expr::syntax_tree_t { return compiler.parse(guard).expression.value(); };
     auto empty_guard = compile_guard("");
     GIVEN("two TTAs with no enabled edges") {
         symbols["x"] = 0;
@@ -85,8 +88,8 @@ SCENARIO("constructing networks of TTAs", "[ntta_t-construction]") {
         GIVEN("adding a tocker implementation with some changes to report") {
             expr::symbol_table_t ex_symbols{};
             n.external_symbols["x"] = 0;
-            expr::interpreter i{ex_symbols};
-            auto interpret_update = [&i](const std::string& update){ i.result = {}; i.parse(update); return i.result; };
+            aaltitoad::expression_driver i{ex_symbols};
+            auto interpret_update = [&i](const std::string& update) -> expr::symbol_table_t { return i.parse(update).get_symbol_table(); };
             n.add_tocker(std::make_unique<dummy_tocker>(std::vector<expr::symbol_table_t>{interpret_update("x:=32")}));
             THEN("tocker is added to the list") {
                 REQUIRE(1 == n.tockers.size());
@@ -176,9 +179,9 @@ SCENARIO("ticking result in maximal behavior (no tockers registered)", "[tick-ma
     spdlog::set_level(spdlog::level::trace);
     aaltitoad::ntta_t::tta_map_t component_map{};
     expr::symbol_table_t symbols{};
-    expr::compiler compiler{symbols};
-    auto compile_update = [&compiler](const std::string& updates) { compiler.trees = {}; compiler.parse(updates); return compiler.trees; };
-    auto compile_guard = [&compiler](const std::string& guard) { compiler.trees = {}; compiler.parse(guard); return compiler.trees["expression_result"]; };
+    aaltitoad::expression_driver compiler{symbols};
+    auto compile_update = [&compiler](const std::string& updates) -> expr::syntax_tree_collection_t { return compiler.parse(updates).declarations; };
+    auto compile_guard = [&compiler](const std::string& guard) -> expr::syntax_tree_t { return compiler.parse(guard).expression.value(); };
     auto empty_guard = compile_guard("");
     GIVEN("two TTAs with 1 enabled edge no update overlap") {
         { // TTA A
@@ -318,8 +321,8 @@ SCENARIO("ticking result in maximal behavior (no tockers registered)", "[tick-ma
     GIVEN("one TTAs checking an external variable") {
         expr::symbol_table_t ex_symbols{};
         ex_symbols["x"] = 0;
-        expr::compiler ex_compiler{ex_symbols};
-        auto ex_compile_guard = [&ex_compiler](const std::string& guard) { ex_compiler.trees = {}; ex_compiler.parse(guard); return ex_compiler.trees["expression_result"]; };
+        aaltitoad::expression_driver ex_compiler{ex_symbols};
+        auto ex_compile_guard = [&ex_compiler](const std::string& guard) -> expr::syntax_tree_t { return ex_compiler.parse(guard).expression.value(); };
         { // TTA A
             auto factory = aaltitoad::tta_t::graph_builder{};
             factory.add_nodes({{"L0"},{"L1"}});
