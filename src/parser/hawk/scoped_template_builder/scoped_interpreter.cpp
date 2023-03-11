@@ -16,13 +16,16 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "scoped_interpreter.h"
+#include "driver/evaluator.h"
 #include "expr-wrappers/interpreter.h"
 #include "expr-wrappers/parameterized-expr-evaluator.h"
+#include "language-builder.h"
+#include "operations/symbol-operator.h"
 #include "symbol_table.h"
 #include <utility>
 
 namespace aaltitoad::hawk {
-    auto get_parameterized_identifier(const std::string& identifier, const expr::symbol_table_t& parameters) -> std::optional<std::string> {
+    auto scoped_interpreter::get_parameterized_identifier(const std::string& identifier) const -> std::string {
         auto id = trim_copy(identifier);
         for(auto& parameter : parameters) {
             std::regex r{"\\." + parameter.first + "$"};
@@ -30,77 +33,88 @@ namespace aaltitoad::hawk {
             if (std::regex_search(id.cbegin(), id.cend(), match, r)) {
                 auto replace = "." + expr::as_string(parameter.second);
                 auto parameterized_identifier = std::regex_replace(id, r, replace);
-                return {parameterized_identifier};
+                return parameterized_identifier;
             }
         }
-        return {};
+        return id;
     }
 
-    scoped_interpreter::scoped_interpreter(std::initializer_list<std::reference_wrapper<expr::symbol_table_t>> environments, const std::string& prefix)
-     : public_result{}, parameters{}, identifier_prefix{prefix} {
-    }
+    scoped_interpreter::scoped_interpreter(const expr::symbol_table_ref_collection_t& environments, const std::string& prefix)
+    : public_result{}, parameters{}, identifier_prefix{prefix}, environments{environments} {}
 
     void scoped_interpreter::add_parameter(const std::string &key, const expr::symbol_value_t &value) {
         parameters[key] = value;
     }
 
+    auto placeholder(const std::string& s) -> expr::declaration_tree_builder::result_t {
+        std::istringstream iss{s};
+        expr::ast_factory factory{};
+        expr::declaration_tree_builder builder{};
+        expr::scanner sc{iss, std::cerr, &factory};
+        expr::parser_args pa{&sc, &factory, &builder};
+        expr::parser p{pa};
+        if(p.parse() != 0)
+            throw std::logic_error("unable to parse the expression(s)");
+        return builder.build();
+    }
+
     // This function is used to evaluate some expression to some raw symbol value.
     // Explicitly, this is used for calculating the value of the arguments provided to instances of TTA templates
-    // NOTE: the scope-name shouldn't be used in this case...
     auto scoped_interpreter::parse(const std::string &expression) -> expr::symbol_value_t { 
-        // TODO: implement this
-        aaltitoad::parameterized_expr_evaluator e{};
-
+        auto res = placeholder(expression);
+        aaltitoad::parameterized_expr_evaluator e{environments, parameters, expr::symbol_operator{}};
+        return e.evaluate(res.raw_expression.value());
     }
 
     // This function is used to evaluate the declaration expression during TTA template instantiation
-    // NOTE: all declarations will be prepended with the scope-name prefix
     auto scoped_interpreter::parse_table(const std::string &expression) -> expr::symbol_table_t { 
-        // TODO: implement this
+        auto res = placeholder(expression);
+        aaltitoad::parameterized_expr_evaluator e{environments, parameters, expr::symbol_operator{}};
+        expr::symbol_table_t result{};
+        for(auto& decl : res.declarations) {
+            auto ident = get_parameterized_identifier(decl.first);
+            if(decl.second.access_modifier == expr::symbol_access_modifier_t::_private)
+                ident = identifier_prefix + ident;
+            result[ident] = e.evaluate(decl.second.tree);
+        }
+        return result;
     }
-/* Old functionality:
-    void scoped_interpreter::add_tree(const std::string& identifier, const expr::syntax_tree_t& tree) {
-        auto id = identifier;
-        auto parameterized_identifier = get_parameterized_identifier(id, parameters);
-        if(parameterized_identifier.has_value())
-            id = parameterized_identifier.value();
-        
-        expr::interpreter::add_tree(identifier_prefix + id, tree);
-    }
-
-    void scoped_interpreter::add_tree(const std::string& access_modifier, const std::string& identifier, const expr::syntax_tree_t& tree) {
-        auto id = identifier;
-        auto parameterized_identifier = get_parameterized_identifier(id, parameters);
-        if(parameterized_identifier.has_value())
-            id = parameterized_identifier.value();
-
-        if(lower_case(access_modifier) == "public")
-            public_result[id] = evaluate(tree);
-        else
-            expr::interpreter::add_tree(access_modifier, identifier_prefix + id, tree);
-    }
-
-    auto scoped_interpreter::get_symbol(const std::string& identifier) -> expr::syntax_tree_t {
-        auto env_it = parameters.find(identifier);
-        if(env_it != parameters.end())
-            return expr::syntax_tree_t{env_it->second};
-        return expr::interpreter::get_symbol(identifier);
-    }
-*/
+    
     scoped_compiler::scoped_compiler(const expr::symbol_table_t& local_symbols, const expr::symbol_table_t& parameters, const std::string& local_prefix, const std::initializer_list<std::reference_wrapper<expr::symbol_table_t>>& environments)
      : local_symbols{local_symbols}, parameters{parameters}, local_prefix{local_prefix} {
 
     }
 
+    auto scoped_compiler::get_parameterized_identifier(const std::string& identifier) const -> std::string {
+        auto id = trim_copy(identifier);
+        for(auto& parameter : parameters) {
+            std::regex r{"\\." + parameter.first + "$"};
+            std::smatch match;
+            if (std::regex_search(id.cbegin(), id.cend(), match, r)) {
+                auto replace = "." + expr::as_string(parameter.second);
+                auto parameterized_identifier = std::regex_replace(id, r, replace);
+                return parameterized_identifier;
+            }
+        }
+        return id;
+    }
+
     auto scoped_compiler::parse(const std::string &expression) -> language_result {
-        // TODO: implement this!
+        auto res = placeholder(expression);
+        language_result result{};
+        for(auto& decl : res.declarations) {
+            auto ident = get_parameterized_identifier(decl.first);
+            if(decl.second.access_modifier == expr::symbol_access_modifier_t::_private)
+                ident = local_prefix + ident;
+            result.declarations[ident] = decl.second.tree;
+        }
+        if(res.raw_expression)
+            result.expression = res.raw_expression.value();
+        return result;
     }
 
     auto scoped_compiler::get_localized_symbols() -> expr::symbol_table_t {
-        expr::symbol_table_t localized_symbols{};
-        for(auto& s : local_symbols)
-            localized_symbols[s.first] = s.second;
-        return localized_symbols;
+        return local_symbols;
     }
 /*
     auto scoped_compiler::get_symbol(const std::string& identifier) -> expr::syntax_tree_t {

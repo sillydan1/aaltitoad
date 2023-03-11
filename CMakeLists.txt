@@ -14,7 +14,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 cmake_minimum_required(VERSION 3.16) # 3.16+ because of target_precompiled_header
-project(aaltitoad VERSION 1.0.0)
+project(aaltitoad VERSION 1.1.0)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CXX_STANDARD_REQUIRED ON)
@@ -54,7 +54,7 @@ CPMAddPackage("gh:neargye/magic_enum@0.8.1")
 CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.5")
 cpm_licenses_create_disclaimer_target(write_licenses "${CMAKE_BINARY_DIR}/third_party.txt" "${CPM_PACKAGES}")
 
-set(${PROJECT_NAME}_SOURCES
+add_library(${PROJECT_NAME} SHARED 
         src/expr-wrappers/parameterized-expr-evaluator.cpp
         src/ntta/builder/ntta_builder.cpp
         src/ntta/tta.cpp
@@ -65,9 +65,6 @@ set(${PROJECT_NAME}_SOURCES
         src/util/warnings.cpp
         src/util/random.cpp
         src/util/string_extensions.cpp)
-
-# TODO: split the project up - each folder should have their own CMakeLists file
-add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES})
 if(${CODE_COVERAGE})
     target_link_options(${PROJECT_NAME} PUBLIC --coverage)
     target_compile_options(${PROJECT_NAME} PUBLIC --coverage)
