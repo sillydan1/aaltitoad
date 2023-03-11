@@ -25,7 +25,7 @@ namespace aaltitoad {
         struct language_result {
             expr::syntax_tree_collection_t declarations;
             std::optional<expr::syntax_tree_t> expression;
-            auto get_symbol_table() -> expr::symbol_table_t {
+            auto get_symbol_table() -> expr::symbol_table_t { // NOTE: no environment context available here
                 expr::symbol_operator op{};
                 expr::evaluator e{{}, op};
                 expr::symbol_table_t env{};
@@ -39,19 +39,14 @@ namespace aaltitoad {
                 return e.evaluate(expression.value());
             }
         };
-        expression_driver(const std::string& environment, const std::string& unknown) : known_environment{}, unknown_environment{} {
-            known_environment = parse(environment).get_symbol_table();
-            unknown_environment = parse(unknown).get_symbol_table();
-        }
         // TODO: we shouldn't copy the environments!
-        expression_driver(const expr::symbol_table_t& known, const expr::symbol_table_t& unknown) : known_environment{known}, unknown_environment{unknown} {}
-        expression_driver(const expr::symbol_table_t& known) : known_environment{known}, unknown_environment{} {}
         expression_driver() : known_environment{}, unknown_environment{} {}
+        expression_driver(const expr::symbol_table_t& known) : known_environment{known}, unknown_environment{} {}
+        expression_driver(const expr::symbol_table_t& known, const expr::symbol_table_t& unknown) : known_environment{known}, unknown_environment{unknown} {}
         virtual ~expression_driver() = default;
 
-        auto evaluate(const expr::syntax_tree_collection_t& declarations) -> expr::symbol_table_t {
-            expr::symbol_operator op{};
-            expr::evaluator e{{known_environment}, op};// TODO: environment(s) should be injected directly instead of through the ctor
+        auto evaluate(const expr::syntax_tree_collection_t& declarations) -> expr::symbol_table_t { // NOTE: this uses environment context
+            expr::evaluator e{{known_environment, unknown_environment}, expr::symbol_operator{}};
             expr::symbol_table_t result{};
             for(auto& decl : declarations)
                 result[decl.first] = e.evaluate(decl.second);
@@ -59,16 +54,13 @@ namespace aaltitoad {
         }
 
         auto evaluate(const expr::syntax_tree_t& expression) -> expr::symbol_value_t {
-            expr::symbol_operator op{};
-            expr::evaluator e{{known_environment}, op};// TODO: environment(s) should be injected directly instead of through the ctor
-            return e.evaluate(expression);
+            return expr::evaluator{{known_environment, unknown_environment}, expr::symbol_operator{}}.evaluate(expression);
         }
 
-        auto sat_check(const expr::syntax_tree_t& expression) -> expr::symbol_table_t { // TODO: This could return an optional instead
-            expr::z3_driver z{known_environment, unknown_environment};
-            auto sol = z.find_solution(expression);
-            if(sol)
-                return sol.value();
+        auto sat_check(const expr::syntax_tree_t& expression) -> expr::symbol_table_t {
+            auto solultion = expr::z3_driver{known_environment, unknown_environment}.find_solution(expression);
+            if(solultion)
+                return solultion.value();
             return {};
         }
 

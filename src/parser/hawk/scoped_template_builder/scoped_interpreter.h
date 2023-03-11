@@ -31,7 +31,7 @@ namespace aaltitoad::hawk {
         std::string identifier_prefix{};
     };
 
-    struct scoped_compiler : public expression_driver { // TODO: This should just be part of the expression_driver class itself
+    struct scoped_compiler : public expression_driver { // TODO: This should just be part of the expression_driver class itself, because that class is meant to be the singular interface that everyone uses
         scoped_compiler(const expr::symbol_table_t& local_symbols, const expr::symbol_table_t& parameters, const std::string& local_prefix, const std::initializer_list<std::reference_wrapper<expr::symbol_table_t>>& environments);
         auto parse(const std::string& expression) -> language_result override;
         auto get_localized_symbols() -> expr::symbol_table_t;

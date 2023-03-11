@@ -74,7 +74,6 @@ namespace aaltitoad {
 
     void ntta_t::apply(const expr::symbol_table_t& symbol_changes) {
         // apply changes to internal and external symbols (overwrite, dont insert)
-        // TODO: This could be done in a more sophisticated manner.
         symbols *= symbol_changes;
         external_symbols *= symbol_changes;
     }

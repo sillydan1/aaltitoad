@@ -17,6 +17,7 @@
  */
 #include "scoped_interpreter.h"
 #include "expr-wrappers/interpreter.h"
+#include "expr-wrappers/parameterized-expr-evaluator.h"
 #include "symbol_table.h"
 #include <utility>
 
@@ -43,10 +44,17 @@ namespace aaltitoad::hawk {
         parameters[key] = value;
     }
 
+    // This function is used to evaluate some expression to some raw symbol value.
+    // Explicitly, this is used for calculating the value of the arguments provided to instances of TTA templates
+    // NOTE: the scope-name shouldn't be used in this case...
     auto scoped_interpreter::parse(const std::string &expression) -> expr::symbol_value_t { 
         // TODO: implement this
+        aaltitoad::parameterized_expr_evaluator e{};
+
     }
 
+    // This function is used to evaluate the declaration expression during TTA template instantiation
+    // NOTE: all declarations will be prepended with the scope-name prefix
     auto scoped_interpreter::parse_table(const std::string &expression) -> expr::symbol_table_t { 
         // TODO: implement this
     }
