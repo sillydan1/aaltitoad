@@ -64,7 +64,9 @@ namespace aaltitoad {
                             value = !is_satisfied(ast.children()[0], state); break;
                         default: throw std::logic_error("not a valid raw CTL operator");
                     }},
-                [](auto&&) { std::cerr << "not here!" << std::endl; }
+                [](auto&& v) {
+                           std::cerr << "something" << std::endl; // TODO: Decide what to do here. If it is fine, dont print anything
+                       }
         ), static_cast<const ctl::underlying_syntax_node_t&>(ast.node));
         return value;
     }

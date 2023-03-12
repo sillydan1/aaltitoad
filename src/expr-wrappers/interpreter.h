@@ -59,6 +59,14 @@ namespace aaltitoad {
             return {};
         }
 
+        auto parse_guard(const std::string& expression) -> expr::syntax_tree_t {
+            if(expression.empty()) {
+                expr::ast_factory factory{};
+                return factory.build_root(factory.build_literal(true)) ;
+            }
+            return parse(expression).expression.value(); 
+        }
+
         virtual auto parse(const std::string& s) -> language_result {
             std::istringstream iss{s};
             expr::ast_factory factory{};

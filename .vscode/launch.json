@@ -2,6 +2,18 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "launch unit tests",
+            "type": "cppdbg",
+            "request": "launch",
+            "osx": {
+                "type": "codelldb"
+            },
+            "request": "launch",
+            "program": "${workspaceFolder}/Debug/aaltitoad_tests",
+            "args": [],
+            "cwd": "${workspaceFolder}/Debug"
+        },
+        {
             "name": "Launch detcheck",
             "type": "cppdbg",
             "request": "launch",

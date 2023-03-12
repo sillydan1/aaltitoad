@@ -24,7 +24,7 @@ namespace aaltitoad {
     tta_builder::tta_builder(expression_driver* expression_compiler)
      : compiler{expression_compiler}, factory{}, empty_guard{}, starting_location{}
     {
-        empty_guard = compile_guard("");
+        empty_guard = compiler->parse_guard("");
     }
     auto tta_builder::get_name() -> std::optional<std::string> {
         return tta_name;
