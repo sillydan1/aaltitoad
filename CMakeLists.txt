@@ -56,6 +56,7 @@ cpm_licenses_create_disclaimer_target(write_licenses "${CMAKE_BINARY_DIR}/third_
 
 add_library(${PROJECT_NAME} SHARED 
         src/expr-wrappers/parameterized-expr-evaluator.cpp
+        src/expr-wrappers/parameterized-ast-factory.cpp
         src/ntta/builder/ntta_builder.cpp
         src/ntta/tta.cpp
         src/ntta/interesting_tocker.cpp

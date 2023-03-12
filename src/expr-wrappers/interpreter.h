@@ -39,8 +39,7 @@ namespace aaltitoad {
                 return e.evaluate(expression.value());
             }
         };
-        // TODO: we shouldn't copy the environments!
-        expression_driver() : known_environment{}, unknown_environment{} {}
+        expression_driver() : known_environment{}, unknown_environment{} {} // TODO: stop copying the environments, they should be reference_wrapper<const symbol_table_t> instead
         expression_driver(const expr::symbol_table_t& known) : known_environment{known}, unknown_environment{} {}
         expression_driver(const expr::symbol_table_t& known, const expr::symbol_table_t& unknown) : known_environment{known}, unknown_environment{unknown} {}
         virtual ~expression_driver() = default;
@@ -83,7 +82,7 @@ namespace aaltitoad {
         }
 
     public:
-        expr::symbol_table_t known_environment{}; // TODO: These environments are only used for z3
+        expr::symbol_table_t known_environment{};
         expr::symbol_table_t unknown_environment{};
     };
 

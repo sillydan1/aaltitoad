@@ -54,7 +54,7 @@ namespace aaltitoad::hawk {
         if (std::regex_search(instance.invocation.cbegin(), instance.invocation.cend(), match, param_section)) {
             auto m = match.str().substr(1, match.str().size() - 2); // remove the parentheses
             for(auto i = std::sregex_iterator(m.begin(), m.end(), arg_split); i != std::sregex_iterator(); ++i)
-                result.push_back(interpreter.parse(trim_copy(i->str())));
+                result.push_back(interpreter.parse_raw(trim_copy(i->str())));
         }
         return result;
     }
@@ -80,19 +80,14 @@ namespace aaltitoad::hawk {
         auto scoped_name = (parent_name.empty() ? parent_name : parent_name + ".") + instance.invocation;
         spdlog::trace("{0}: parsing declarations", scoped_name);
         try {
-            // Does the template exist?
             if(!templates.contains(instance.tta_template_name))
                 throw parse_error(instance.tta_template_name + ": no such template");
             auto& instance_template = templates.at(instance.tta_template_name);
 
-            // Construct the expression compiler
+            // FIX: An instantiation cannot have a declaration that references a parent's declaration(s) - which _should_ be a feature of the hawk language, but is considered out of scope for aaltitoad v1.1.0
             auto interpreter = construct_interpreter_from_scope(instance, scoped_name);
-            auto local_scope_declarations = interpreter.parse_table(instance_template.declarations);
-            internal_symbols += interpreter.public_result;
-            scoped_compiler c{local_scope_declarations, interpreter.parameters, scoped_name + ".",{internal_symbols, external_symbols}};
-            internal_symbols += c.get_localized_symbols();
+            internal_symbols += interpreter.parse_declarations(instance_template.declarations); // TODO: Add check for public declaration overrides, and spit a warn::warning!
 
-            // Recurse
             call_func_aggregate_errors(instance_template.instances, [this, &scoped_name](auto& template_instance){
                parse_declarations_recursively(template_instance, scoped_name);
             });
@@ -107,20 +102,16 @@ namespace aaltitoad::hawk {
         auto scoped_name = (parent_name.empty() ? parent_name : parent_name + ".") + instance.invocation;
         spdlog::trace("{0}: instantiating", scoped_name);
         try {
-            // Does the template exist?
             if(!templates.contains(instance.tta_template_name))
                 throw parse_error(instance.tta_template_name + ": no such template");
             auto& instance_template = templates.at(instance.tta_template_name);
 
-            // Recursively add instances
             call_func_aggregate_errors(instance_template.instances, [this, &scoped_name, &network_builder](auto& template_instance){
                 instantiate_tta_recursively(template_instance, scoped_name, network_builder);
             });
 
-            // Construct the tta builder
             auto interpreter = construct_interpreter_from_scope(instance, scoped_name);
-            auto result = interpreter.parse_table(instance_template.declarations);
-            scoped_compiler c{result, interpreter.parameters, scoped_name + ".", {internal_symbols, external_symbols}};
+            scoped_compiler c{interpreter.get_local_identifiers(), interpreter.get_parameters(), scoped_name + ".", {internal_symbols, external_symbols}};
             tta_builder builder{&c};
             builder.set_name(scoped_name);
 

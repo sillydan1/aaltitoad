@@ -23,28 +23,36 @@
 #include <symbol_table.h>
 
 namespace aaltitoad::hawk {
-    struct scoped_interpreter {
-        scoped_interpreter(const expr::symbol_table_ref_collection_t& environments, const std::string& prefix);
-        auto parse(const std::string& expression) -> expr::symbol_value_t;
-        auto parse_table(const std::string& expression) -> expr::symbol_table_t; // TODO: Rename
+    class parameterizer {
+    public:
+        auto get_parameters() const -> expr::symbol_table_t;
+        auto get_prefix() const -> std::string;
         void add_parameter(const std::string& key, const expr::symbol_value_t& value);
+    protected:
+        parameterizer(const expr::symbol_table_t& params, const std::string& identifier_prefix);
+        virtual ~parameterizer();
         auto get_parameterized_identifier(const std::string& identifier) const -> std::string;
-        expr::symbol_table_t public_result;
-        expr::symbol_table_t parameters{};
-        std::string identifier_prefix{};
-        expr::symbol_table_ref_collection_t environments;
+        auto placeholder(const std::string& expression, const std::vector<std::string>& local_identifiers) -> expr::declaration_tree_builder::result_t;
+        expr::symbol_table_t parameters;
+        std::string identifier_prefix;
     };
 
-    struct scoped_compiler : public expression_driver { // TODO: This should just be part of the expression_driver class itself, because that class is meant to be the singular interface that everyone uses
-        scoped_compiler(const expr::symbol_table_t& local_symbols, const expr::symbol_table_t& parameters, const std::string& local_prefix, const std::initializer_list<std::reference_wrapper<expr::symbol_table_t>>& environments);
-        auto get_parameterized_identifier(const std::string& identifier) const -> std::string;
-        auto parse(const std::string& expression) -> language_result override;
-        auto get_localized_symbols() -> expr::symbol_table_t;
-
+    struct scoped_interpreter : public expr::evaluator, parameterizer {
+        scoped_interpreter(const expr::symbol_table_ref_collection_t& environments, const std::string& prefix);
+        ~scoped_interpreter() override = default;
+        auto parse_raw(const std::string& expression) -> expr::symbol_value_t;
+        auto parse_declarations(const std::string& expression) -> expr::symbol_table_t;
+        auto find(const std::string& identifier) const -> expr::symbol_table_t::const_iterator override;
+        auto get_local_identifiers() -> std::vector<std::string>;
     private:
-        expr::symbol_table_t local_symbols;
-        expr::symbol_table_t parameters;
-        std::string local_prefix;
+        std::vector<std::string> local_identifiers;
+    };
+
+    struct scoped_compiler : public expression_driver, parameterizer { // TODO: This should just be part of the expression_driver class itself, because that class is meant to be the singular interface that everyone uses
+        scoped_compiler(const std::vector<std::string>& local_identifiers, const expr::symbol_table_t& parameters, const std::string& local_prefix, const std::initializer_list<std::reference_wrapper<expr::symbol_table_t>>& environments);
+        auto parse(const std::string& expression) -> language_result override;
+    private:
+        std::vector<std::string> local_identifiers;
     };
 }
 
