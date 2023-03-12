@@ -63,6 +63,8 @@ namespace aaltitoad {
     auto tta_builder::compile_guard(const std::optional<std::string>& guard) -> expr::syntax_tree_t {
         if(!guard.has_value())
             return empty_guard;
+        if(guard.value().empty())
+            return empty_guard;
         auto result = compiler->parse(guard.value());
         if(!result.expression)
             throw new std::logic_error("guard is not an expression");
