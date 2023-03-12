@@ -15,10 +15,6 @@ namespace expr {
     using syntax_tree_collection_t = std::map<std::string, expr::syntax_tree_t>;
 }
 
-namespace ctl {
-    using syntax_tree_collection_t = std::map<std::string, ctl::syntax_tree_t>;
-}
-
 namespace aaltitoad {
     class expression_driver {
     public:
@@ -84,27 +80,6 @@ namespace aaltitoad {
     public:
         expr::symbol_table_t known_environment{};
         expr::symbol_table_t unknown_environment{};
-    };
-
-    class ctl_interpreter {
-    public:
-        struct language_result {
-            ctl::syntax_tree_collection_t declarations;
-            std::optional<ctl::syntax_tree_t> expression;
-        };
-        ctl_interpreter(const expr::symbol_table_t& env1, const expr::symbol_table_t& env2);
-        ctl_interpreter(const expr::symbol_table_t& env1); 
-        ctl_interpreter(const std::initializer_list<std::reference_wrapper<expr::symbol_table_t>>& environments) : environments{environments} {}
-        auto compile(const std::string& expression) -> ctl::syntax_tree_t {
-            // TODO: implement this
-            throw std::logic_error("not implemented yet");
-        }
-        auto parse(const std::string& expression) -> language_result {
-            // TODO: implement this
-            throw std::logic_error("not implemented yet");
-        }
-    private:
-        std::vector<std::reference_wrapper<expr::symbol_table_t>> environments;
     };
 }
 

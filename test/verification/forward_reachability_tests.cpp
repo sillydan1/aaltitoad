@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "expr-wrappers/interpreter.h"
+#include "expr-wrappers/ctl-interpreter.h"
 #include <ntta/tta.h>
 #include <catch2/catch_test_macros.hpp>
 #include <ntta/builder/ntta_builder.h>
@@ -37,7 +37,7 @@ SCENARIO("basic reachability", "[frs]") {
                 // Add tockers
                 .build_with_interesting_tocker();
         GIVEN("a simple reachability query 'can x reach zero?'") {
-            auto query = aaltitoad::ctl_interpreter{n.symbols, n.external_symbols}.parse("E F x == 0").expression.value();
+            auto query = aaltitoad::ctl_interpreter{n.symbols, n.external_symbols}.compile("E F x == 0");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{};
                 auto results = frs.is_reachable(n, query);
@@ -58,7 +58,7 @@ SCENARIO("basic reachability", "[frs]") {
         }
         GIVEN("a simple reachability query 'can L1 be reached?'") {
             auto s = n.symbols + n.external_symbols;
-            auto query = aaltitoad::ctl_interpreter{s}.parse("E F L1").expression.value();
+            auto query = aaltitoad::ctl_interpreter{s}.compile("E F L1");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{};
                 auto results = frs.is_reachable(n, query);
@@ -89,7 +89,7 @@ SCENARIO("basic reachability", "[frs]") {
                 .build_with_interesting_tocker();
         GIVEN("a simple unsatisfiable query 'can x reach 1?'") {
             auto s = n.symbols + n.external_symbols;
-            auto query = aaltitoad::ctl_interpreter{s}.parse("E F x == 1").expression.value();
+            auto query = aaltitoad::ctl_interpreter{s}.compile("E F x == 1");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{};
                 auto results = frs.is_reachable(n, query);
@@ -115,7 +115,7 @@ SCENARIO("basic reachability", "[frs]") {
                 .build_with_interesting_tocker();
         GIVEN("a simple query matching the interesting guard 'E F y > 0'") {
             auto s = n.symbols + n.external_symbols;
-            auto query = aaltitoad::ctl_interpreter{s}.parse("E F y > 0").expression.value();
+            auto query = aaltitoad::ctl_interpreter{s}.compile("E F y > 0");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{};
                 auto results = frs.is_reachable(n, query);
@@ -144,7 +144,7 @@ SCENARIO("basic reachability", "[frs]") {
                 .build_with_interesting_tocker();
         GIVEN("a simple query matching the interesting guard 'E F y > 0'") {
             auto s = n.symbols + n.external_symbols;
-            auto query = aaltitoad::ctl_interpreter{s}.parse("E F y > 0").expression.value();
+            auto query = aaltitoad::ctl_interpreter{s}.compile("E F y > 0");
             WHEN("searching through the state-space with forward reachability search (strategy last)") {
                 aaltitoad::forward_reachability_searcher frs{aaltitoad::pick_strategy::last};
                 auto results = frs.is_reachable(n, query);
@@ -157,7 +157,7 @@ SCENARIO("basic reachability", "[frs]") {
         }
         GIVEN("is L2 reachable?") {
             auto s = n.symbols + n.external_symbols;
-            auto query = aaltitoad::ctl_interpreter{s}.parse("E F L2").expression.value();
+            auto query = aaltitoad::ctl_interpreter{s}.compile("E F L2");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{aaltitoad::pick_strategy::random};
                 auto results = frs.is_reachable(n, query);

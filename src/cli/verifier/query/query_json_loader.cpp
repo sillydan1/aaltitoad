@@ -17,6 +17,7 @@
  */
 #include <ctl_syntax_tree.h>
 #include <nlohmann/json.hpp>
+#include "expr-wrappers/ctl-interpreter.h"
 #include "expr-wrappers/interpreter.h"
 #include "query_json_loader.h"
 #include "symbol_table.h"

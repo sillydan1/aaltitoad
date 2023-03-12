@@ -24,7 +24,9 @@
 #include <ntta/interesting_tocker.h>
 #include "cli_options.h"
 #include "../cli_common.h"
-#include "expr-wrappers/interpreter.h"
+#include <expr-lang/expr-scanner.hpp>
+#include <expr-lang/expr-parser.hpp>
+#include "expr-wrappers/ctl-interpreter.h"
 #include "query/query_json_loader.h"
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
