@@ -46,6 +46,7 @@ namespace aaltitoad::hawk {
         return id;
     }
 
+    // TODO: Rename this function please
     auto parameterizer::placeholder(const std::string& expression, const std::vector<std::string>& local_identifiers) -> expr::declaration_tree_builder::result_t {
         std::istringstream iss{expression};
         parameterized_ast_factory factory{identifier_prefix, parameters, local_identifiers};
@@ -116,7 +117,7 @@ namespace aaltitoad::hawk {
         language_result result{};
         for(auto& decl : res.declarations) {
             auto ident = get_parameterized_identifier(decl.first);
-            if(decl.second.access_modifier == expr::symbol_access_modifier_t::_private)
+            if(std::find(local_identifiers.begin(), local_identifiers.end(), ident) != local_identifiers.end())
                 ident = identifier_prefix + ident;
             result.declarations[ident] = decl.second.tree;
         }

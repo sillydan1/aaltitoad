@@ -32,6 +32,7 @@
 #include "spdlog/spdlog.h"
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
+void trace_log_ntta(const aaltitoad::ntta_t& n);
 
 int main(int argc, char** argv) {
     try {
@@ -70,37 +71,7 @@ int main(int argc, char** argv) {
         auto parser = std::get<parser_func_t>(available_plugins.at(selected_parser).function);
         ya::timer<int> t{};
         std::unique_ptr<aaltitoad::ntta_t> n{parser(inputs, ignore)};
-        if(spdlog::get_level() >= spdlog::level::trace) {
-            std::stringstream internal_symbols_ss{};
-            internal_symbols_ss << n->symbols;
-            spdlog::trace("internal symbols: {0}", internal_symbols_ss.str());
-
-            std::stringstream external_symbols_ss{};
-            external_symbols_ss << n->external_symbols;
-            spdlog::trace("external symbols: {0}", external_symbols_ss.str());
-            for(auto& c : n->components) {
-                spdlog::trace("instance '{0}': (initial: '{1}')", c.first, c.second.initial_location);
-                std::stringstream nodes_ss{};
-                nodes_ss << "nodes: \n";
-                for(auto& node : c.second.graph->nodes)
-                    nodes_ss << node.first << ": " << node.second.data.identifier << "\n";
-                spdlog::trace(nodes_ss.str());
-                
-                std::stringstream edges_ss{};
-                edges_ss << "edges: \n";
-                for(auto& edge : c.second.graph->edges)
-                    edges_ss << edge.first.identifier << ": " << 
-                        edge.second.source->second.data.identifier << 
-                        " -> " <<
-                        edge.second.target->second.data.identifier <<
-                        " ( " << 
-                        edge.second.data.guard << 
-                        " )  [ " <<
-                        " <updates> " << // TODO: implement operator<< for expr::syntax_tree_collection_t
-                        " ] \n";
-                spdlog::trace(edges_ss.str());
-            }
-        }
+        trace_log_ntta(*n);
         spdlog::debug("model parsing took {0}ms", t.milliseconds_elapsed());
 
         t.start();
@@ -149,3 +120,39 @@ auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_ma
     look_dirs.insert(look_dirs.end(), provided_dirs.begin(), provided_dirs.end());
     return aaltitoad::plugins::load(look_dirs);
 }
+
+void trace_log_ntta(const aaltitoad::ntta_t& n) {
+    if(spdlog::get_level() >= spdlog::level::trace) {
+        std::stringstream internal_symbols_ss{};
+        internal_symbols_ss << n.symbols;
+        spdlog::trace("internal symbols: \n{0}", internal_symbols_ss.str());
+
+        std::stringstream external_symbols_ss{};
+        external_symbols_ss << n.external_symbols;
+        spdlog::trace("external symbols: \n{0}", external_symbols_ss.str());
+        for(auto& c : n.components) {
+            spdlog::trace("<instance> '{0}': (initial: '{1}')", c.first, c.second.initial_location);
+            std::stringstream nodes_ss{};
+            nodes_ss << "nodes: \n";
+            for(auto& node : c.second.graph->nodes)
+                nodes_ss << node.first << ": " << node.second.data.identifier << "\n";
+            spdlog::trace(nodes_ss.str());
+            
+            std::stringstream edges_ss{};
+            edges_ss << "edges: \n";
+            for(auto& edge : c.second.graph->edges)
+                edges_ss << edge.first.identifier << ": " << 
+                    edge.second.source->second.data.identifier << 
+                    " -> " <<
+                    edge.second.target->second.data.identifier <<
+                    " ( " << 
+                    edge.second.data.guard << 
+                    " )  [ " <<
+                    edge.second.data.updates << 
+                    " ] \n";
+            spdlog::trace(edges_ss.str());
+            spdlog::trace("</instance>");
+        }
+    }
+}
+

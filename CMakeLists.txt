@@ -55,6 +55,7 @@ CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.5")
 cpm_licenses_create_disclaimer_target(write_licenses "${CMAKE_BINARY_DIR}/third_party.txt" "${CPM_PACKAGES}")
 
 add_library(${PROJECT_NAME} SHARED 
+        src/expr-wrappers/interpreter.cpp
         src/expr-wrappers/parameterized-expr-evaluator.cpp
         src/expr-wrappers/parameterized-ast-factory.cpp
         src/ntta/builder/ntta_builder.cpp
