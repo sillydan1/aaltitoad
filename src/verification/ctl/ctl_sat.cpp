@@ -44,7 +44,7 @@ namespace aaltitoad {
                                       // TODO: actual modal/quantifier interpretation
                                       case ctl::modal_op_t::A: return is_satisfied(ast.children()[0], state);
                                       case ctl::modal_op_t::E: return is_satisfied(ast.children()[0], state);
-                                      default: throw std::logic_error("not a valid modal CTL operator");
+                                      default: throw std::logic_error("not a valid CTL modal");
                                   }},
                               [&](const ctl::quantifier_t &v) -> bool {
                                   switch(v.operator_type) {
@@ -54,18 +54,18 @@ namespace aaltitoad {
                                       case ctl::quantifier_op_t::G: return is_satisfied(ast.children()[0], state);
                                       case ctl::quantifier_op_t::U: return is_satisfied(ast.children()[0], state);
                                       case ctl::quantifier_op_t::W: return is_satisfied(ast.children()[0], state);
-                                      default: throw std::logic_error("not a valid quantifier CTL operator");
+                                      default: throw std::logic_error("not a valid CTL quantifier");
                                   }},
-                              // [&](const expr::operator_t& v) -> bool {
-                              //     switch(v.operator_type) {
-                              //         case expr::operator_type_t::_and:     return is_satisfied(ast.children()[0], state) && is_satisfied(ast.children()[1], state);
-                              //         case expr::operator_type_t::_or:      return is_satisfied(ast.children()[0], state) || is_satisfied(ast.children()[1], state);
-                              //         case expr::operator_type_t::_xor:     return is_satisfied(ast.children()[0], state) != is_satisfied(ast.children()[1], state);
-                              //         case expr::operator_type_t::_implies: return !is_satisfied(ast.children()[0], state) || is_satisfied(ast.children()[1], state);
-                              //         case expr::operator_type_t::_not:     return !is_satisfied(ast.children()[0], state);
-                              //         default: throw std::logic_error("not a valid raw CTL operator");
-                              //     }},
-                              [](auto&&) -> bool { throw std::logic_error("unsupported thing"); }
+                              [&](const expr::operator_t& v) -> bool {
+                                  switch(v.operator_type) {
+                                      case expr::operator_type_t::_and:     return is_satisfied(ast.children()[0], state) && is_satisfied(ast.children()[1], state);
+                                      case expr::operator_type_t::_or:      return is_satisfied(ast.children()[0], state) || is_satisfied(ast.children()[1], state);
+                                      case expr::operator_type_t::_xor:     return is_satisfied(ast.children()[0], state) != is_satisfied(ast.children()[1], state);
+                                      case expr::operator_type_t::_implies: return !is_satisfied(ast.children()[0], state) || is_satisfied(ast.children()[1], state);
+                                      case expr::operator_type_t::_not:     return !is_satisfied(ast.children()[0], state);
+                                      default: throw std::logic_error("not a valid CTL operator");
+                                  }},
+                              [](auto&&) -> bool { throw std::logic_error("unsupported CTL syntax_tree node type"); }
                           ), static_cast<const ctl::underlying_syntax_node_t&>(ast.node));
     }
 }

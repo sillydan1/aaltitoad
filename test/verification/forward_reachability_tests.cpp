@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+// #include "cli/verifier/query/query_json_loader.h"
 #include "expr-wrappers/ctl-interpreter.h"
 #include <ntta/tta.h>
 #include <catch2/catch_test_macros.hpp>
@@ -38,6 +39,12 @@ SCENARIO("basic reachability", "[frs]") {
                 .build_with_interesting_tocker();
         GIVEN("a simple reachability query 'can x reach zero?'") {
             auto query = aaltitoad::ctl_interpreter{n.symbols, n.external_symbols}.compile("E F x == 0");
+            // THEN("query 'E F x == 0' is a searchable query") {
+            //     aaltitoad::is_query_searchable(query);
+            // }
+            // THEN("query 'E F x == 0' is not a trivial query") {
+            //     aaltitoad::is_query_trivial(query);
+            // }
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{};
                 auto results = frs.is_reachable(n, query);
