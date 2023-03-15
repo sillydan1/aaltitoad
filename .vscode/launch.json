@@ -8,10 +8,9 @@
             "osx": {
                 "type": "codelldb"
             },
-            "request": "launch",
-            "program": "${workspaceFolder}/Debug/aaltitoad_tests",
             "args": [],
-            "cwd": "${workspaceFolder}/Debug"
+            "cwd": "${workspaceFolder}/Debug",
+            "program": "${workspaceFolder}/Debug/aaltitoad_tests"
         },
         {
             "name": "Launch detcheck",

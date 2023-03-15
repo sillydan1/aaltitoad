@@ -52,10 +52,10 @@ namespace aaltitoad::hawk {
         parameterized_ast_factory factory{identifier_prefix, parameters, local_identifiers};
         expr::declaration_tree_builder builder{};
         expr::scanner sc{iss, std::cerr, &factory};
-        expr::parser_args pa{&sc, &factory, &builder};
+        expr::parser_args pa{expression, &sc, &factory, &builder};
         expr::parser p{pa};
         if(p.parse() != 0)
-            throw std::logic_error("unable to parse the expression(s)");
+            throw std::logic_error("parameterizer: unable to parse the expression(s): " + expression);
         return builder.build();
     }
 

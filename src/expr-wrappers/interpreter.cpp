@@ -59,10 +59,11 @@ namespace aaltitoad {
         expr::ast_factory factory{};
         expr::declaration_tree_builder builder{};
         expr::scanner sc{iss, std::cerr, &factory};
-        expr::parser_args pa{&sc, &factory, &builder};
+        expr::parser_args pa{s, &sc, &factory, &builder};
         expr::parser p{pa};
+        p.set_debug_level(1);
         if(p.parse() != 0)
-            throw std::logic_error("unable to parse the expression(s)");
+            throw std::logic_error("expression_driver: unable to parse the expression(s): " + s);
         auto res = builder.build();
         language_result result{};
         for(auto& e : res.declarations)
