@@ -3,12 +3,11 @@
     "configurations": [
         {
             "name": "launch unit tests",
-            "type": "cppdbg",
+            "type": "codelldb",
             "request": "launch",
-            "osx": {
-                "type": "codelldb"
-            },
-            "args": [],
+            "args": [
+                "[aa]"
+            ],
             "cwd": "${workspaceFolder}/Debug",
             "program": "${workspaceFolder}/Debug/aaltitoad_tests"
         },
