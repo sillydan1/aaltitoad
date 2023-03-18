@@ -34,6 +34,8 @@ namespace aaltitoad {
             for(auto& q : data) {
                 spdlog::trace("compiling query {0}", q["query"]);
                 auto query = c.compile(q["query"]);
+                std::stringstream ss{}; ss << query;
+                spdlog::trace("resulting tree: {0}", ss.str());
                 if(!aaltitoad::is_query_searchable(query))
                     warnings::warn(unsupported_query, std::string(q["query"])+" is not supported by aaltitoad - ignoring");
                 else

@@ -79,7 +79,10 @@ int main(int argc, char** argv) {
         aaltitoad::ctl_interpreter ctl_compiler{n->symbols, n->external_symbols};
         for(auto& q : cli_arguments["query"].as_list_or_default({})) {
             spdlog::trace("compiling query '{0}'", q);
-            queries.emplace_back(ctl_compiler.compile(q));
+            auto qq = ctl_compiler.compile(q);
+            std::stringstream ss{}; ss << qq;
+            spdlog::trace("resulting tree: {0}", ss.str());
+            queries.emplace_back(qq);
         }
         for(auto& f : cli_arguments["query-file"].as_list_or_default({})) {
             spdlog::trace("loading queries in file {0}", f);

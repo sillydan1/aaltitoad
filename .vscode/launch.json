@@ -6,7 +6,6 @@
             "type": "codelldb",
             "request": "launch",
             "args": [
-                "[aa]"
             ],
             "cwd": "${workspaceFolder}/Debug",
             "program": "${workspaceFolder}/Debug/aaltitoad_tests"
