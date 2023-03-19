@@ -16,7 +16,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "tta.h"
-#include "expr-wrappers/interpreter.h"
 #include "symbol_table.h"
 #include <setwrappers>
 #include <algorithm>
@@ -78,20 +77,22 @@ namespace aaltitoad {
         external_symbols *= symbol_changes;
     }
 
-    auto conflict_string(const expr::symbol_table_t& a, const expr::symbol_table_t& b) -> std::string {
-        std::stringstream ss{};
-        for(auto& v : b)
-            if(b.contains(v.first) && std::get<bool>(b.get(v.first) != v.second))
-                ss << v.first << " (' " << b.get(v.first) << "' / '" << v.second << "')\n";
-        return ss.str();
+    auto conflict_string(const expr::symbol_table_t& a, const expr::symbol_table_t& b) -> std::vector<std::string> {
+        std::vector<std::string> result{};
+        for(auto& v : a) {
+            if(b.contains(v.first) && std::get<bool>(b.get(v.first) != v.second)) {
+                std::stringstream ss{}; ss << "\t- conflict: " << v.first << " (" << b.get(v.first) << " / " << v.second << ")";
+                result.push_back(ss.str());
+            }
+        }
+        return result;
     }
 
     void ntta_t::apply(const std::vector<expr::symbol_table_t>& symbol_change_list) {
         expr::symbol_table_t combined_changes{};
         for(auto& changes : symbol_change_list) {
-            if(combined_changes.is_overlapping_and_not_idempotent(changes))
-                warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tocker-change application, will overwrite depending on the order",
-                               {conflict_string(combined_changes, changes)});
+            if(warnings::is_enabled(overlap_idem) && combined_changes.is_overlapping_and_not_idempotent(changes))
+                warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tocker-change application, will overwrite depending on the order:", conflict_string(combined_changes, changes));
             combined_changes += changes;
         }
         apply(combined_changes);
@@ -103,7 +104,8 @@ namespace aaltitoad {
         auto changes1 = i.evaluate(e1->second.data.updates);
         auto changes2 = i.evaluate(e2->second.data.updates);
         if(changes1.is_overlapping_and_not_idempotent(changes2)) {
-            warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tick-change calculation", {conflict_string(changes1, changes2)});
+            if(warnings::is_enabled(overlap_idem))
+                warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tick-change calculation:", conflict_string(changes1, changes2));
             return true;
         }
         return false;

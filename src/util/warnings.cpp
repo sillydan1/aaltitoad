@@ -60,9 +60,10 @@ namespace aaltitoad {
             return;
 
         std::stringstream ss{}; ss << msg << "\n";
-        if(spdlog::get_level() <= spdlog::level::debug) {
-            for(auto& line: extra_info_lines)
-                ss << line << "\n";
+        std::string sep = "";
+        for(auto& line: extra_info_lines) {
+            ss << sep << line;
+            sep = "\n";
         }
         warn(warning, ss.str());
     }
