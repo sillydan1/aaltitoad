@@ -5,40 +5,34 @@
             "name": "launch unit tests",
             "type": "codelldb",
             "request": "launch",
-            "args": [
-            ],
             "cwd": "${workspaceFolder}/Debug",
-            "program": "${workspaceFolder}/Debug/aaltitoad_tests"
+            "program": "${workspaceFolder}/Debug/aaltitoad_tests",
+            "args": [
+            ]
         },
         {
             "name": "Launch detcheck",
-            "type": "cppdbg",
+            "type": "codelldb",
             "request": "launch",
-            "osx": {
-                "type": "codelldb"
-            },
-            "request": "launch",
+            "cwd": "${workspaceFolder}/Debug",
             "program": "${workspaceFolder}/Debug/detcheck",
             "args": [ 
-                "-f", "../test/verification/fischer-suite/fischer-2/",
-                "-i", ".*\\.ignore.*"
-            ],
-            "cwd": "${workspaceFolder}/Debug"
+                "-f", "/Users/agj/Git/hmk/safecontrucks/Safecon3",
+                "-i", ".*CHANGELOG.*",
+                "-n", "Main.CS(15)"
+            ]
         },
         {
             "name": "Launch Verifier",
-            "type": "cppdbg",
-            "osx": {
-                "type": "codelldb"
-            },
+            "type": "codelldb",
             "request": "launch",
             "program": "${workspaceFolder}/Debug/verifier",
+            "cwd": "${workspaceFolder}/Debug",
             "args": [ 
                 "-f", "../test/verification/fischer-suite/fischer-2/",
                 "-q", "../test/verification/fischer-suite/fischer-2/Queries.json",
                 "-i", ".*\\.ignore.*"
-            ],
-            "cwd": "${workspaceFolder}/Debug"
+            ]
         }
     ]
 }

@@ -26,7 +26,7 @@
 #define PROJECT_VER_SLUG "@GIT_SLUG@"
 
 auto get_license() {
-     return "                 Copyright (C) 2022  Asger Gitz-Johansen\n"
+     return "                 Copyright (C) 2023  Asger Gitz-Johansen\n"
             "\n"
             "    This program is free software: you can redistribute it and/or modify\n"
             "    it under the terms of the GNU General Public License as published by\n"
