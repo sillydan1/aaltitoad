@@ -35,7 +35,7 @@ find_package(FLEX REQUIRED)
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
 CPMAddPackage(NAME expr VERSION 3.0.0 GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
 CPMAddPackage("gh:sillydan1/argvparse@1.2.3")
-CPMAddPackage("gh:sillydan1/ctl-expr#feat/cpp-parser")
+CPMAddPackage("gh:sillydan1/ctl-expr@2.0.0")
 
 CPMAddPackage("gh:yalibs/yatimer@1.0.0")
 CPMAddPackage("gh:yalibs/yaoverload@1.0.0")
@@ -47,11 +47,11 @@ CPMAddPackage("gh:yalibs/yauuid@1.0.1")
 CPMAddPackage("gh:yalibs/yasetwrappers@1.0.0")
 CPMAddPackage("gh:yalibs/yapermutation@1.1.2")
 
-CPMAddPackage("gh:gabime/spdlog@1.8.2")
-CPMAddPackage("gh:nlohmann/json@3.10.5")
-CPMAddPackage("gh:neargye/magic_enum@0.8.1")
+CPMAddPackage("gh:gabime/spdlog@1.11.0")
+CPMAddPackage("gh:nlohmann/json@3.11.2")
+CPMAddPackage("gh:neargye/magic_enum@0.8.2")
 
-CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.5")
+CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.6")
 cpm_licenses_create_disclaimer_target(write_licenses "${CMAKE_BINARY_DIR}/third_party.txt" "${CPM_PACKAGES}")
 
 add_library(${PROJECT_NAME} SHARED 
