@@ -19,6 +19,7 @@
 #include <plugin_system/plugin_system.h>
 #include <aaltitoadpch.h>
 #include <timer>
+#include <nlohmann/json.hpp>
 #include "cli_options.h"
 #include "expr-wrappers/interpreter.h"
 
@@ -104,30 +105,49 @@ auto get_mentioned_symbols(const expr::syntax_tree_t& expression, const expr::sy
 
 void find_deadlocks(const std::unique_ptr<aaltitoad::ntta_t>& ntta, std::map<std::string, argument_t>& cli_arguments) {
     ya::timer<unsigned int> t{};
-    // TODO: Also check for --condition-file
+    aaltitoad::expression_driver c{ntta->symbols, ntta->external_symbols};
     std::vector<expr::syntax_tree_t> extra_conditions{};
     for(auto& condition : cli_arguments["condition"].as_list_or_default({})) {
-        aaltitoad::expression_driver c{ntta->symbols, ntta->external_symbols};
         auto result = c.parse(condition);
         if(!result.expression)
             spdlog::error("only raw expressions will be used for extra conditions");
         else
             extra_conditions.push_back(result.expression.value());
     }
+    if(cli_arguments["condition-file"]) {
+        std::ifstream f(cli_arguments["condition-file"].as_string());
+        nlohmann::json data = nlohmann::json::parse(f);
+        for(auto& condition : data["conditions"]) {
+            auto result = c.parse(condition);
+            if(!result.expression)
+                spdlog::error("only raw expressions will be used for extra conditions");
+            else
+                extra_conditions.push_back(result.expression.value());
+        }
+    }
     spdlog::trace("parsing extra {0} conditions took {1}ms", extra_conditions.size(), t.milliseconds_elapsed());
 
-    // TODO: also check for --known-file
     t.start();
-    aaltitoad::expression_driver i{};
     expr::symbol_table_t known_symbols{};
     for(auto& k : cli_arguments["known"].as_list_or_default({}))
-        known_symbols += i.parse(k).get_symbol_table();
+        known_symbols += c.parse(k).get_symbol_table();
+    if(cli_arguments["known-file"]) {
+        std::ifstream f(cli_arguments["known-file"].as_string());
+        nlohmann::json data = nlohmann::json::parse(f);
+        for(auto& known : data["known"])
+            known_symbols += c.parse(known).get_symbol_table();
+    }
     spdlog::trace("parsing {0} known symbols took {1}ms", known_symbols.size(), t.milliseconds_elapsed());
 
-    // TODO: also check for --instance-file
     t.start();
     expr::symbol_table_t unknown_symbols{};
     auto instances = cli_arguments["instance"].as_list_or_default({});
+    if(cli_arguments["instance-file"]) {
+        std::ifstream f(cli_arguments["instance-file"].as_string());
+        nlohmann::json data = nlohmann::json::parse(f);
+        for(auto& instance : data["instances"])
+            instances.push_back(instance);
+    }
     for(auto& instance: instances) {
         spdlog::trace("looking for '{0}' in components", instance);
         for(auto& location: ntta->components.at(instance).graph->nodes)
@@ -136,7 +156,7 @@ void find_deadlocks(const std::unique_ptr<aaltitoad::ntta_t>& ntta, std::map<std
     }
     spdlog::trace("finding {0} mentioned symbols in {1} tta instances took {2}ms", unknown_symbols.size(), instances.size(), t.milliseconds_elapsed());
 
-    // known and unknown should have no overlap
+    // prune known symbols from unknown
     for(auto& known : known_symbols)
         unknown_symbols.erase(known.first);
 
