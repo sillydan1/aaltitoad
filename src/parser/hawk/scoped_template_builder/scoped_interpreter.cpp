@@ -46,8 +46,7 @@ namespace aaltitoad::hawk {
         return id;
     }
 
-    // TODO: Rename this function please
-    auto parameterizer::placeholder(const std::string& expression, const std::vector<std::string>& local_identifiers) -> expr::declaration_tree_builder::result_t {
+    auto parameterizer::parse_with_local_identifiers(const std::string& expression, const std::vector<std::string>& local_identifiers) -> expr::declaration_tree_builder::result_t {
         std::istringstream iss{expression};
         parameterized_ast_factory factory{identifier_prefix, parameters, local_identifiers};
         expr::declaration_tree_builder builder{};
@@ -84,13 +83,13 @@ namespace aaltitoad::hawk {
     // This function is used to evaluate some expression to some raw symbol value.
     // Explicitly, this is used for calculating the value of the arguments provided to instances of TTA templates
     auto scoped_interpreter::parse_raw(const std::string &expression) -> expr::symbol_value_t { 
-        auto res = placeholder(expression, {});
+        auto res = parse_with_local_identifiers(expression, {});
         return evaluate(res.raw_expression.value());
     }
 
     // This function is used to evaluate the declaration expression during TTA template instantiation
     auto scoped_interpreter::parse_declarations(const std::string &expression) -> expr::symbol_table_t { 
-        auto res = placeholder(expression, {});
+        auto res = parse_with_local_identifiers(expression, {});
         expr::symbol_table_t result{};
         for(auto& decl : res.declarations) {
             auto ident = get_parameterized_identifier(decl.first);
@@ -113,7 +112,7 @@ namespace aaltitoad::hawk {
     }
 
     auto scoped_compiler::parse(const std::string &expression) -> language_result {
-        auto res = placeholder(expression, local_identifiers);
+        auto res = parse_with_local_identifiers(expression, local_identifiers);
         language_result result{};
         for(auto& decl : res.declarations) {
             auto ident = get_parameterized_identifier(decl.first);

@@ -18,6 +18,7 @@
 #include "scoped_template_builder.h"
 #include "expr-wrappers/interpreter.h"
 #include "scoped_interpreter.h"
+#include "spdlog/spdlog.h"
 #include "util/string_extensions.h"
 #include <ntta/builder/ntta_builder.h>
 #include <util/exceptions/parse_error.h>
@@ -86,7 +87,10 @@ namespace aaltitoad::hawk {
 
             // FIX: An instantiation cannot have a declaration that references a parent's declaration(s) - which _should_ be a feature of the hawk language, but is considered out of scope for aaltitoad v1.1.0
             auto interpreter = construct_interpreter_from_scope(instance, scoped_name);
-            internal_symbols += interpreter.parse_declarations(instance_template.declarations); // TODO: Add check for public declaration overrides, and spit a warn::warning!
+            auto decls = interpreter.parse_declarations(instance_template.declarations);
+            if(internal_symbols.is_overlapping(decls))
+                spdlog::warn("double declaration detected");
+            internal_symbols += decls;
 
             call_func_aggregate_errors(instance_template.instances, [this, &scoped_name](auto& template_instance){
                parse_declarations_recursively(template_instance, scoped_name);

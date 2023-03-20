@@ -8,7 +8,7 @@ auto operator<<(std::ostream& os, const expr::syntax_tree_collection_t& c) -> st
 }
 
 namespace aaltitoad {
-    auto expression_driver::language_result::get_symbol_table() -> expr::symbol_table_t { // NOTE: no environment context available here
+    auto expression_driver::language_result::get_symbol_table() -> expr::symbol_table_t {
         expr::symbol_operator op{};
         expr::evaluator e{{}, op};
         expr::symbol_table_t env{};
@@ -27,7 +27,7 @@ namespace aaltitoad {
     expression_driver::expression_driver(const expr::symbol_table_t& env) : known_environment{env}, unknown_environment{} {}
     expression_driver::expression_driver(const expr::symbol_table_t& env0, const expr::symbol_table_t& env1) : known_environment{env0}, unknown_environment{env1} {}
     expression_driver::~expression_driver() {}
-    auto expression_driver::evaluate(const expr::syntax_tree_collection_t& declarations) -> expr::symbol_table_t { // NOTE: this uses environment context
+    auto expression_driver::evaluate(const expr::syntax_tree_collection_t& declarations) -> expr::symbol_table_t {
         expr::evaluator e{{known_environment, unknown_environment}, expr::symbol_operator{}};
         expr::symbol_table_t result{};
         for(auto& decl : declarations)

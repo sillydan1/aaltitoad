@@ -11,7 +11,6 @@
 #include <driver/evaluator.h>
 #include <expr-parser.hpp>
 
-// TODO: Extract implementations into a cpp file
 namespace expr {
     using syntax_tree_collection_t = std::map<std::string, expr::syntax_tree_t>;
 }
@@ -24,10 +23,11 @@ namespace aaltitoad {
         struct language_result {
             expr::syntax_tree_collection_t declarations;
             std::optional<expr::syntax_tree_t> expression;
-            auto get_symbol_table() -> expr::symbol_table_t; // NOTE: no environment context available here
+            auto get_symbol_table() -> expr::symbol_table_t;
             auto get_symbol_value() -> expr::symbol_value_t;
         };
-        expression_driver(); // TODO: stop copying the environments, they should be reference_wrapper<const symbol_table_t> instead
+        // NOTE: we are copying the symbol tables - this might affect performance
+        expression_driver(); 
         expression_driver(const expr::symbol_table_t& known);
         expression_driver(const expr::symbol_table_t& known, const expr::symbol_table_t& unknown);
         virtual ~expression_driver();

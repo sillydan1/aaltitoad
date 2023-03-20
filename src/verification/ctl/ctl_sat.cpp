@@ -23,7 +23,7 @@
 
 namespace aaltitoad {
     auto is_satisfied(const ctl::syntax_tree_t& ast, const ntta_t& state) -> bool {
-        // TODO: This does not work if the ast is more complex than E F predicate
+        // TODO: This does not work if the ast is more complex than E F predicate (https://github.com/sillydan1/aaltitoad/issues/41)
         return std::visit(ya::overload(
                               [&](const expr::syntax_tree_t& v) -> bool {
                                   auto s = state.symbols + state.external_symbols;
@@ -41,14 +41,12 @@ namespace aaltitoad {
                               },
                               [&](const ctl::modal_t &v) -> bool {
                                   switch(v.operator_type) {
-                                      // TODO: actual modal/quantifier interpretation
                                       case ctl::modal_op_t::A: return is_satisfied(ast.children()[0], state);
                                       case ctl::modal_op_t::E: return is_satisfied(ast.children()[0], state);
                                       default: throw std::logic_error("not a valid CTL modal");
                                   }},
                               [&](const ctl::quantifier_t &v) -> bool {
                                   switch(v.operator_type) {
-                                      // TODO: actual modal/quantifier interpretation (U & W have 2 children btw)
                                       case ctl::quantifier_op_t::X: return is_satisfied(ast.children()[0], state);
                                       case ctl::quantifier_op_t::F: return is_satisfied(ast.children()[0], state);
                                       case ctl::quantifier_op_t::G: return is_satisfied(ast.children()[0], state);

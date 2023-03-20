@@ -32,7 +32,7 @@ namespace aaltitoad::hawk {
         parameterizer(const expr::symbol_table_t& params, const std::string& identifier_prefix);
         virtual ~parameterizer();
         auto get_parameterized_identifier(const std::string& identifier) const -> std::string;
-        auto placeholder(const std::string& expression, const std::vector<std::string>& local_identifiers) -> expr::declaration_tree_builder::result_t;
+        auto parse_with_local_identifiers(const std::string& expression, const std::vector<std::string>& local_identifiers) -> expr::declaration_tree_builder::result_t;
         expr::symbol_table_t parameters;
         std::string identifier_prefix;
     };
@@ -48,7 +48,7 @@ namespace aaltitoad::hawk {
         std::vector<std::string> local_identifiers;
     };
 
-    struct scoped_compiler : public expression_driver, parameterizer { // TODO: This should just be part of the expression_driver class itself, because that class is meant to be the singular interface that everyone uses
+    struct scoped_compiler : public expression_driver, parameterizer {
         scoped_compiler(const std::vector<std::string>& local_identifiers, const expr::symbol_table_t& parameters, const std::string& local_prefix, const std::initializer_list<std::reference_wrapper<expr::symbol_table_t>>& environments);
         auto parse(const std::string& expression) -> language_result override;
     private:

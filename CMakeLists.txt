@@ -22,7 +22,7 @@ set(SPDLOG_BUILD_SHARED)
 set(CONFIG_IN_FILE src/config.h.in)
 set(CONFIG_OUT_FILE config.h)
 include(cmake/CPM.cmake)
-include(cmake/VER.cmake) # TODO: make a yalibs release of this cmake file
+include(cmake/VER.cmake) # TODO: yalibs candidate 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -111,7 +111,7 @@ add_subdirectory(src/cli/detcheck)
 add_subdirectory(src/parser)
 add_subdirectory(test)
 
-install(TARGETS ${PROJECT_NAME} expr_lang ctl_lang)
+install(TARGETS ${PROJECT_NAME} expr_lang ctl_lang verifier simulator detcheck)
 install(FILES src/man/tta.7 DESTINATION man/man7)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     install(FILES ${CMAKE_BINARY_DIR}/libz3.so DESTINATION lib)
@@ -122,10 +122,9 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 else()
     message(WARNING "unknown system ${CMAKE_SYSTEM_NAME}")
 endif()
-
-# TODO: determine required header files for plugins and add them to the install target
-#       install(DIRECTORY src/ntta src/plugin_system src/util DESTINATION include FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY src/ntta src/plugin_system src/util src/verification src/parser DESTINATION include FILES_MATCHING PATTERN "*.h")
 
 if(NOT WIN32)
     target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
 endif()
+

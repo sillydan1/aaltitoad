@@ -14,7 +14,7 @@ namespace aaltitoad {
         auto build_identifier(const std::string& identifier) -> expr::syntax_tree_t override;
     private:
         auto get_parameterized_identifier(const std::string& identifier) const -> std::string;
-        std::string scope_prefix; // TODO: Should be string_views
+        std::string scope_prefix;
         std::vector<std::string> local_identifiers;
         const expr::symbol_table_t& parameter_arguments;
     };
