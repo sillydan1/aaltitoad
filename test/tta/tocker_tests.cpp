@@ -15,6 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include "expr-wrappers/interpreter.h"
+#include "symbol_table.h"
 #include <ntta/interesting_tocker.h>
 #include <ntta/async_tocker.h>
 #include <catch2/catch_test_macros.hpp>
@@ -23,21 +25,20 @@ SCENARIO("interesting tocker", "[interesting-tocker]") {
     spdlog::set_level(spdlog::level::trace);
     aaltitoad::ntta_t::tta_map_t component_map{};
     expr::symbol_table_t external_symbols{};
-    expr::compiler compiler{external_symbols};
-    auto compile_guard = [&compiler](const std::string& guard) { compiler.trees = {}; compiler.parse(guard); return compiler.trees["expression_result"]; };
+    aaltitoad::expression_driver compiler{external_symbols};
     GIVEN("two external symbols and two TTA with edges guarding the respective external symbols") {
         external_symbols["x"] = false;
         external_symbols["y"] = false;
         { // TTA A
             auto factory = aaltitoad::tta_t::graph_builder{};
             factory.add_nodes({{"L0"},{"L1"}});
-            factory.add_edge("L0", "L1", {.identifier="a", .guard=compile_guard("x"), .updates={}});
+            factory.add_edge("L0", "L1", {.identifier="a", .guard=compiler.parse_guard("x"), .updates={}});
             component_map["A"] = {std::move(factory.build_heap()), "L0"};
         }
         { // TTA B
             auto factory = aaltitoad::tta_t::graph_builder{};
             factory.add_nodes({{"L0"},{"L1"}});
-            factory.add_edge("L0", "L1", {.identifier="b", .guard=compile_guard("y"), .updates={}});
+            factory.add_edge("L0", "L1", {.identifier="b", .guard=compiler.parse_guard("y"), .updates={}});
             component_map["B"] = {std::move(factory.build_heap()), "L0"};
         }
         auto n = aaltitoad::ntta_t{{}, external_symbols, component_map};
@@ -69,7 +70,7 @@ SCENARIO("interesting tocker", "[interesting-tocker]") {
     GIVEN("two external symbols and no guards that checks them") {
         external_symbols["x"] = false;
         external_symbols["y"] = false;
-        auto emptyguard = compile_guard("");
+        auto emptyguard = compiler.parse_guard("");
         { // TTA A
             auto factory = aaltitoad::tta_t::graph_builder{};
             factory.add_nodes({{"L0"},{"L1"}});
@@ -97,13 +98,13 @@ SCENARIO("interesting tocker", "[interesting-tocker]") {
         { // TTA A
             auto factory = aaltitoad::tta_t::graph_builder{};
             factory.add_nodes({{"L0"},{"L1"}});
-            factory.add_edge("L0", "L1", {.identifier="a", .guard=compile_guard("x && !y"), .updates={}});
+            factory.add_edge("L0", "L1", {.identifier="a", .guard=compiler.parse_guard("x && !y"), .updates={}});
             component_map["A"] = {std::move(factory.build_heap()), "L0"};
         }
         { // TTA B
             auto factory = aaltitoad::tta_t::graph_builder{};
             factory.add_nodes({{"L0"},{"L1"}});
-            factory.add_edge("L0", "L1", {.identifier="b", .guard=compile_guard("y && !x"), .updates={}});
+            factory.add_edge("L0", "L1", {.identifier="b", .guard=compiler.parse_guard("y && !x"), .updates={}});
             component_map["B"] = {std::move(factory.build_heap()), "L0"};
         }
         auto n = aaltitoad::ntta_t{{}, external_symbols, component_map};
@@ -125,13 +126,13 @@ SCENARIO("interesting tocker", "[interesting-tocker]") {
         { // TTA A
             auto factory = aaltitoad::tta_t::graph_builder{};
             factory.add_nodes({{"L0"},{"L1"}});
-            factory.add_edge("L0", "L1", {.identifier="a", .guard=compile_guard("x && !y"), .updates={}});
+            factory.add_edge("L0", "L1", {.identifier="a", .guard=compiler.parse_guard("x && !y"), .updates={}});
             component_map["A"] = {std::move(factory.build_heap()), "L0"};
         }
         { // TTA B
             auto factory = aaltitoad::tta_t::graph_builder{};
             factory.add_nodes({{"L0"},{"L1"}});
-            factory.add_edge("L0", "L1", {.identifier="b", .guard=compile_guard("y && !x"), .updates={}});
+            factory.add_edge("L0", "L1", {.identifier="b", .guard=compiler.parse_guard("y && !x"), .updates={}});
             component_map["B"] = {std::move(factory.build_heap()), "L0"};
         }
         auto n = aaltitoad::ntta_t{symbols, {}, component_map};
@@ -180,8 +181,7 @@ SCENARIO("dummy asynchronous tocker", "[dummy-async-tocker]") {
     spdlog::set_level(spdlog::level::trace);
     aaltitoad::ntta_t::tta_map_t component_map{};
     expr::symbol_table_t external_symbols{};
-    expr::compiler compiler{external_symbols};
-    auto compile_guard = [&compiler](const std::string& guard) { compiler.trees = {}; compiler.parse(guard); return compiler.trees["expression_result"]; };
+    aaltitoad::expression_driver compiler{external_symbols};
     GIVEN("a manually controllable dummy async tocker and one irrelevant TTA") {
         expr::symbol_table_t symbols{};
         symbols["x"] = false;

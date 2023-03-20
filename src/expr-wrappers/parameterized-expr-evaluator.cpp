@@ -15,13 +15,23 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef AALTITOAD_CTL_SAT_H
-#define AALTITOAD_CTL_SAT_H
-#include <ctl_syntax_tree.h>
-#include <ntta/tta.h>
+#include "parameterized-expr-evaluator.h"
+#include "driver/evaluator.h"
+#include "symbol_table.h"
 
 namespace aaltitoad {
-    auto is_satisfied(const ctl::syntax_tree_t& ast, const ntta_t& state) -> bool;
+    parameterized_expr_evaluator::parameterized_expr_evaluator(const expr::symbol_table_ref_collection_t& environments, const expr::symbol_table_t& paramargs, const expr::symbol_operator& op) 
+    : expr::evaluator{environments, op}, parameter_arguments{paramargs} {}
+
+    parameterized_expr_evaluator::~parameterized_expr_evaluator() {
+
+    }
+
+    auto parameterized_expr_evaluator::find(const std::string& identifier) const -> expr::symbol_table_t::const_iterator {
+        auto env_it = parameter_arguments.find(identifier);
+        if(env_it != parameter_arguments.end())
+            return env_it; 
+        return expr::evaluator::find(identifier);
+    }
 }
 
-#endif //AALTITOAD_CTL_SAT_H

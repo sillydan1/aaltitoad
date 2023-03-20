@@ -2,16 +2,25 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "launch unit tests",
+            "type": "codelldb",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/Debug",
+            "program": "${workspaceFolder}/Debug/aaltitoad_tests",
+            "args": [
+            ]
+        },
+        {
             "name": "Launch Verifier",
             "type": "codelldb",
             "request": "launch",
             "program": "${workspaceFolder}/Debug/verifier",
+            "cwd": "${workspaceFolder}/Debug",
             "args": [ 
                 "-f", "../test/verification/fischer-suite/fischer-2/",
                 "-q", "../test/verification/fischer-suite/fischer-2/Queries.json",
                 "-i", ".*\\.ignore.*"
-            ],
-            "cwd": "${workspaceFolder}/Debug"
+            ]
         }
     ]
 }

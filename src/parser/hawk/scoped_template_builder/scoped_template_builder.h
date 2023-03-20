@@ -43,7 +43,7 @@ namespace aaltitoad::hawk {
         auto generate_dependency_graph() -> ya::graph<std::string,std::string,std::string>;
         auto find_instance_sccs(ya::graph<std::string,std::string,std::string>& g) -> std::vector<scc_t<std::string,std::string,std::string>>;
         void throw_if_infinite_recursion_in_dependencies();
-        auto get_invocation_arguments(const model::tta_instance_t& instance, expr::interpreter& interpreter) -> std::vector<expr::symbol_value_t>;
+        auto get_invocation_arguments(const model::tta_instance_t& instance, scoped_interpreter& interpreter) -> std::vector<expr::symbol_value_t>;
         auto get_invocation_parameters(const model::tta_instance_t& instance) -> std::vector<std::string>;
     };
 }

@@ -16,7 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "tta.h"
-#include "drivers/z3_driver.h"
+#include "symbol_table.h"
 #include <setwrappers>
 #include <algorithm>
 #include <spdlog/spdlog.h>
@@ -29,11 +29,11 @@ namespace aaltitoad {
         return *this;
     }
 
-    auto ntta_t::eval_updates(expr::interpreter &i, const expr::compiler::compiled_expr_collection_t &t) -> expr::symbol_table_t {
+    auto ntta_t::eval_updates(expression_driver& i, const expr::syntax_tree_collection_t& t) -> expr::symbol_table_t {
         return i.evaluate(t);
     }
 
-    auto ntta_t::eval_guard(expr::interpreter &i, const expr::compiler::compiled_expr_t &e) -> expr::symbol_value_t {
+    auto ntta_t::eval_guard(expression_driver& i, const expr::syntax_tree_t& e) -> expr::symbol_value_t {
         return i.evaluate(e);
     }
 
@@ -73,44 +73,46 @@ namespace aaltitoad {
 
     void ntta_t::apply(const expr::symbol_table_t& symbol_changes) {
         // apply changes to internal and external symbols (overwrite, dont insert)
-        // TODO: This could be done in a more sophisticated manner.
         symbols *= symbol_changes;
         external_symbols *= symbol_changes;
     }
 
-    auto conflict_string(const expr::symbol_table_t& a, const expr::symbol_table_t& b) -> std::string {
-        std::stringstream ss{};
-        for(auto& v : b)
-            if(b.contains(v.first) && std::get<bool>(b.get(v.first) != v.second))
-                ss << v.first << " (' " << b.get(v.first) << "' / '" << v.second << "')\n";
-        return ss.str();
+    auto conflict_string(const expr::symbol_table_t& a, const expr::symbol_table_t& b) -> std::vector<std::string> {
+        std::vector<std::string> result{};
+        for(auto& v : a) {
+            if(b.contains(v.first) && std::get<bool>(b.get(v.first) != v.second)) {
+                std::stringstream ss{}; ss << "\t- conflict: " << v.first << " (" << b.get(v.first) << " / " << v.second << ")";
+                result.push_back(ss.str());
+            }
+        }
+        return result;
     }
 
     void ntta_t::apply(const std::vector<expr::symbol_table_t>& symbol_change_list) {
         expr::symbol_table_t combined_changes{};
         for(auto& changes : symbol_change_list) {
-            if(combined_changes.is_overlapping_and_not_idempotent(changes))
-                warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tocker-change application, will overwrite depending on the order",
-                               {conflict_string(combined_changes, changes)});
+            if(warnings::is_enabled(overlap_idem) && combined_changes.is_overlapping_and_not_idempotent(changes))
+                warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tocker-change application, will overwrite depending on the order:", conflict_string(combined_changes, changes));
             combined_changes += changes;
         }
         apply(combined_changes);
     }
 
-    auto ntta_t::should_create_dependency_edge(const tta_t::graph_edge_iterator_t& e1, const tta_t::graph_edge_iterator_t& e2, expr::interpreter& i) const -> bool {
+    auto ntta_t::should_create_dependency_edge(const tta_t::graph_edge_iterator_t& e1, const tta_t::graph_edge_iterator_t& e2, expression_driver& i) const -> bool {
         if(e1->second.source == e2->second.source)
             return true;
         auto changes1 = i.evaluate(e1->second.data.updates);
         auto changes2 = i.evaluate(e2->second.data.updates);
         if(changes1.is_overlapping_and_not_idempotent(changes2)) {
-            warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tick-change calculation", {conflict_string(changes1, changes2)});
+            if(warnings::is_enabled(overlap_idem))
+                warnings::warn(overlap_idem, "overlapping and non-idempotent changes in tick-change calculation:", conflict_string(changes1, changes2));
             return true;
         }
         return false;
     }
 
     auto ntta_t::calculate_edge_dependency_graph() -> tick_resolver::choice_dependency_problem {
-        expr::interpreter i{{symbols, external_symbols}};
+        expression_driver i{symbols, external_symbols}; // BUG: external_symbols are not looked at yet
         tick_resolver::graph_type_builder graph_builder{};
         std::unordered_map<std::string, choice_t> all_enabled_choices{};
         uint32_t unique_counter = 0;

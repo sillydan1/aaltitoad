@@ -14,7 +14,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 cmake_minimum_required(VERSION 3.16) # 3.16+ because of target_precompiled_header
-project(aaltitoad VERSION 1.0.0)
+project(aaltitoad VERSION 1.1.0)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CXX_STANDARD_REQUIRED ON)
@@ -22,17 +22,20 @@ set(SPDLOG_BUILD_SHARED)
 set(CONFIG_IN_FILE src/config.h.in)
 set(CONFIG_OUT_FILE config.h)
 include(cmake/CPM.cmake)
-include(cmake/VER.cmake) # TODO: make a yalibs release of this cmake file
+include(cmake/VER.cmake) # TODO: yalibs candidate 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_MACOSX_RPATH 1)
 list(APPEND CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib)
 
+find_package(BISON REQUIRED)
+find_package(FLEX REQUIRED)
+
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
-CPMAddPackage(NAME expr VERSION 2.2.0 GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
+CPMAddPackage(NAME expr VERSION 3.0.0 GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
 CPMAddPackage("gh:sillydan1/argvparse@1.2.3")
-CPMAddPackage("gh:sillydan1/ctl-expr@1.1.2")
+CPMAddPackage("gh:sillydan1/ctl-expr@2.0.0")
 
 CPMAddPackage("gh:yalibs/yatimer@1.0.0")
 CPMAddPackage("gh:yalibs/yaoverload@1.0.0")
@@ -44,14 +47,17 @@ CPMAddPackage("gh:yalibs/yauuid@1.0.1")
 CPMAddPackage("gh:yalibs/yasetwrappers@1.0.0")
 CPMAddPackage("gh:yalibs/yapermutation@1.1.2")
 
-CPMAddPackage("gh:gabime/spdlog@1.8.2")
-CPMAddPackage("gh:nlohmann/json@3.10.5")
-CPMAddPackage("gh:neargye/magic_enum@0.8.1")
+CPMAddPackage("gh:gabime/spdlog@1.11.0")
+CPMAddPackage("gh:nlohmann/json@3.11.2")
+CPMAddPackage("gh:neargye/magic_enum@0.8.2")
 
-CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.5")
+CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.6")
 cpm_licenses_create_disclaimer_target(write_licenses "${CMAKE_BINARY_DIR}/third_party.txt" "${CPM_PACKAGES}")
 
-set(${PROJECT_NAME}_SOURCES
+add_library(${PROJECT_NAME} SHARED 
+        src/expr-wrappers/interpreter.cpp
+        src/expr-wrappers/parameterized-expr-evaluator.cpp
+        src/expr-wrappers/parameterized-ast-factory.cpp
         src/ntta/builder/ntta_builder.cpp
         src/ntta/tta.cpp
         src/ntta/interesting_tocker.cpp
@@ -61,14 +67,11 @@ set(${PROJECT_NAME}_SOURCES
         src/util/warnings.cpp
         src/util/random.cpp
         src/util/string_extensions.cpp)
-
-# TODO: split the project up - each folder should have their own CMakeLists file
-add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES})
 if(${CODE_COVERAGE})
     target_link_options(${PROJECT_NAME} PUBLIC --coverage)
     target_compile_options(${PROJECT_NAME} PUBLIC --coverage)
 endif()
-target_link_libraries(${PROJECT_NAME} expr dl pthread ctl)
+target_link_libraries(${PROJECT_NAME} PUBLIC expr_lang dl pthread ctl_lang)
 target_include_directories(${PROJECT_NAME} PUBLIC
         ${CMAKE_BINARY_DIR}
         ${CMAKE_CURRENT_BINARY_DIR}
@@ -96,15 +99,19 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         ${yapermutation_SOURCE_DIR}/include
         ${yasetwrappers_SOURCE_DIR}/include
         src
+        # strictly not required, but it helps my clangd lsp setup and it doesn't hurt
+        ${FLEX_INCLUDE_DIRS}
+        ${BISON_INCLUDE_DIRS}
 )
 
 add_compile_definitions(ENABLE_Z3)
 add_subdirectory(src/cli/simulator)
 add_subdirectory(src/cli/verifier)
+add_subdirectory(src/cli/detcheck)
 add_subdirectory(src/parser)
 add_subdirectory(test)
 
-install(TARGETS ${PROJECT_NAME} expr ctl)
+install(TARGETS ${PROJECT_NAME} expr_lang ctl_lang verifier simulator detcheck)
 install(FILES src/man/tta.7 DESTINATION man/man7)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     install(FILES ${CMAKE_BINARY_DIR}/libz3.so DESTINATION lib)
@@ -115,10 +122,9 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 else()
     message(WARNING "unknown system ${CMAKE_SYSTEM_NAME}")
 endif()
-
-# TODO: determine required header files for plugins and add them to the install target
-#       install(DIRECTORY src/ntta src/plugin_system src/util DESTINATION include FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY src/ntta src/plugin_system src/util src/verification src/parser DESTINATION include FILES_MATCHING PATTERN "*.h")
 
 if(NOT WIN32)
     target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
 endif()
+

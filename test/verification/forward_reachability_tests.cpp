@@ -15,6 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+// #include "cli/verifier/query/query_json_loader.h"
+#include "expr-wrappers/ctl-interpreter.h"
 #include <ntta/tta.h>
 #include <catch2/catch_test_macros.hpp>
 #include <ntta/builder/ntta_builder.h>
@@ -24,7 +26,7 @@ SCENARIO("basic reachability", "[frs]") {
     spdlog::set_level(spdlog::level::trace);
     GIVEN("one tta with a simple count-down loop") {
         aaltitoad::ntta_builder builder{};
-        expr::compiler compiler{{builder.symbols, builder.external_symbols}};
+        aaltitoad::expression_driver compiler{builder.symbols, builder.external_symbols};
         auto n = builder
                 // Add symbols
                 .add_symbols({{"x", 5}})
@@ -36,7 +38,7 @@ SCENARIO("basic reachability", "[frs]") {
                 // Add tockers
                 .build_with_interesting_tocker();
         GIVEN("a simple reachability query 'can x reach zero?'") {
-            auto query = ctl::compiler{{n.symbols, n.external_symbols}}.compile("E F x == 0");
+            auto query = aaltitoad::ctl_interpreter{n.symbols, n.external_symbols}.compile("E F x == 0");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{};
                 auto results = frs.is_reachable(n, query);
@@ -57,7 +59,7 @@ SCENARIO("basic reachability", "[frs]") {
         }
         GIVEN("a simple reachability query 'can L1 be reached?'") {
             auto s = n.symbols + n.external_symbols;
-            auto query = ctl::compiler{{s}}.compile("E F L1");
+            auto query = aaltitoad::ctl_interpreter{s}.compile("E F L1");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{};
                 auto results = frs.is_reachable(n, query);
@@ -76,7 +78,7 @@ SCENARIO("basic reachability", "[frs]") {
     }
     GIVEN("one looping tta and no symbol manipulation") {
         aaltitoad::ntta_builder builder{};
-        expr::compiler compiler{{builder.symbols, builder.external_symbols}};
+        aaltitoad::expression_driver compiler{builder.symbols, builder.external_symbols};
         auto n = builder
                 .add_symbol({"x", 0})
                 // Add components
@@ -88,7 +90,7 @@ SCENARIO("basic reachability", "[frs]") {
                 .build_with_interesting_tocker();
         GIVEN("a simple unsatisfiable query 'can x reach 1?'") {
             auto s = n.symbols + n.external_symbols;
-            auto query = ctl::compiler{{s}}.compile("E F x == 1");
+            auto query = aaltitoad::ctl_interpreter{s}.compile("E F x == 1");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{};
                 auto results = frs.is_reachable(n, query);
@@ -101,7 +103,7 @@ SCENARIO("basic reachability", "[frs]") {
     }
     GIVEN("one tta with an interesting edge from initial location") {
         aaltitoad::ntta_builder builder{};
-        expr::compiler compiler{{builder.symbols, builder.external_symbols}};
+        aaltitoad::expression_driver compiler{builder.symbols, builder.external_symbols};
         auto n = builder
                 // Add symbols
                 .add_external_symbol({"y", 0})
@@ -114,7 +116,7 @@ SCENARIO("basic reachability", "[frs]") {
                 .build_with_interesting_tocker();
         GIVEN("a simple query matching the interesting guard 'E F y > 0'") {
             auto s = n.symbols + n.external_symbols;
-            auto query = ctl::compiler{{s}}.compile("E F y > 0");
+            auto query = aaltitoad::ctl_interpreter{s}.compile("E F y > 0");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{};
                 auto results = frs.is_reachable(n, query);
@@ -128,7 +130,7 @@ SCENARIO("basic reachability", "[frs]") {
     }
     GIVEN("one tta with an interesting edge from somewhere in the middle") {
         aaltitoad::ntta_builder builder{};
-        expr::compiler compiler{{builder.symbols, builder.external_symbols}};
+        aaltitoad::expression_driver compiler{builder.symbols, builder.external_symbols};
         auto n = builder
                 // Add symbols
                 .add_external_symbol({"y", 0})
@@ -143,7 +145,7 @@ SCENARIO("basic reachability", "[frs]") {
                 .build_with_interesting_tocker();
         GIVEN("a simple query matching the interesting guard 'E F y > 0'") {
             auto s = n.symbols + n.external_symbols;
-            auto query = ctl::compiler{{s}}.compile("E F y > 0");
+            auto query = aaltitoad::ctl_interpreter{s}.compile("E F y > 0");
             WHEN("searching through the state-space with forward reachability search (strategy last)") {
                 aaltitoad::forward_reachability_searcher frs{aaltitoad::pick_strategy::last};
                 auto results = frs.is_reachable(n, query);
@@ -156,7 +158,7 @@ SCENARIO("basic reachability", "[frs]") {
         }
         GIVEN("is L2 reachable?") {
             auto s = n.symbols + n.external_symbols;
-            auto query = ctl::compiler{{s}}.compile("E F L2");
+            auto query = aaltitoad::ctl_interpreter{s}.compile("E F L2");
             WHEN("searching through the state-space with forward reachability search") {
                 aaltitoad::forward_reachability_searcher frs{aaltitoad::pick_strategy::random};
                 auto results = frs.is_reachable(n, query);

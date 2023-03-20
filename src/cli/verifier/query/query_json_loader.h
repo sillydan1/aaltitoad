@@ -17,12 +17,13 @@
  */
 #ifndef AALTITOAD_QUERY_JSON_LOADER_H
 #define AALTITOAD_QUERY_JSON_LOADER_H
-#include <ctl_compiler.h>
+#include "expr-wrappers/interpreter.h"
+#include <ctl_syntax_tree.h>
 
 namespace aaltitoad {
-    auto load_query_json_file(const std::string& json_file, std::initializer_list<expr::symbol_table_ref_t> environments) -> std::vector<ctl::compiler::compiled_expr_t>;
-    auto is_query_searchable(const ctl::compiler::compiled_expr_t& q) -> bool;
-    auto is_query_trivial(const ctl::compiler::compiled_expr_t& q) -> bool;
+    auto load_query_json_file(const std::string& json_file, std::initializer_list<std::reference_wrapper<expr::symbol_table_t>> environments) -> std::vector<ctl::syntax_tree_t>;
+    auto is_query_searchable(const ctl::syntax_tree_t& q) -> bool;
+    auto is_query_trivial(const ctl::syntax_tree_t& q) -> bool;
 }
 
 #endif //AALTITOAD_QUERY_JSON_LOADER_H

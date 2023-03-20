@@ -21,7 +21,7 @@ jobs:
     - name: checkout repository
       uses: actions/checkout@v2
     - name: install dependencies
-      run: sudo apt-get install -y flex bison make m4 cmake
+      run: sudo apt-get install -y flex bison make m4 cmake libfl-dev libbison-dev
     - name: create build environment
       run: cmake -E make_directory ${{ github.workspace }}/build
     - name: configure

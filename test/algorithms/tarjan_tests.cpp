@@ -113,7 +113,19 @@ TEST_CASE("givenGraphWithWithWeaklyConnectedComponents_whenSearchForSCCs_thenFou
     REQUIRE(found_scc4);
 }
 
-// TODO: Test a single looping node
+TEST_CASE("givenGraphWithWithOneLoopingNode_whenSearchForSCCs_thenOneSCCIsFound") {
+    auto my_graph = ya::graph_builder<int,char>{}
+                    .add_nodes({0})
+                    .add_edges({{0,0,'a'}})
+                    .build();
+    auto sccs = tarjan(my_graph);
+    REQUIRE(sccs.size() == 1);
+    std::vector<int> scc1 = {0};
+    bool found_scc1 = false;
+    for(auto& scc : sccs)
+        found_scc1 |= compare_scc<int,char,int>(scc, scc1);
+    REQUIRE(found_scc1);
+}
 
 #include <graph>
 struct node_data {

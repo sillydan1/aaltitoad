@@ -16,11 +16,11 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "interesting_tocker.h"
-#include <drivers/z3_driver.h>
+#include "expr-wrappers/interpreter.h"
 #include <spdlog/spdlog.h>
 
 namespace aaltitoad {
-    auto interesting_tocker::find_solution(expr::z3_driver& d, const ya::combiner_iterator_list_t<expr::syntax_tree_t> &elements) -> std::optional<expr::symbol_table_t> {
+    auto interesting_tocker::find_solution(expression_driver& d, const ya::combiner_iterator_list_t<expr::syntax_tree_t> &elements) -> std::optional<expr::symbol_table_t> {
         if(elements.empty())
             return {};
         auto it = elements.begin();
@@ -31,10 +31,9 @@ namespace aaltitoad {
                         .concat(expression)
                         .concat(**it);
         try {
-            d.result = {};
-            d.add_tree(expression);
-            if (!d.result.empty() || d.result.get_delay_amount().has_value())
-                return std::optional{d.result};
+            auto result = d.sat_check(expression);
+            if (!result.empty() || result.get_delay_amount().has_value())
+                return std::optional{result};
         } catch(std::domain_error& e) {
             std::stringstream ss{}; ss << expression;
             spdlog::trace("'{0}' for '{1}'", e.what(), ss.str());
@@ -62,7 +61,7 @@ namespace aaltitoad {
         }
         if(guards.empty())
             return {};
-        expr::z3_driver d{state.symbols, state.external_symbols};
+        expression_driver d{state.symbols, state.external_symbols};
         ya::combiner_funct_t<expr::symbol_table_t, expr::syntax_tree_t> f =
                 [&d](const ya::combiner_iterator_list_t<expr::syntax_tree_t>& elements) -> std::optional<expr::symbol_table_t> {
             return find_solution(d, elements);
@@ -118,3 +117,4 @@ namespace aaltitoad {
         return "interesting_tocker";
     }
 }
+

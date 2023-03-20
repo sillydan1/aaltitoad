@@ -16,13 +16,15 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <util/exceptions/parse_error.h>
+#include "expr-wrappers/interpreter.h"
 #include "ntta_builder.h"
+#include "symbol_table.h"
 
 namespace aaltitoad {
-    tta_builder::tta_builder(expr::compiler* expression_compiler)
+    tta_builder::tta_builder(expression_driver* expression_compiler)
      : compiler{expression_compiler}, factory{}, empty_guard{}, starting_location{}
     {
-        empty_guard = compile_guard("");
+        empty_guard = compiler->parse_guard("");
     }
     auto tta_builder::get_name() -> std::optional<std::string> {
         return tta_name;
@@ -58,21 +60,20 @@ namespace aaltitoad {
             throw std::logic_error("no starting location provided");
         return { std::move(factory.build_heap()), starting_location.value() };
     }
-    auto tta_builder::compile_guard(const std::optional<std::string>& guard) -> expr::compiler::compiled_expr_t {
+    auto tta_builder::compile_guard(const std::optional<std::string>& guard) -> expr::syntax_tree_t {
         if(!guard.has_value())
             return empty_guard;
-        compiler->trees.erase("expression_result");
-        if(compiler->parse(guard.value()) != 0)
-            throw std::logic_error(compiler->error);
-        return compiler->trees["expression_result"];
+        if(guard.value().empty())
+            return empty_guard;
+        auto result = compiler->parse(guard.value());
+        if(!result.expression)
+            throw new std::logic_error("guard is not an expression");
+        return result.expression.value();
     }
-    auto tta_builder::compile_update(const std::optional<std::string>& update) -> expr::compiler::compiled_expr_collection_t {
+    auto tta_builder::compile_update(const std::optional<std::string>& update) -> expr::syntax_tree_collection_t {
         if(!update.has_value())
             return {};
-        compiler->trees.clear();
-        if(compiler->parse(update.value()) != 0)
-            throw std::logic_error(compiler->error);
-        return compiler->trees;
+        return compiler->parse(update.value()).declarations;
     }
 
     ntta_builder::ntta_builder() : components{}, symbols{} {

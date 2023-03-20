@@ -16,17 +16,23 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <aaltitoadpch.h>
+#include <ctl_syntax_tree.h>
 #include <ntta/tta.h>
 #include <timer>
 #include <plugin_system/plugin_system.h>
-#include <ctl_compiler.h>
 #include <verification/forward_reachability.h>
 #include <ntta/interesting_tocker.h>
 #include "cli_options.h"
 #include "../cli_common.h"
+#include <expr-lang/expr-scanner.hpp>
+#include <expr-lang/expr-parser.hpp>
+#include "expr-wrappers/ctl-interpreter.h"
 #include "query/query_json_loader.h"
+#include "spdlog/common.h"
+#include "spdlog/spdlog.h"
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
+void trace_log_ntta(const aaltitoad::ntta_t& n);
 
 int main(int argc, char** argv) {
     try {
@@ -65,14 +71,18 @@ int main(int argc, char** argv) {
         auto parser = std::get<parser_func_t>(available_plugins.at(selected_parser).function);
         ya::timer<int> t{};
         std::unique_ptr<aaltitoad::ntta_t> n{parser(inputs, ignore)};
+        trace_log_ntta(*n);
         spdlog::debug("model parsing took {0}ms", t.milliseconds_elapsed());
 
         t.start();
-        std::vector<ctl::compiler::compiled_expr_t> queries{};
-        ctl::compiler ctl_compiler{{n->symbols, n->external_symbols}};
+        std::vector<ctl::syntax_tree_t> queries{};
+        aaltitoad::ctl_interpreter ctl_compiler{n->symbols, n->external_symbols};
         for(auto& q : cli_arguments["query"].as_list_or_default({})) {
             spdlog::trace("compiling query '{0}'", q);
-            queries.emplace_back(ctl_compiler.compile(q));
+            auto qq = ctl_compiler.compile(q);
+            std::stringstream ss{}; ss << qq;
+            spdlog::trace("resulting tree: {0}", ss.str());
+            queries.emplace_back(qq);
         }
         for(auto& f : cli_arguments["query-file"].as_list_or_default({})) {
             spdlog::trace("loading queries in file {0}", f);
@@ -113,3 +123,39 @@ auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_ma
     look_dirs.insert(look_dirs.end(), provided_dirs.begin(), provided_dirs.end());
     return aaltitoad::plugins::load(look_dirs);
 }
+
+void trace_log_ntta(const aaltitoad::ntta_t& n) {
+    if(spdlog::get_level() >= spdlog::level::trace) {
+        std::stringstream internal_symbols_ss{};
+        internal_symbols_ss << n.symbols;
+        spdlog::trace("internal symbols: \n{0}", internal_symbols_ss.str());
+
+        std::stringstream external_symbols_ss{};
+        external_symbols_ss << n.external_symbols;
+        spdlog::trace("external symbols: \n{0}", external_symbols_ss.str());
+        for(auto& c : n.components) {
+            spdlog::trace("<instance> '{0}': (initial: '{1}')", c.first, c.second.initial_location);
+            std::stringstream nodes_ss{};
+            nodes_ss << "nodes: \n";
+            for(auto& node : c.second.graph->nodes)
+                nodes_ss << node.first << ": " << node.second.data.identifier << "\n";
+            spdlog::trace(nodes_ss.str());
+            
+            std::stringstream edges_ss{};
+            edges_ss << "edges: \n";
+            for(auto& edge : c.second.graph->edges)
+                edges_ss << edge.first.identifier << ": " << 
+                    edge.second.source->second.data.identifier << 
+                    " -> " <<
+                    edge.second.target->second.data.identifier <<
+                    " ( " << 
+                    edge.second.data.guard << 
+                    " )  [ " <<
+                    edge.second.data.updates << 
+                    " ] \n";
+            spdlog::trace(edges_ss.str());
+            spdlog::trace("</instance>");
+        }
+    }
+}
+

@@ -15,15 +15,20 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include <dlfcn.h>
 #include <util/warnings.h>
 #include "plugin_system.h"
 
 namespace aaltitoad::plugins {
     template<typename T>
     T load_symbol(void* handle, const std::string& symbol_name) {
+        dlerror(); // clear errors
         T val = (T) dlsym(handle, symbol_name.c_str());
-        if(!val)
-            throw std::logic_error("could not find "+symbol_name+" symbol");
+        auto* err = dlerror();
+        if(!val || err) {
+            dlclose(handle);
+            throw std::logic_error("could not find "+symbol_name+" symbol: "+err);
+        }
         return val;
     }
 
@@ -47,6 +52,7 @@ namespace aaltitoad::plugins {
                         if (is_dynamic_library(entry.path().filename())) {
                             spdlog::trace("attempting to load file '{0}' as a plugin",
                                           entry.path().filename().string());
+                            std::string entry_name = entry.path().c_str();
                             auto *handle = dlopen(entry.path().c_str(), RTLD_LAZY);
                             if (!handle)
                                 throw std::logic_error("could not load as a shared/dynamic library");
