@@ -22,4 +22,4 @@ if(TARGET default_plugins)
     add_dependencies(${PROJECT_NAME} default_plugins)
 endif()
 install(TARGETS ${PROJECT_NAME})
-#install(FILES man/simulator.1 DESTINATION /man/man1)
+

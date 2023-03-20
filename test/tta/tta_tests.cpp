@@ -22,13 +22,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <utility>
 
-SCENARIO("djwkadjw", "[aa]") {
-    expr::symbol_table_t ex_symbols{};
-    aaltitoad::expression_driver i{ex_symbols};
-    auto r = i.parse("x:=0_ms");
-    std::cout << r.declarations << std::endl;
-}
-
 SCENARIO("constructing networks of TTAs", "[ntta_t-construction]") {
     struct dummy_tocker : public aaltitoad::tocker_t {
         [[nodiscard]] auto tock(const aaltitoad::ntta_t& state) -> std::vector<expr::symbol_table_t> override {

@@ -11,18 +11,6 @@
             ]
         },
         {
-            "name": "Launch detcheck",
-            "type": "codelldb",
-            "request": "launch",
-            "cwd": "${workspaceFolder}/Debug",
-            "program": "${workspaceFolder}/Debug/detcheck",
-            "args": [ 
-                "-f", "/Users/agj/Git/hmk/safecontrucks/Safecon3",
-                "-i", ".*CHANGELOG.*",
-                "-n", "Main.CS(15)"
-            ]
-        },
-        {
             "name": "Launch Verifier",
             "type": "codelldb",
             "request": "launch",
