@@ -73,8 +73,10 @@ namespace aaltitoad {
                         if(v.operator_type == ctl::modal_op_t::E && std::get<ctl::quantifier_t>(c.node).operator_type == ctl::quantifier_op_t::F)
                             return is_query_trivial(cc);
 
-                        if(v.operator_type == ctl::modal_op_t::A && std::get<ctl::quantifier_t>(c.node).operator_type == ctl::quantifier_op_t::G)
-                            return is_query_trivial(cc);
+                        if(v.operator_type == ctl::modal_op_t::A && std::get<ctl::quantifier_t>(c.node).operator_type == ctl::quantifier_op_t::G) {
+                            spdlog::debug("safety queries (A G <query>) are not supported yet. See issue #41 if you need this feature");
+                            return false;
+                        }
 
                         return false;
                     },
