@@ -99,16 +99,20 @@ int main(int argc, char** argv) {
         spdlog::debug("reachability search took {0}ms", t.milliseconds_elapsed());
 
         // gather and return results
+        auto trace_file = cli_arguments["trace-file"].as_string_or_default("");
+        auto* trace_stream = &std::cout;
+        if(trace_file != "")
+            trace_stream = new std::ofstream{trace_file, std::ios::app};
         for(auto& result : results) {
-            std::cout << result.query << ": " << std::boolalpha << result.solution.has_value() << "\n";
+            *trace_stream << result.query << ": " << std::boolalpha << result.solution.has_value() << "\n";
             if(result.solution.has_value())
-                std::cout << result.solution.value();
+                *trace_stream << result.solution.value(); // TODO: This should be json formatted
         }
 
         return 0;
     } catch (std::exception& any) {
         spdlog::error(any.what());
-        std::cout.flush();
+        std::cout.flush(); // Flush the output streams, just to be nice
         std::cerr.flush();
         return 1;
     }
