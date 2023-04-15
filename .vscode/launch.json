@@ -19,7 +19,9 @@
             "args": [ 
                 "-f", "../test/verification/fischer-suite/fischer-2/",
                 "-q", "../test/verification/fischer-suite/fischer-2/Queries.json",
-                "-i", ".*\\.ignore.*"
+                "-i", ".*\\.ignore.*",
+                "-t", "/dev/null",
+                "-v", "6"
             ]
         }
     ]
