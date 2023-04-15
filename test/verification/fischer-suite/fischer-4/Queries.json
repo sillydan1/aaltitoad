@@ -1,0 +1,17 @@
+[
+  {
+    "query": "E F ctr > 1",
+    "comment": "Can the counter be larger than one? Should be unreachable",
+    "is_periodic": false
+  },
+  {
+    "query": "E F ctr < 0",
+    "comment": "Can the counter be less than zero? Should be unreachable",
+    "is_periodic": false
+  },
+  {
+    "query": "E F ctr == 1",
+    "comment": "Can the counter reach excactly 1? Should be reachable",
+    "is_periodic": false
+  }
+]
