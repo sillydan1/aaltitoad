@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
         t.start();
         aaltitoad::forward_reachability_searcher frs{};
         auto results = frs.is_reachable(*n, queries);
-        spdlog::debug("reachability search took {0}ms", t.milliseconds_elapsed());
+        spdlog::info("reachability search took {0}ms", t.milliseconds_elapsed());
 
         // gather and return results
         auto trace_file = cli_arguments["trace-file"].as_string_or_default("");

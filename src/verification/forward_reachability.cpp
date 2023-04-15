@@ -70,7 +70,7 @@ namespace aaltitoad {
             }
         }
         /// Searched through all of the reachable state-space from s0
-        spdlog::info("end of reachable state-space");
+        spdlog::debug("end of reachable state-space");
         return get_results();
     }
 
