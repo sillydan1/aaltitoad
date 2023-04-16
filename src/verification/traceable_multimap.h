@@ -21,6 +21,7 @@
 #include "pick_strategy.h"
 #include "util/exceptions/not_implemented_yet_exception.h"
 #include "util/random.h"
+#include "util/warnings.h"
 
 namespace aaltitoad {
     template<typename T>
@@ -56,6 +57,11 @@ namespace aaltitoad {
         }
         auto add(size_t key, const std::optional<iterator_t>& parent, const T& v) {
             return data.insert({key, {parent, v}});
+        }
+        void add_if_not_contains(const std::optional<iterator_t>& parent, const T& v) {
+            if(contains(v))
+                return;
+            add(parent, v);
         }
         auto contains(const T& v) const -> bool {
             return contains(std::hash<T>{}(v), v);

@@ -35,7 +35,7 @@ namespace aaltitoad {
         for(auto& l : s0.tock()) {
             auto sp = s0 + l;
             if(!P.contains(sp))
-                W.add(s0_it, sp);
+                W.add_if_not_contains(s0_it, sp);
         }
         while(!W.empty()) {
             spdlog::trace("len(W)={0} | len(P)={1}", W.size(), P.size());
@@ -54,7 +54,7 @@ namespace aaltitoad {
                 auto sn_tocks = sn.tock();
                 /// if nothing interesting is possible, just add tick-space state to W
                 if(sn_tocks.empty()) {
-                    W.add(s_it, sn);
+                    W.add_if_not_contains(s_it, sn);
                     continue;
                 }
                 /// Add tock-space states to W
@@ -65,7 +65,7 @@ namespace aaltitoad {
                 for(auto& so : sn_tocks) {
                     auto sp = sn + so;
                     if(!P.contains(sp))
-                        W.add(sn_it, sp);
+                        W.add_if_not_contains(sn_it, sp);
                 }
             }
         }
