@@ -27,9 +27,11 @@
 #include <expr-lang/expr-scanner.hpp>
 #include <expr-lang/expr-parser.hpp>
 #include "expr-wrappers/ctl-interpreter.h"
+#include "magic_enum.hpp"
 #include "query/query_json_loader.h"
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"
+#include "verification/pick_strategy.h"
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
 void trace_log_ntta(const aaltitoad::ntta_t& n);
@@ -91,10 +93,14 @@ int main(int argc, char** argv) {
         }
         spdlog::debug("query parsing took {0}ms", t.milliseconds_elapsed());
 
+        auto strategy_s = cli_arguments["pick-strategy"].as_string_or_default("first");
+        auto strategy = magic_enum::enum_cast<aaltitoad::pick_strategy>(strategy_s).value_or(aaltitoad::pick_strategy::first);
+        spdlog::debug("using pick strategy '{0}'", magic_enum::enum_name(strategy));
+
         n->add_tocker(std::make_unique<aaltitoad::interesting_tocker>());
         spdlog::trace("starting reachability search for {0} queries", queries.size());
         t.start();
-        aaltitoad::forward_reachability_searcher frs{};
+        aaltitoad::forward_reachability_searcher frs{strategy};
         auto results = frs.is_reachable(*n, queries);
         spdlog::info("reachability search took {0}ms", t.milliseconds_elapsed());
 
