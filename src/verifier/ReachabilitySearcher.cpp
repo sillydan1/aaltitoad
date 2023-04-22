@@ -83,7 +83,7 @@ void ReachabilitySearcher::AreQueriesSatisfied(std::vector<QueryResultPair>& que
         query.acceptingStateHash = state_hash;
         query.acceptingState.tta = state; // TODO: This is terrible
         auto ss = ConvertASTToString(*query.query);
-        spdlog::info("Query '{0}' is satisfied!", ss);
+        spdlog::debug("Query '{0}' is satisfied!", ss);
         spdlog::debug("Query '{0}' was satisfied in state: \n{1}", ss, state.GetCurrentStateString());
         if(CLIConfig::getInstance()["immediate-output"])
             PrintResults({query});
@@ -103,13 +103,13 @@ void ReachabilitySearcher::OutputResults(const std::vector<QueryResultPair>& res
 auto ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& results) -> int {
     OutputResults(results);
     auto acceptedResults = 0;
-    spdlog::info("==== QUERY RESULTS ====");
+    spdlog::debug("==== QUERY RESULTS ====");
     for(const auto& r : results) {
-        spdlog::info("===================="); // Delimiter to make it easier to read
+        spdlog::debug("===================="); // Delimiter to make it easier to read
         auto answer = r.query->root.type == NodeType_t::Forall && r.query->children[0].root.type == NodeType_t::Globally ? !r.answer : r.answer;
         if(answer)
             acceptedResults++;
-        spdlog::info("{0} : {1}", ConvertASTToString(*r.query), answer);
+        spdlog::debug("{0} : {1}", ConvertASTToString(*r.query), answer);
         auto stateHash = r.acceptingStateHash;
         auto state = r.acceptingState;
         std::vector<std::string> trace{};
@@ -147,18 +147,19 @@ auto ReachabilitySearcher::PrintResults(const std::vector<QueryResultPair>& resu
                 break;
             }
         }
-        if(trace.empty()) {
-            spdlog::info("No trace available");
-            printf("[]\n"); // TODO: This should be able to print to a file
-            continue;
-        }
-        spdlog::info("Trace:");
-        std::reverse(trace.begin(), trace.end());
-        printf("[\n");
-        for(auto& stateStr : trace)
-            printf("%s,\n", stateStr.c_str());
-        printf("]\n");
+        // if(trace.empty()) {
+        //     spdlog::debug("No trace available");
+        //     printf("[]\n"); // TODO: This should be able to print to a file
+        //     continue;
+        // }
+        // spdlog::info("Trace:");
+        // std::reverse(trace.begin(), trace.end());
+        // printf("[\n");
+        // for(auto& stateStr : trace)
+        //     printf("%s,\n", stateStr.c_str());
+        // printf("]\n");
     }
+    spdlog::info("queries solved: [{0}/{1}]", acceptedResults, results.size());
     return acceptedResults;
 }
 
@@ -217,12 +218,22 @@ std::string debug_get_symbol_map_string_representation(const TTA::SymbolMap& map
 
 bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strategy_t& strategy) {
     auto stateit = Waiting.begin();
+    Timer<unsigned int> t{}; t.start();
     Timer<unsigned int> periodic_timer{};
+    size_t state_byte_size = sizeof(*stateit);
     periodic_timer.start();
+    spdlog::info("count(W) ; count(P) ; generated_states ; bytes(W) ; bytes(P) ; total_bytes ");
     while(stateit != Waiting.end()) {
+        spdlog::info("{0} ; {1} ; {5} ; {2} ; {3} ; {4}",
+                Waiting.size(),
+                Passed.size(),
+                Waiting.size() * state_byte_size,
+                Passed.size() * state_byte_size,
+                (Passed.size() + Waiting.size()) * state_byte_size,
+                generated_states);
         if(CLIConfig::getInstance()["print-memory"]) {
             if(periodic_timer.milliseconds_elapsed() >= CLIConfig::getInstance()["print-memory"].as_integer()) {
-                spdlog::debug("Waiting list size: {0}", Waiting.size());
+                spdlog::info("len(W): {0}, len(P): {1}", Waiting.size(), Passed.size());
                 periodic_timer.start();
             }
         }
@@ -254,7 +265,15 @@ bool ReachabilitySearcher::ForwardReachabilitySearch(const nondeterminism_strate
         cleanup_waiting_list(*this, curstatehash, state);
         stateit = PickStateFromWaitingList(strategy);
     }
-    spdlog::info("Found a negative result after searching: {0} states", Passed.size());
+    spdlog::info("{0} ; {1} ; {5} ; {2} ; {3} ; {4}",
+            Waiting.size(),
+            Passed.size(),
+            Waiting.size() * state_byte_size,
+            Passed.size() * state_byte_size,
+            (Passed.size() + Waiting.size()) * state_byte_size,
+            generated_states);
+    spdlog::info("end of reachable statespace: len(P)={0}", Passed.size());
+    spdlog::info("time: {0}ms", t.milliseconds_elapsed());
     if(CLIConfig::getInstance()["verbosity"].as_integer_or_default(0) >= 6)
         debug_print_passed_list(*this);
     if(!CLIConfig::getInstance()["notrace"])
@@ -279,6 +298,7 @@ void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<
                 continue;
             /// This is a lot of copying large data objects... Figure something out with maybe std::move
             auto nstate = state << change;
+            generated_states++;
             auto nstatehash = nstate.GetCurrentStateHash();
             auto passed_it = Passed.find(nstatehash);
             if (passed_it == Passed.end()) {
@@ -307,6 +327,7 @@ void ReachabilitySearcher::AddToWaitingList(const TTA &state, const std::vector<
                 continue;
             /// This is a lot of copying large data objects... Figure something out with maybe std::move
             auto nstate = baseChanges << *it;
+            generated_states++;
             auto nstatehash = nstate.GetCurrentStateHash();
             auto passed_it = Passed.find(nstatehash);
             if (passed_it == Passed.end()) {

@@ -45,6 +45,7 @@ struct ReachabilitySearcher {
     StateList Passed;
     StateList Waiting;
     std::vector<QueryResultPair> query_results;
+    size_t generated_states = 1;
 public:
     ReachabilitySearcher(const std::vector<const Query*>& queries, const TTA& initialState);
     inline bool Search(const nondeterminism_strategy_t& strategy = nondeterminism_strategy_t::PICK_FIRST) { return ForwardReachabilitySearch(strategy); }

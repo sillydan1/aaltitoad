@@ -1,0 +1,17 @@
+[
+  {
+    "query": "E F (counter > 1)",
+    "comment": "",
+    "is_periodic": false
+  },
+  {
+    "query": "E F (counter < 0)",
+    "comment": "",
+    "is_periodic": false
+  },
+  {
+    "query": "E F counter == 1",
+    "comment": "",
+    "is_periodic": false
+  }
+]

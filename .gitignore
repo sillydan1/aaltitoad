@@ -41,3 +41,7 @@ build/
 test/**/results.txt
 
 bin/
+Debug/
+compile_commands.json
+.cache
+

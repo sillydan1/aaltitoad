@@ -1,0 +1,8 @@
+{
+   "parts": [
+  {"PartName":"pubid","SpecificType":{"Variable":{"Value":0}},"GenericType":{"int":{"Value":0}},"Access":{"Read":true,"Write":true},"VariableEnvironment":"INTERNAL"},
+  {"PartName":"x","SpecificType":{"Timer":{"Value":0}},"GenericType":{"Timer":{"Value":0}},"Access":{"Read":true,"Write":true},"VariableEnvironment":"TIMER"},
+  {"PartName":"counter","SpecificType":{"Variable":{"Value":0}},"GenericType":{"int":{"Value":0}},"Access":{"Read":true,"Write":true},"VariableEnvironment":"INTERNAL"},
+  {"PartName":"k","SpecificType":{"Variable":{"Value":1}},"GenericType":{"int":{"Value":1}},"Access":{"Read":true,"Write":true},"VariableEnvironment":"INTERNAL"}
+   ]
+  }
