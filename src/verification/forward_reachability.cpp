@@ -17,6 +17,7 @@
  */
 #include "forward_reachability.h"
 #include "verification/ctl/ctl_sat.h"
+#include "verification/traceable_multimap.h"
 
 namespace aaltitoad {
     forward_reachability_searcher::forward_reachability_searcher(const aaltitoad::pick_strategy& strategy)
@@ -31,9 +32,10 @@ namespace aaltitoad {
     auto forward_reachability_searcher::is_reachable(const aaltitoad::ntta_t& s0, const std::vector<compiled_query_t>& q) -> solutions_t {
         // TODO: Catch SIGTERM (ctrl-c) and write statistics (info)
         W = {s0}; P = {}; solutions = empty_solution_set(q);
+        size_t total_state_gen_count = 1;
         auto s0_it = P.add(s0);
         for(auto& l : s0.tock()) {
-            auto sp = s0 + l;
+            auto sp = s0 + l; total_state_gen_count++;
             if(!P.contains(sp))
                 W.add_if_not_contains(s0_it, sp);
         }
@@ -47,7 +49,7 @@ namespace aaltitoad {
                 return get_results();
             /// Add successors
             for(auto& si : s.data.tick()) {
-                auto sn = s.data + si;
+                auto sn = s.data + si; total_state_gen_count++;
                 if(P.contains(sn))
                     continue;
                 /// Calculate interesting tock changes
@@ -63,7 +65,7 @@ namespace aaltitoad {
                 if(check_satisfactions(sn_it))
                     return get_results();
                 for(auto& so : sn_tocks) {
-                    auto sp = sn + so;
+                    auto sp = sn + so; total_state_gen_count++;
                     if(!P.contains(sp))
                         W.add_if_not_contains(sn_it, sp);
                 }
@@ -71,6 +73,7 @@ namespace aaltitoad {
         }
         /// Searched through all of the reachable state-space from s0
         spdlog::debug("end of reachable state-space");
+        spdlog::info("generated in total {0} states", total_state_gen_count);
         return get_results();
     }
 
