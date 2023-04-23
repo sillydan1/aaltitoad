@@ -16,6 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "forward_reachability.h"
+#include "spdlog/spdlog.h"
 #include "verification/ctl/ctl_sat.h"
 #include "verification/traceable_multimap.h"
 
@@ -32,24 +33,34 @@ namespace aaltitoad {
     auto forward_reachability_searcher::is_reachable(const aaltitoad::ntta_t& s0, const std::vector<compiled_query_t>& q) -> solutions_t {
         // TODO: Catch SIGTERM (ctrl-c) and write statistics (info)
         W = {s0}; P = {}; solutions = empty_solution_set(q);
-        size_t total_state_gen_count = 1;
+        size_t state_byte_size = sizeof(s0);
+        size_t traversed_states = 1;
         auto s0_it = P.add(s0);
         for(auto& l : s0.tock()) {
-            auto sp = s0 + l; total_state_gen_count++;
-            if(!P.contains(sp))
+            auto sp = s0 + l;
+            if(!P.contains(sp)) {
                 W.add_if_not_contains(s0_it, sp);
+                traversed_states++;
+            }
         }
+        spdlog::info("count(W) ; count(P) ; generated_states ; bytes(W) ; bytes(P) ; total_bytes ");
         while(!W.empty()) {
-            spdlog::trace("len(W)={0} | len(P)={1}", W.size(), P.size());
+            spdlog::info("{0} ; {1} ; {5} ; {2} ; {3} ; {4}",
+                    W.size(),
+                    P.size(),
+                    W.size() * state_byte_size,
+                    P.size() * state_byte_size,
+                    (P.size() + W.size()) * state_byte_size,
+                    traversed_states);
             /// Select the next state to search
             auto s = W.pop(strategy);
-            /// Does this state complete our query-list?
             auto s_it = P.add(s.parent, s.data);
             if(check_satisfactions(s_it))
                 return get_results();
             /// Add successors
             for(auto& si : s.data.tick()) {
-                auto sn = s.data + si; total_state_gen_count++;
+                auto sn = s.data + si;
+                traversed_states++;
                 if(P.contains(sn))
                     continue;
                 /// Calculate interesting tock changes
@@ -59,21 +70,36 @@ namespace aaltitoad {
                     W.add_if_not_contains(s_it, sn);
                     continue;
                 }
+                spdlog::info("{0} ; {1} ; {5} ; {2} ; {3} ; {4}",
+                        W.size(),
+                        P.size(),
+                        W.size() * state_byte_size,
+                        P.size() * state_byte_size,
+                        (P.size() + W.size()) * state_byte_size,
+                        traversed_states);
                 /// Add tock-space states to W
                 spdlog::trace("{0} tock values available", sn_tocks.size());
                 auto sn_it = P.add(s_it, sn);
                 if(check_satisfactions(sn_it))
                     return get_results();
                 for(auto& so : sn_tocks) {
-                    auto sp = sn + so; total_state_gen_count++;
+                    auto sp = sn + so;
+                    traversed_states++;
                     if(!P.contains(sp))
                         W.add_if_not_contains(sn_it, sp);
                 }
             }
         }
+        spdlog::info("{0} ; {1} ; {5} ; {2} ; {3} ; {4}",
+                W.size(),
+                P.size(),
+                W.size() * state_byte_size,
+                P.size() * state_byte_size,
+                (P.size() + W.size()) * state_byte_size,
+                traversed_states);
         /// Searched through all of the reachable state-space from s0
         spdlog::debug("end of reachable state-space");
-        spdlog::info("generated in total {0} states", total_state_gen_count);
+        spdlog::info("traversed_states: {0}", traversed_states);
         return get_results();
     }
 
