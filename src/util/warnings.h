@@ -26,8 +26,7 @@ namespace aaltitoad {
         overlap_idem,
         plugin_load_failed,
         unsupported_query,
-        parser_warning,
-        already_visited
+        parser_warning
     };
 
     class warnings {
