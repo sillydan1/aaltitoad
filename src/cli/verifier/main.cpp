@@ -17,6 +17,7 @@
  */
 #include <aaltitoadpch.h>
 #include <ctl_syntax_tree.h>
+#include <ios>
 #include <ntta/tta.h>
 #include <timer>
 #include <plugin_system/plugin_system.h>
@@ -104,21 +105,39 @@ int main(int argc, char** argv) {
         auto results = frs.is_reachable(*n, queries);
         spdlog::info("reachability search took {0}ms", t.milliseconds_elapsed());
 
-        // gather and return results
-        auto trace_file = cli_arguments["trace-file"].as_string_or_default("");
+        // open the results file (std::cout by default)
+        spdlog::trace("opening results file stream");
         auto* trace_stream = &std::cout;
+        auto trace_file = cli_arguments["trace-file"].as_string_or_default("");
         if(trace_file != "")
             trace_stream = new std::ofstream{trace_file, std::ios::app};
-        for(auto& result : results) {
-            *trace_stream << result.query << ": " << std::boolalpha << result.solution.has_value() << "\n";
-            if(result.solution.has_value())
-                *trace_stream << result.solution.value(); // TODO: This should be json formatted
+
+        // write json to results file or non-json if not provided
+        if(cli_arguments["result-json"]) {
+            spdlog::trace("gathering results json data");
+            auto json_results = "[]"_json;
+            for(auto& result : results) {
+                nlohmann::json res{};
+                std::stringstream ss{}; ss << result.query;
+                res["query"] = ss.str();
+                if(result.solution.has_value())
+                    res["trace"] = to_json(result.solution.value());
+                json_results.push_back(res);
+            }
+            *trace_stream << json_results << std::endl;
+        } else {
+            spdlog::trace("printing resuls data (non-json)");
+            for(auto& result : results) {
+                *trace_stream << result.query << ": " << std::boolalpha << result.solution.has_value();
+                if(result.solution.has_value())
+                    *trace_stream << result.solution.value();
+            }
         }
 
         return 0;
     } catch (std::exception& any) {
         spdlog::error(any.what());
-        std::cout.flush(); // Flush the output streams, just to be nice
+        std::cout.flush();
         std::cerr.flush();
         return 1;
     }

@@ -21,6 +21,7 @@
 #include "ntta/tta.h"
 #include "traceable_multimap.h"
 #include <ctl_syntax_tree.h>
+#include <nlohmann/json.hpp>
 #include <vector>
 #include <utility>
 
@@ -51,5 +52,6 @@ namespace aaltitoad {
     };
 }
 auto operator<<(std::ostream& o, const aaltitoad::forward_reachability_searcher::solution_t& s) -> std::ostream&;
+auto to_json(const aaltitoad::forward_reachability_searcher::solution_t& s) -> std::vector<nlohmann::json>;
 
 #endif //AALTITOAD_FORWARD_REACHABILITY_H

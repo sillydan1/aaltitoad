@@ -112,3 +112,16 @@ auto operator<<(std::ostream& o, const aaltitoad::forward_reachability_searcher:
         o << s->second.parent.value();
     return o << s->second.data;
 }
+
+void to_json_helper(const aaltitoad::forward_reachability_searcher::solution_t& s, std::vector<nlohmann::json>& tail) {
+    if(s->second.parent.has_value())
+        to_json_helper(s->second.parent.value(), tail);
+    tail.push_back(s->second.data.to_json());
+}
+
+auto to_json(const aaltitoad::forward_reachability_searcher::solution_t& s) -> std::vector<nlohmann::json> {
+    std::vector<nlohmann::json> states{};
+    to_json_helper(s, states);
+    return states;
+}
+
