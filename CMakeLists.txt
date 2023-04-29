@@ -14,7 +14,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 cmake_minimum_required(VERSION 3.16) # 3.16+ because of target_precompiled_header
-project(aaltitoad VERSION 1.1.0)
+project(aaltitoad VERSION 1.2.0)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CXX_STANDARD_REQUIRED ON)

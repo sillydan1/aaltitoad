@@ -183,6 +183,28 @@ namespace aaltitoad {
         ss << *this;
         return ss.str();
     }
+
+    auto ntta_t::to_json() const -> nlohmann::json {
+        nlohmann::json result{};
+        result["locations"] = "[]"_json;
+        for(auto& component : components) {
+            auto j = "{}"_json;
+            j[component.first] = component.second.current_location->first;
+            result["locations"].push_back(j);
+        }
+        result["symbols"] = "{}"_json;
+        for(auto& symbol : symbols + external_symbols) {
+            std::visit(ya::overload(
+                        [&result, &symbol](const int& v){ result["symbols"][symbol.first] = v; },
+                        [&result, &symbol](const float& v){ result["symbols"][symbol.first] = v; },
+                        [&result, &symbol](const bool& v){ result["symbols"][symbol.first] = v; },
+                        [&result, &symbol](const std::string& v){ result["symbols"][symbol.first] = v; },
+                        [&result, &symbol](const expr::clock_t& v){ result["symbols"][symbol.first] = v.time_units; },
+                        [&result, &symbol](auto&& v){ result["symbols"][symbol.first] = "undefined"; }
+                        ), static_cast<const expr::underlying_symbol_value_t&>(symbol.second));
+        }
+        return result;
+    }
 }
 
 auto operator<<(std::ostream& os, const aaltitoad::ntta_t& state) -> std::ostream& {

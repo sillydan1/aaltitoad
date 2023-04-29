@@ -17,6 +17,7 @@
  */
 #include <aaltitoadpch.h>
 #include <ctl_syntax_tree.h>
+#include <ios>
 #include <ntta/tta.h>
 #include <timer>
 #include <plugin_system/plugin_system.h>
@@ -27,9 +28,11 @@
 #include <expr-lang/expr-scanner.hpp>
 #include <expr-lang/expr-parser.hpp>
 #include "expr-wrappers/ctl-interpreter.h"
+#include "magic_enum.hpp"
 #include "query/query_json_loader.h"
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"
+#include "verification/pick_strategy.h"
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
 void trace_log_ntta(const aaltitoad::ntta_t& n);
@@ -91,18 +94,44 @@ int main(int argc, char** argv) {
         }
         spdlog::debug("query parsing took {0}ms", t.milliseconds_elapsed());
 
+        auto strategy_s = cli_arguments["pick-strategy"].as_string_or_default("first");
+        auto strategy = magic_enum::enum_cast<aaltitoad::pick_strategy>(strategy_s).value_or(aaltitoad::pick_strategy::first);
+        spdlog::debug("using pick strategy '{0}'", magic_enum::enum_name(strategy));
+
         n->add_tocker(std::make_unique<aaltitoad::interesting_tocker>());
         spdlog::trace("starting reachability search for {0} queries", queries.size());
         t.start();
-        aaltitoad::forward_reachability_searcher frs{};
+        aaltitoad::forward_reachability_searcher frs{strategy};
         auto results = frs.is_reachable(*n, queries);
-        spdlog::debug("reachability search took {0}ms", t.milliseconds_elapsed());
+        spdlog::info("reachability search took {0}ms", t.milliseconds_elapsed());
 
-        // gather and return results
-        for(auto& result : results) {
-            std::cout << result.query << ": " << std::boolalpha << result.solution.has_value() << "\n";
-            if(result.solution.has_value())
-                std::cout << result.solution.value();
+        // open the results file (std::cout by default)
+        spdlog::trace("opening results file stream");
+        auto* trace_stream = &std::cout;
+        auto trace_file = cli_arguments["trace-file"].as_string_or_default("");
+        if(trace_file != "")
+            trace_stream = new std::ofstream{trace_file, std::ios::app};
+
+        // write json to results file or non-json if not provided
+        if(cli_arguments["result-json"]) {
+            spdlog::trace("gathering results json data");
+            auto json_results = "[]"_json;
+            for(auto& result : results) {
+                nlohmann::json res{};
+                std::stringstream ss{}; ss << result.query;
+                res["query"] = ss.str();
+                if(result.solution.has_value())
+                    res["trace"] = to_json(result.solution.value());
+                json_results.push_back(res);
+            }
+            *trace_stream << json_results << std::endl;
+        } else {
+            spdlog::trace("printing resuls data (non-json)");
+            for(auto& result : results) {
+                *trace_stream << result.query << ": " << std::boolalpha << result.solution.has_value();
+                if(result.solution.has_value())
+                    *trace_stream << result.solution.value();
+            }
         }
 
         return 0;

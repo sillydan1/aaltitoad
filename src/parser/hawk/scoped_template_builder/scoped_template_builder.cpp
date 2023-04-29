@@ -20,6 +20,7 @@
 #include "scoped_interpreter.h"
 #include "spdlog/spdlog.h"
 #include "util/string_extensions.h"
+#include "util/warnings.h"
 #include <ntta/builder/ntta_builder.h>
 #include <util/exceptions/parse_error.h>
 
@@ -89,7 +90,7 @@ namespace aaltitoad::hawk {
             auto interpreter = construct_interpreter_from_scope(instance, scoped_name);
             auto decls = interpreter.parse_declarations(instance_template.declarations);
             if(internal_symbols.is_overlapping(decls))
-                spdlog::warn("double declaration detected");
+                warnings::warn(parser_warning, "double declaration detected");
             internal_symbols += decls;
 
             call_func_aggregate_errors(instance_template.instances, [this, &scoped_name](auto& template_instance){

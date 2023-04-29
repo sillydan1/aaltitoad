@@ -16,7 +16,9 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "forward_reachability.h"
+#include "spdlog/spdlog.h"
 #include "verification/ctl/ctl_sat.h"
+#include "verification/traceable_multimap.h"
 
 namespace aaltitoad {
     forward_reachability_searcher::forward_reachability_searcher(const aaltitoad::pick_strategy& strategy)
@@ -35,13 +37,11 @@ namespace aaltitoad {
         for(auto& l : s0.tock()) {
             auto sp = s0 + l;
             if(!P.contains(sp))
-                W.add(s0_it, sp);
+                W.add_if_not_contains(s0_it, sp);
         }
         while(!W.empty()) {
-            spdlog::trace("len(W)={0} | len(P)={1}", W.size(), P.size());
             /// Select the next state to search
             auto s = W.pop(strategy);
-            /// Does this state complete our query-list?
             auto s_it = P.add(s.parent, s.data);
             if(check_satisfactions(s_it))
                 return get_results();
@@ -54,7 +54,7 @@ namespace aaltitoad {
                 auto sn_tocks = sn.tock();
                 /// if nothing interesting is possible, just add tick-space state to W
                 if(sn_tocks.empty()) {
-                    W.add(s_it, sn);
+                    W.add_if_not_contains(s_it, sn);
                     continue;
                 }
                 /// Add tock-space states to W
@@ -65,12 +65,12 @@ namespace aaltitoad {
                 for(auto& so : sn_tocks) {
                     auto sp = sn + so;
                     if(!P.contains(sp))
-                        W.add(sn_it, sp);
+                        W.add_if_not_contains(sn_it, sp);
                 }
             }
         }
         /// Searched through all of the reachable state-space from s0
-        spdlog::info("end of reachable state-space");
+        spdlog::debug("end of reachable state-space");
         return get_results();
     }
 
@@ -112,3 +112,16 @@ auto operator<<(std::ostream& o, const aaltitoad::forward_reachability_searcher:
         o << s->second.parent.value();
     return o << s->second.data;
 }
+
+void to_json_helper(const aaltitoad::forward_reachability_searcher::solution_t& s, std::vector<nlohmann::json>& tail) {
+    if(s->second.parent.has_value())
+        to_json_helper(s->second.parent.value(), tail);
+    tail.push_back(s->second.data.to_json());
+}
+
+auto to_json(const aaltitoad::forward_reachability_searcher::solution_t& s) -> std::vector<nlohmann::json> {
+    std::vector<nlohmann::json> states{};
+    to_json_helper(s, states);
+    return states;
+}
+

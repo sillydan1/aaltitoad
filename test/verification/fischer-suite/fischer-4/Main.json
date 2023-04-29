@@ -1,0 +1,77 @@
+{
+  "name": "Main",
+  "declarations": "",
+  "locations": [],
+  "initial_location": {
+    "id": "L0",
+    "nickname": "",
+    "invariant": "",
+    "type": "INITIAL",
+    "urgency": "NORMAL",
+    "x": 20.0,
+    "y": 20.0,
+    "color": "8",
+    "nickname_x": 30.0,
+    "nickname_y": -10.0,
+    "invariant_x": 30.0,
+    "invariant_y": 10.0
+  },
+  "final_location": {
+    "id": "L1",
+    "nickname": "",
+    "invariant": "",
+    "type": "FINAl",
+    "urgency": "NORMAL",
+    "x": 240.0,
+    "y": 170.0,
+    "color": "8",
+    "nickname_x": 30.0,
+    "nickname_y": -10.0,
+    "invariant_x": 30.0,
+    "invariant_y": 10.0
+  },
+  "jorks": [],
+  "sub_components": [
+    {
+      "component": "Fischer(id)",
+      "identifier": "F(1)",
+      "x": 10.0,
+      "y": 30.0,
+      "width": 240.0,
+      "height": 120.0
+    },
+    {
+      "component": "Fischer(id)",
+      "identifier": "F(2)",
+      "x": 10.0,
+      "y": 60.0,
+      "width": 240.0,
+      "height": 120.0
+    },
+    {
+      "component": "Fischer(id)",
+      "identifier": "F(3)",
+      "x": 10.0,
+      "y": 90.0,
+      "width": 240.0,
+      "height": 120.0
+    },
+    {
+      "component": "Fischer(id)",
+      "identifier": "F(4)",
+      "x": 10.0,
+      "y": 110.0,
+      "width": 240.0,
+      "height": 120.0
+    }
+  ],
+  "edges": [],
+  "main": true,
+  "description": "",
+  "x": 5.0,
+  "y": 5.0,
+  "width": 260.0,
+  "height": 190.0,
+  "color": "8",
+  "include_in_periodic_check": true
+}

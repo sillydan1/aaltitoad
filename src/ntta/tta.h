@@ -18,6 +18,7 @@
 #ifndef AALTITOAD_TTA_H
 #define AALTITOAD_TTA_H
 #include "expr-wrappers/interpreter.h"
+#include <nlohmann/json.hpp>
 #include <string>
 #include <graph>
 #include <symbol_table.h>
@@ -117,6 +118,7 @@ namespace aaltitoad {
         void apply(const std::vector<expr::symbol_table_t>& external_symbol_change_list);
         void apply_internal(const expr::symbol_table_t& symbol_changes);
         auto to_string() const -> std::string;
+        auto to_json() const -> nlohmann::json;
     private:
         class tick_resolver {
         public:
