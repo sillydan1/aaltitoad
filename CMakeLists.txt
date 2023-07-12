@@ -14,7 +14,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 cmake_minimum_required(VERSION 3.16) # 3.16+ because of target_precompiled_header
-project(aaltitoad VERSION 1.2.0)
+project(aaltitoad VERSION 1.2.1)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CXX_STANDARD_REQUIRED ON)
@@ -47,11 +47,11 @@ CPMAddPackage("gh:yalibs/yauuid@1.0.1")
 CPMAddPackage("gh:yalibs/yasetwrappers@1.0.0")
 CPMAddPackage("gh:yalibs/yapermutation@1.1.2")
 
-CPMAddPackage("gh:gabime/spdlog@1.11.0")
+CPMAddPackage("gh:gabime/spdlog@1.12.0")
 CPMAddPackage("gh:nlohmann/json@3.11.2")
-CPMAddPackage("gh:neargye/magic_enum@0.8.2")
+CPMAddPackage("gh:neargye/magic_enum@0.9.3")
 
-CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.6")
+CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.7")
 cpm_licenses_create_disclaimer_target(write_licenses "${CMAKE_BINARY_DIR}/third_party.txt" "${CPM_PACKAGES}")
 
 add_library(${PROJECT_NAME} SHARED 
