@@ -62,7 +62,7 @@ Such a network is called simply a **n**etwork of **t**ick **t**ock **a**utomata 
 
 ### Further Reading
  - [This](.github/resources/docs/SW10__Tick_Tock_Automata.pdf) paper describes the base Tick Tock Automata theory
- - [This(wip)]() paper describes in detail the newest iteration of the tool (v1.0.0+)
+ - [This](.github/resources/docs/aaltitoad-v1.0.0.pdf) paper describes in detail the newest iteration of the tool (v1.0.0+)
  - [This](.github/resources/docs/SW9__AALTITOAD.pdf) paper describes the first iteration of the tool (v0.10.x)
  - Take a look at [H-UPPAAL](https://github.com/DEIS-Tools/H-Uppaal) if you want to create some TTAs yourself
 
