@@ -33,10 +33,9 @@ namespace aaltitoad {
                                   return is_satisfied(ast.children()[0], state);
                               },
                               [&](const ctl::location_t &v) -> bool {
-                                  for(auto& component : state.components) {
+                                  for(auto& component : state.components)
                                       if(component.second.current_location->first == v.location_name)
                                           return true;
-                                  }
                                   return false;
                               },
                               [&](const ctl::modal_t &v) -> bool {

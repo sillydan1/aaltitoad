@@ -22,7 +22,7 @@ set(SPDLOG_BUILD_SHARED)
 set(CONFIG_IN_FILE src/config.h.in)
 set(CONFIG_OUT_FILE config.h)
 include(cmake/CPM.cmake)
-include(cmake/VER.cmake) # TODO: yalibs candidate 
+include(cmake/VER.cmake)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
