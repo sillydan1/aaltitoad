@@ -15,105 +15,169 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <aaltitoadpch.h>
-#include <ctl_syntax_tree.h>
-#include <ios>
-#include <ntta/tta.h>
-#include <timer>
-#include <plugin_system/plugin_system.h>
-#include <verification/forward_reachability.h>
-#include <ntta/interesting_tocker.h>
-#include "cli_options.h"
-#include "../cli_common.h"
-#include <expr-lang/expr-scanner.hpp>
-#include <expr-lang/expr-parser.hpp>
 #include "expr-wrappers/ctl-interpreter.h"
-#include "magic_enum.hpp"
 #include "query/query_json_loader.h"
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"
 #include "verification/pick_strategy.h"
+#include <aaltitoadpch.h>
+#include <config.h>
+#include <ctl_syntax_tree.h>
+#include <expr-lang/expr-parser.hpp>
+#include <expr-lang/expr-scanner.hpp>
+#include <ios>
+#include <lyra/lyra.hpp>
+#include <magic_enum/magic_enum.hpp>
+#include <ntta/interesting_tocker.h>
+#include <ntta/tta.h>
+#include <plugin_system/plugin_system.h>
+#include <timer>
+#include <verification/forward_reachability.h>
 
-auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
 void trace_log_ntta(const aaltitoad::ntta_t& n);
+void disable_warnings(const std::vector<std::string>& disable_warns);
 
 int main(int argc, char** argv) {
     try {
-        auto options = get_options();
-        auto cli_arguments = get_arguments(options, argc, argv);
-        if(cli_arguments["verbosity"])
-            spdlog::set_level(static_cast<spdlog::level::level_enum>(SPDLOG_LEVEL_OFF - cli_arguments["verbosity"].as_integer()));
-        if(cli_arguments["version"])
-            return print_version();
-        if(cli_arguments["list-warn"])
-            return list_warnings();
-        if(cli_arguments["help"])
-            return print_help(argv[0], options);
-        if(!is_required_provided(cli_arguments, options))
-            return print_required_args();
-        spdlog::trace("welcome to {0} v{1}", PROJECT_NAME, PROJECT_VER);
-        if(cli_arguments["no-warn"])
+        bool show_help = false;
+        int verbosity = SPDLOG_LEVEL_INFO;
+        bool show_version = false;
+        std::vector<std::string> input = {};
+        std::vector<std::string> plugin_dirs = {};
+        std::string parser = "huppaal_parser";
+        bool list_plugins = false;
+        std::vector<std::string> ignore = {};
+        std::vector<std::string> query = {};
+        std::vector<std::string> query_files = {};
+        std::string pick_strategy = "first";
+        std::vector<std::string> disabled_warnings = {};
+        bool list_warnings = false;
+        bool no_warnings = false;
+        std::optional<std::string> result_file = {};
+        bool output_json = false;
+        auto cli = lyra::cli()
+            | lyra::help(show_help).description("An extendable verifier for Networks of Tick Tock Automata (NTTA)")
+                ("show this message")
+            | lyra::opt(verbosity, "0-6")
+                ["-v"]["--verbosity"]("set verbosity level, default: " + std::to_string(verbosity))
+            | lyra::opt(show_version)
+                ["-V"]["--version"]("show version")
+            | lyra::opt(input, "DIR")
+                ["-f"]["--input"]("add input directory to parse and verify").required()
+            | lyra::opt(plugin_dirs, "DIR")
+                ["-d"]["--plugin-dir"]("use a directory to look for plugins")
+            | lyra::opt(parser, "PARSER")
+                ["-p"]["--parser"]("set a parser to use, default: " + parser)
+            | lyra::opt(list_plugins)
+                ["-L"]["--list-plugins"]("list found plugins and exit")
+            | lyra::opt(ignore, "GLOB")
+                ["-i"]["--ignore"]("add a glob file pattern to ignore")
+            | lyra::opt(query, "CTL")
+                ["-Q"]["--query"]("add a CTL query to check verify")
+            | lyra::opt(query_files, "FILE")
+                ["-q"]["--query-file"]("add a json file with CTL queries to check verify")
+            | lyra::opt(pick_strategy, "STRATEGY").choices("first", "last", "random")
+                ["-s"]["--pick-strategy"]("waiting list pick strategy, default: " + pick_strategy)
+            | lyra::opt(disabled_warnings, "WARN")
+                ["-w"]["--disable-warning"]("disable a warning")
+            | lyra::opt(list_warnings)
+                ["-W"]["--list-warnings"]("list all available warnings and exit")
+            | lyra::opt(no_warnings)
+                ["-m"]["--no-warnings"]("disable all warnings")
+            | lyra::opt(result_file, "FILE")
+                ["-t"]["--result-file"]("set file to output results to")
+            | lyra::opt(output_json)
+                ["-j"]["--result-json"]("output results in json format")
+            ;
+        auto args = cli.parse({argc, argv});
+        if(show_help) {
+            std::cout << cli << std::endl;
+            return 0;
+        }
+        if(verbosity < 0 || verbosity > SPDLOG_LEVEL_OFF) {
+            std::cout << "verbosity must be within 0-6" << std::endl;
+            return 1;
+        }
+        spdlog::set_level(static_cast<spdlog::level::level_enum>(SPDLOG_LEVEL_OFF - verbosity));
+        spdlog::trace("welcome to {} v{}", PROJECT_NAME, PROJECT_VER);
+        if(show_version) {
+            std::cout << PROJECT_NAME << " v" << PROJECT_VER << std::endl;
+            return 0;
+        }
+        if(!args) {
+            spdlog::error(args.message());
+            return 1;
+        }
+        if(list_warnings) { 
+            std::cout << "[WARNINGS]:\n";
+            for(const auto& warning : aaltitoad::warnings::descriptions())
+                std::cout << "\t - [" << magic_enum::enum_name(warning.first) << "]: " << warning.second << "\n";
+            return 0;
+        }
+        if(no_warnings)
             aaltitoad::warnings::disable_all();
-        disable_warnings(cli_arguments["disable-warn"].as_list_or_default({}));
+        disable_warnings(disabled_warnings);
 
-        auto available_plugins = load_plugins(cli_arguments);
-        if(cli_arguments["list-plugins"]) {
+        auto available_plugins = aaltitoad::plugins::load(plugin_dirs);
+        if(list_plugins) {
             std::cout << "available plugins:\n" << available_plugins;
             return 0;
         }
 
-        auto selected_parser = cli_arguments["parser"].as_string_or_default("hawk_parser");
-        if(!available_plugins.contains(selected_parser) || available_plugins.at(selected_parser).type != plugin_type::parser) {
-            spdlog::critical("no such parser available: '{0}'", selected_parser);
+        if(!available_plugins.contains(parser) || available_plugins.at(parser).type != plugin_type::parser) {
+            spdlog::critical("no such parser available: '{}'", parser);
             return 1;
         }
 
-        spdlog::debug("parsing with {0} plugin", selected_parser);
-        auto inputs = cli_arguments["input"].as_list();
-        auto ignore = cli_arguments["ignore"].as_list_or_default({});
-        auto parser = std::get<parser_func_t>(available_plugins.at(selected_parser).function);
+        spdlog::debug("parsing with {0} plugin", parser);
+        auto p = std::get<parser_ctor_t>(available_plugins.at(parser).function)();
         ya::timer<int> t{};
-        std::unique_ptr<aaltitoad::ntta_t> n{parser(inputs, ignore)};
-        trace_log_ntta(*n);
+        auto parse_result = p->parse_files(input, ignore);
+        aaltitoad::warnings::print_warnings(parse_result);
+        if(!parse_result.has_value()) {
+            spdlog::error("compilation failed");
+            return 1;
+        }
+
+        auto n = parse_result.value().ntta;
+        trace_log_ntta(n);
         spdlog::debug("model parsing took {0}ms", t.milliseconds_elapsed());
 
         t.start();
         std::vector<ctl::syntax_tree_t> queries{};
-        aaltitoad::ctl_interpreter ctl_compiler{n->symbols, n->external_symbols};
-        for(auto& q : cli_arguments["query"].as_list_or_default({})) {
+        aaltitoad::ctl_interpreter ctl_compiler{n.symbols, n.external_symbols};
+        for(auto& q : query) {
             spdlog::trace("compiling query '{0}'", q);
             auto qq = ctl_compiler.compile(q);
             std::stringstream ss{}; ss << qq;
             spdlog::trace("resulting tree: {0}", ss.str());
             queries.emplace_back(qq);
         }
-        for(auto& f : cli_arguments["query-file"].as_list_or_default({})) {
+        for(auto& f : query_files) {
             spdlog::trace("loading queries in file {0}", f);
-            auto json_queries = aaltitoad::load_query_json_file(f, {n->symbols, n->external_symbols});
+            auto json_queries = aaltitoad::load_query_json_file(f, {n.symbols, n.external_symbols});
             queries.insert(queries.end(), json_queries.begin(), json_queries.end());
         }
         spdlog::debug("query parsing took {0}ms", t.milliseconds_elapsed());
 
-        auto strategy_s = cli_arguments["pick-strategy"].as_string_or_default("first");
-        auto strategy = magic_enum::enum_cast<aaltitoad::pick_strategy>(strategy_s).value_or(aaltitoad::pick_strategy::first);
+        auto strategy = magic_enum::enum_cast<aaltitoad::pick_strategy>(pick_strategy).value_or(aaltitoad::pick_strategy::first);
         spdlog::debug("using pick strategy '{0}'", magic_enum::enum_name(strategy));
 
-        n->add_tocker(std::make_unique<aaltitoad::interesting_tocker>());
+        n.add_tocker(std::make_unique<aaltitoad::interesting_tocker>());
         spdlog::trace("starting reachability search for {0} queries", queries.size());
         t.start();
         aaltitoad::forward_reachability_searcher frs{strategy};
-        auto results = frs.is_reachable(*n, queries);
+        auto results = frs.is_reachable(n, queries);
         spdlog::info("reachability search took {0}ms", t.milliseconds_elapsed());
 
         // open the results file (std::cout by default)
         spdlog::trace("opening results file stream");
         auto* trace_stream = &std::cout;
-        auto trace_file = cli_arguments["trace-file"].as_string_or_default("");
-        if(trace_file != "")
-            trace_stream = new std::ofstream{trace_file, std::ios::app};
+        if(result_file.has_value())
+            trace_stream = new std::ofstream{result_file.value(), std::ios::app};
 
         // write json to results file or non-json if not provided
-        if(cli_arguments["result-json"]) {
+        if(output_json) {
             spdlog::trace("gathering results json data");
             auto json_results = "[]"_json;
             for(auto& result : results) {
@@ -141,16 +205,6 @@ int main(int argc, char** argv) {
         std::cerr.flush();
         return 1;
     }
-}
-
-auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t {
-    auto rpath = std::getenv("AALTITOAD_LIBPATH");
-    std::vector<std::string> look_dirs = { ".", "lib", "plugins" };
-    if(rpath)
-        look_dirs.emplace_back(rpath);
-    auto provided_dirs = cli_arguments["plugin-dir"].as_list_or_default({});
-    look_dirs.insert(look_dirs.end(), provided_dirs.begin(), provided_dirs.end());
-    return aaltitoad::plugins::load(look_dirs);
 }
 
 void trace_log_ntta(const aaltitoad::ntta_t& n) {
@@ -188,3 +242,13 @@ void trace_log_ntta(const aaltitoad::ntta_t& n) {
     }
 }
 
+void disable_warnings(const std::vector<std::string>& disable_warns) {
+    aaltitoad::warnings::enable_all();
+    for(auto& w : disable_warns) {
+        auto opt = magic_enum::enum_cast<aaltitoad::w_t>(w);
+        if(opt.has_value())
+            aaltitoad::warnings::disable_warning(opt.value());
+        else
+            spdlog::warn("not a warning: {0}", w);
+    }
+}

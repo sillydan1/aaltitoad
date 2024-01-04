@@ -18,7 +18,7 @@
 #include "model.h"
 #include <uuid>
 
-namespace aaltitoad::hawk::model {
+namespace aaltitoad::hawk {
     void from_json(const nlohmann::json& j, urgency_t& e) {
         static const std::pair<urgency_t, nlohmann::json> m[] = {
                 {urgency_t::invalid, nullptr},
@@ -35,7 +35,6 @@ namespace aaltitoad::hawk::model {
         j.at("id").get_to(l.id);
         j.at("nickname").get_to(l.nickname);
         j.at("urgency").get_to(l.urgency);
-        j.at("invariant").get_to(l.invariant);
     }
 
     void from_json(const nlohmann::json& j, edge_t& e) {

@@ -70,17 +70,26 @@ Such a network is called simply a **n**etwork of **t**ick **t**ock **a**utomata 
 
 ## Compile (Linux)
 Aaltitoad is built using cmake. You must have a C++20 compatible compiler, `flex`, `bison` version 3.5+ and the standard template library installed.
-All other dependencies are handled through the wonderful [CPM](https://github.com/cpm-cmake/CPM.cmake) package manager.
-```shell
-mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
-make
+```sh
+# Debian / Ubuntu
+apt-get install -y flex bison make m4 cmake libfl-dev libbison-dev
 ```
-If the CPM step is taking a long time, try rerunning with `-DCPM_SOURCE_CACHE=~/.cache/CPM`
+
+```sh
+# Arch Linux
+pacman -S z3 catch2 flex bison cmake m4
+```
+
+All other dependencies are handled through the wonderful [CPM](https://github.com/cpm-cmake/CPM.cmake) package manager.
+```sh
+cmake -DCMAKE_BUILD_TYPE=Release -B out/Release
+cmake --build out/Release
+```
+If the CPM step is taking a long time, try rerunning with `-DCPM_SOURCE_CACHE=~/.cache/CPM`.
 
 ### Test
 To run the unit tests, compile the `aaltitoad_tests` target
-```shell
+```sh
 mkdir build-test && cd build-test
 cmake -DCMAKE_BUILD_TYPE=Debug ..
 make aaltitoad_tests
@@ -91,12 +100,12 @@ If you want to include code-coverage stats, provide the `-DCODE_COVERAGE=ON` cma
 
 ## How To Use
 Aaltitoad provides three primary compilation targets. All commandline interfaces have a help page that you can summon with the `--help` argument.
- - `verifier`: A verification engine command line interface
+ - `aaltitoad-verifier`: A verification engine command line interface
    - use this if you want to analyze your NTTA
- - `simulator`: A runtime command line interface
+ - `aaltitoad-simulator`: A runtime command line interface
    - use this if you want to execute your NTTA and link with your custom tockers (see below)
  - `aaltitoad`: A library with all things aaltitoad
-   - use this to create your own NTTA-based applications e.g. another verifier, runtime or even compiler
+   - use this to create your own NTTA-based applications e.g. another verifier, compiler, runtime etc.
 
 ------
 
@@ -125,7 +134,7 @@ target_link_libraries(TOCKER_NAME_tocker aaltitoad)
 ```
 Once compiled, you can instantiate the tocker by providing the `--tocker / -t` together with `--tocker-dir / -T` to the aaltitoad command line.
 The `--tocker` option should be provided like so:
-```shell
+```sh
 --tocker-dir /path/to/tocker-plugins --tocker "TOCKER_NAME(argument string)" 
 ```
 The `"argument string"`-part of the option refers to the input argument string provided to the `create_TOCKER_NAME` function.

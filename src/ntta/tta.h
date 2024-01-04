@@ -27,7 +27,6 @@
 #include <uuid>
 #include <permutation>
 #include <set>
-#include <future>
 
 namespace aaltitoad {
     struct location_t {

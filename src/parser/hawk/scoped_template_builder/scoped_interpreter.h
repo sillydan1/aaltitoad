@@ -19,7 +19,6 @@
 #define AALTITOAD_SCOPED_INTERPRETER_H
 #include "driver/evaluator.h"
 #include "expr-wrappers/interpreter.h"
-#include <cwchar>
 #include <symbol_table.h>
 
 namespace aaltitoad::hawk {

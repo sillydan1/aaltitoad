@@ -17,6 +17,7 @@
  */
 #include <aaltitoadpch.h>
 #include <cctype>
+#include <cstdarg>
 #include <regex>
 #include <util/string_extensions.h>
 
@@ -128,6 +129,22 @@ void lower_case(std::string& s) {
 auto lower_case(const std::string& s) -> std::string {
     auto r = s;
     lower_case(r);
+    return r;
+}
+
+void kebab_case(std::string& s) {
+    // NOTE: does not account for camelCased or PascalCased strings
+    for (auto& i : s) {
+        if(i == ' ')
+            i = '-';
+        if(i == '_')
+            i = '-';
+    }
+}
+
+auto kebab_case(const std::string& s) -> std::string {
+    auto r = s;
+    kebab_case(r);
     return r;
 }
 

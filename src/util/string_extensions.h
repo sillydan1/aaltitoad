@@ -37,6 +37,8 @@ auto containsString(const std::string& s, const std::string& substring) -> std::
 auto regex_replace_all(const std::string& original, const std::regex& reg, const std::string& replacement) -> std::string;
 void lower_case(std::string& s);
 auto lower_case(const std::string& s) -> std::string;
+void kebab_case(std::string& s);
+auto kebab_case(const std::string& s) -> std::string;
 
 struct string_builder {
     std::stringstream ss;
