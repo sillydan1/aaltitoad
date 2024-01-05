@@ -108,6 +108,7 @@ add_compile_definitions(ENABLE_Z3)
 add_subdirectory(src/cli/simulator)
 add_subdirectory(src/cli/verifier)
 add_subdirectory(src/cli/detcheck)
+add_subdirectory(src/cli/lsp)
 add_subdirectory(src/parser)
 add_subdirectory(test)
 

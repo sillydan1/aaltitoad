@@ -69,9 +69,14 @@ Such a network is called simply a **n**etwork of **t**ick **t**ock **a**utomata 
 ------
 
 ## Compile (Linux)
-Aaltitoad is built using cmake. You must have a C++20 compatible compiler, `flex`, `bison` version 3.5+ and the standard template library installed.
+Aaltitoad is built using cmake. You must have a C++20 compatible compiler, `flex`, `bison` version 3.5+ and the standard template library installed. If you want to build the `lsp` cli, you must also have `grpc` installed.
+```sh
+# all dependencies
+apt-get install -y flex bison make m4 cmake libfl-dev libbison-dev libgrpc-dev
+```
+
 All other dependencies are handled through the wonderful [CPM](https://github.com/cpm-cmake/CPM.cmake) package manager.
-```shell
+```sh
 mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make
@@ -80,7 +85,7 @@ If the CPM step is taking a long time, try rerunning with `-DCPM_SOURCE_CACHE=~/
 
 ### Test
 To run the unit tests, compile the `aaltitoad_tests` target
-```shell
+```sh
 mkdir build-test && cd build-test
 cmake -DCMAKE_BUILD_TYPE=Debug ..
 make aaltitoad_tests
@@ -125,7 +130,7 @@ target_link_libraries(TOCKER_NAME_tocker aaltitoad)
 ```
 Once compiled, you can instantiate the tocker by providing the `--tocker / -t` together with `--tocker-dir / -T` to the aaltitoad command line.
 The `--tocker` option should be provided like so:
-```shell
+```sh
 --tocker-dir /path/to/tocker-plugins --tocker "TOCKER_NAME(argument string)" 
 ```
 The `"argument string"`-part of the option refers to the input argument string provided to the `create_TOCKER_NAME` function.

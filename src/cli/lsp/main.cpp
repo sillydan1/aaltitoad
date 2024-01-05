@@ -20,6 +20,7 @@
 #include <aaltitoadpch.h>
 #include <timer>
 #include <nlohmann/json.hpp>
+#include "cli/lsp/proto/example_route_guide.h"
 #include "cli_options.h"
 
 void start_lsp(int port);
@@ -43,5 +44,6 @@ int main(int argc, char** argv) {
 }
 
 void start_lsp(int port) {
-    // TODO: Do language server things here
+    aaltitoad::lsp::proto::example_route_guide_t server{};
+    server.start(port);
 }

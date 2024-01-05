@@ -1,0 +1,19 @@
+// TODO: Create a seperate repository with this
+syntax = "proto3";
+
+option java_package = "dk.gtz.aaltitoad";
+option java_multiple_files = true;
+option java_outer_classname = "AaltitoadProto";
+
+// TODO: This is just example code for now
+service RouteGuide {
+    rpc GetFeature(FeatureLookup) returns (Feature) {}
+}
+
+message FeatureLookup {
+    int32 identifier = 1;
+}
+
+message Feature {
+    string name = 1;
+}

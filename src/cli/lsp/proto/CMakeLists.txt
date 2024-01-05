@@ -14,12 +14,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
-project(lsp VERSION 1.0.0)
-find_package(argvparse REQUIRED)
-add_subdirectory(proto)
-add_executable(${PROJECT_NAME} main.cpp)
-target_link_libraries(${PROJECT_NAME} aaltitoad argvparse aaltitoad_proto)
-if(TARGET default_plugins)
-    add_dependencies(${PROJECT_NAME} default_plugins)
-endif()
-install(TARGETS ${PROJECT_NAME})
+find_package(protobuf CONFIG REQUIRED)
+find_package(gRPC CONFIG REQUIRED)
+find_package(Threads)
+set(PROTO_FILES aaltitoad.proto)
+add_library(aaltitoad_proto ${PROTO_FILES} example_route_guide.cpp)
+target_link_libraries(aaltitoad_proto PUBLIC protobuf::libprotobuf gRPC::grpc gRPC::grpc++)
+target_include_directories(aaltitoad_proto PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+get_target_property(grpc_cpp_plugin_location gRPC::grpc_cpp_plugin LOCATION)
+protobuf_generate(TARGET aaltitoad_proto LANGUAGE cpp)
+protobuf_generate(TARGET aaltitoad_proto LANGUAGE grpc GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}")
