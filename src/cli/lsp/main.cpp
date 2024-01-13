@@ -20,10 +20,8 @@
 #include <aaltitoadpch.h>
 #include <timer>
 #include <nlohmann/json.hpp>
-#include "cli/lsp/proto/example_route_guide.h"
+#include "cli/lsp/proto/lsp_server.h"
 #include "cli_options.h"
-
-void start_lsp(int port);
 
 int main(int argc, char** argv) {
     auto options = get_options();
@@ -37,13 +35,11 @@ int main(int argc, char** argv) {
     if(!is_required_provided(cli_arguments, options))
         return print_required_args();
 
-    spdlog::trace("welcome to {0} v{1}", PROJECT_NAME, PROJECT_VER);
-    start_lsp(cli_arguments["port"].as_integer_or_default(5001));
-    spdlog::trace("shutting down...");
+    spdlog::trace("welcome to {} v{}", PROJECT_NAME, PROJECT_VER);
+    aaltitoad::lsp::proto::LanguageServerImpl{
+        cli_arguments["port"].as_integer_or_default(5001),
+        PROJECT_VER
+    }.start();
+    spdlog::trace("shutting down {} v{}", PROJECT_NAME, PROJECT_VER);
     return 0;
-}
-
-void start_lsp(int port) {
-    aaltitoad::lsp::proto::example_route_guide_t server{};
-    server.start(port);
 }
