@@ -16,6 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <cli/cli_common.h>
+#include <csignal>
 #include <plugin_system/plugin_system.h>
 #include <aaltitoadpch.h>
 #include <timer>
@@ -23,7 +24,13 @@
 #include "cli/lsp/proto/lsp_server.h"
 #include "cli_options.h"
 
+void siginthandler(int param) {
+    spdlog::info("exiting ({})", param);
+    exit(param);
+}
+
 int main(int argc, char** argv) {
+    signal(SIGINT, siginthandler);
     auto options = get_options();
     auto cli_arguments = get_arguments(options, argc, argv);
     if(cli_arguments["verbosity"])

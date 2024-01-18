@@ -17,11 +17,13 @@
  */
 #ifndef LSP_SERVER_H
 #define LSP_SERVER_H
+#include <functional>
 #include <grpc/grpc.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <optional>
 #include "lsp.grpc.pb.h"
 #include "lsp.pb.h"
 
@@ -31,14 +33,33 @@ namespace aaltitoad::lsp::proto {
         bool running;
         int port;
         std::string semver;
+        std::optional<std::function<void(const DiagnosticsList&)>> diagnostics_callback;
+        std::optional<std::function<void(const Notification&)>> notifications_callback;
+        std::optional<std::function<void(const ProgressReport&)>> progress_callback;
     public:
         LanguageServerImpl(int port, const std::string& semver);
+        ~LanguageServerImpl();
         void start();
+
+        void progress_start(const std::string& message);
+        void progress(const std::string& message);
+        void progress_end(const std::string& message);
+        void progress_end_fail(const std::string& message);
+
+        void notify_error(const std::string& message);
+        void notify_info(const std::string& message);
+        void notify_warning(const std::string& message);
+        void notify_debug(const std::string& message);
+        void notify_trace(const std::string& message);
+
         auto HandleDiff(grpc::ServerContext* server_context, const Diff* diff, Empty* result) -> grpc::Status;
         auto GetServerInfo(grpc::ServerContext* server_context, const Empty* empty, ServerInfo* result) -> grpc::Status;
         auto GetDiagnostics(grpc::ServerContext* server_context, const Empty* empty, grpc::ServerWriter<DiagnosticsList>* writer) -> grpc::Status;
         auto GetNotifications(grpc::ServerContext* server_context, const Empty* empty, grpc::ServerWriter<Notification>* writer) -> grpc::Status;
         auto GetProgress(grpc::ServerContext* server_context, const Empty* empty, grpc::ServerWriter<ProgressReport>* writer) -> grpc::Status;
+    private:
+        void progress(const ProgressReportType& type, const std::string& message);
+        void notify(const NotificationLevel& level, const std::string& message);
     };
 }
 
