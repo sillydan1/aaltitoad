@@ -45,7 +45,8 @@ namespace aaltitoad::lsp::proto {
     }
 
     auto LanguageServerImpl::HandleDiff(grpc::ServerContext* server_context, const Diff* diff, Empty* result) -> grpc::Status {
-        progress_start("diff received");
+        progress_start("diff for '"+diff->buffername()+"' received");
+        notify_info(diff->buffername() + " opened");
         std::stringstream ss{};
         for(auto x : diff->vertexadditions())
             ss << "+v: {}" << x.jsonencoding();
