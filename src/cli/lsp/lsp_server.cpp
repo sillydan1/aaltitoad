@@ -15,13 +15,16 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "lsp_server.h"
+#include "cli/lsp/model.h"
 #include "lsp.pb.h"
+#include "lsp_server.h"
+#include <exception>
 #include <future>
-#include <spdlog/spdlog.h>
-#include <grpcpp/support/status.h>
 #include <grpc/support/log.h>
+#include <grpcpp/support/status.h>
+#include <spdlog/spdlog.h>
 #include <unistd.h>
+#include <variant>
 
 namespace aaltitoad::lsp::proto {
     LanguageServerImpl::LanguageServerImpl(int port, const std::string& semver) : running{false}, port{port}, semver{semver}, diagnostics_callback{}, notifications_callback{}, progress_callback{} {
@@ -45,20 +48,39 @@ namespace aaltitoad::lsp::proto {
     }
 
     auto LanguageServerImpl::HandleDiff(grpc::ServerContext* server_context, const Diff* diff, Empty* result) -> grpc::Status {
-        progress_start("diff for '"+diff->buffername()+"' received");
-        notify_info(diff->buffername() + " opened");
-        std::stringstream ss{};
-        for(auto x : diff->vertexadditions())
-            ss << "+v: {}" << x.jsonencoding();
-        for(auto x : diff->edgeadditions())
-            ss << "+e: {}" << x.jsonencoding();
-        for(auto x : diff->vertexdeletions())
-            ss << "-v: {}" << x.jsonencoding();
-        for(auto x : diff->edgedeletions())
-            ss << "-e: {}" << x.jsonencoding();
-        notify_trace(ss.str());
-        progress_end("done");
-        return grpc::Status::OK;
+        try {
+            progress_start("diff for '" + diff->buffername() + "' received");
+            if(!network.components.contains(diff->buffername())) {
+                network.components[diff->buffername()] = tta_t{};
+                progress(diff->buffername() + " opened");
+            }
+            for(auto x : diff->vertexadditions()) {
+                auto json = nlohmann::json::parse(x.jsonencoding());
+                lsp::vertex_t vert{};
+                lsp::from_json(json, vert);
+                std::visit(ya::overload(
+                    [this](const lsp::nail_t& n){ notify_info("nail expression: " + n.expression); },
+                    [this](const lsp::location_t& l){ notify_info("location nickname: " + l.nickname); }
+                ), static_cast<const lsp::vertex_t&>(vert));
+            }
+            for(auto x : diff->edgeadditions()) {
+                auto json = nlohmann::json::parse(x.jsonencoding());
+            }
+            for(auto x : diff->vertexdeletions()) {
+                auto json = nlohmann::json::parse(x.jsonencoding());
+            }
+            for(auto x : diff->edgedeletions()) {
+                auto json = nlohmann::json::parse(x.jsonencoding());
+            }
+            progress_end("done");
+            return grpc::Status::OK;
+        } catch(const std::exception& e) {
+            spdlog::error("something went wrong: {}", e.what());
+            return grpc::Status(grpc::StatusCode::INTERNAL, e.what());
+        } catch(...) {
+            spdlog::error("unknown error");
+            return grpc::Status(grpc::StatusCode::INTERNAL, "unknown error");
+        }
     }
 
     auto LanguageServerImpl::GetServerInfo(grpc::ServerContext* server_context, const Empty* empty, ServerInfo* result) -> grpc::Status {

@@ -17,7 +17,7 @@
 project(lsp VERSION 1.0.0)
 find_package(argvparse REQUIRED)
 add_subdirectory(proto)
-add_executable(${PROJECT_NAME} main.cpp lsp_server.cpp)
+add_executable(${PROJECT_NAME} main.cpp lsp_server.cpp model.cpp)
 target_link_libraries(${PROJECT_NAME} aaltitoad argvparse aaltitoad_proto)
 if(TARGET default_plugins)
     add_dependencies(${PROJECT_NAME} default_plugins)
