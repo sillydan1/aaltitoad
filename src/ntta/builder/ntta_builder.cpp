@@ -17,6 +17,7 @@
  */
 #include <util/exceptions/parse_error.h>
 #include "expr-wrappers/interpreter.h"
+#include "ntta/interesting_tocker.h"
 #include "ntta_builder.h"
 #include "symbol_table.h"
 

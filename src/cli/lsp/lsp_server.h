@@ -17,6 +17,9 @@
  */
 #ifndef LSP_SERVER_H
 #define LSP_SERVER_H
+#include "lsp.grpc.pb.h"
+#include "lsp.pb.h"
+#include "ntta/tta.h"
 #include <functional>
 #include <grpc/grpc.h>
 #include <grpcpp/security/server_credentials.h>
@@ -24,8 +27,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <optional>
-#include "lsp.grpc.pb.h"
-#include "lsp.pb.h"
+#include <string>
 
 namespace aaltitoad::lsp::proto {
     class LanguageServerImpl final : public LanguageServer::Service {
@@ -36,6 +38,7 @@ namespace aaltitoad::lsp::proto {
         std::optional<std::function<void(const DiagnosticsList&)>> diagnostics_callback;
         std::optional<std::function<void(const Notification&)>> notifications_callback;
         std::optional<std::function<void(const ProgressReport&)>> progress_callback;
+        ntta_t network;
     public:
         LanguageServerImpl(int port, const std::string& semver);
         ~LanguageServerImpl();

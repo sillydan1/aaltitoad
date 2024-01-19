@@ -18,6 +18,7 @@
 #ifndef AALTITOAD_ASYNC_TOCKER_H
 #define AALTITOAD_ASYNC_TOCKER_H
 #include "tta.h"
+#include <future>
 
 namespace aaltitoad {
     template<typename T>

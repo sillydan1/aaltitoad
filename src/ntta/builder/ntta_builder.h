@@ -19,7 +19,6 @@
 #define AALTITOAD_NTTA_BUILDER_H
 #include "expr-wrappers/interpreter.h"
 #include "ntta/tta.h"
-#include "ntta/interesting_tocker.h"
 #include "symbol_table.h"
 
 namespace aaltitoad {

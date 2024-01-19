@@ -21,7 +21,7 @@
 #include <aaltitoadpch.h>
 #include <timer>
 #include <nlohmann/json.hpp>
-#include "cli/lsp/proto/lsp_server.h"
+#include "lsp_server.h"
 #include "cli_options.h"
 
 void siginthandler(int param) {
