@@ -49,6 +49,7 @@ namespace aaltitoad::lsp::proto {
 
     auto LanguageServerImpl::HandleDiff(grpc::ServerContext* server_context, const Diff* diff, Empty* result) -> grpc::Status {
         try {
+            // NOTE: BOOKMARK: You're converting to model objects, so you can feed them into the builder, so you can get compiler errors
             progress_start("diff for '" + diff->buffername() + "' received");
             if(!network.components.contains(diff->buffername())) {
                 network.components[diff->buffername()] = tta_t{};
@@ -58,6 +59,7 @@ namespace aaltitoad::lsp::proto {
                 auto json = nlohmann::json::parse(x.jsonencoding());
                 lsp::vertex_t vert{};
                 lsp::from_json(json, vert);
+                notify_info(x.id());
                 std::visit(ya::overload(
                     [this](const lsp::nail_t& n){ notify_info("nail expression: " + n.expression); },
                     [this](const lsp::location_t& l){ notify_info("location nickname: " + l.nickname); }
