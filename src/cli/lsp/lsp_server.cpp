@@ -23,6 +23,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/support/status.h>
 #include <spdlog/spdlog.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <variant>
 
@@ -45,6 +46,31 @@ namespace aaltitoad::lsp::proto {
         std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
         spdlog::info("language server listening on {}", ss.str());
         server->Wait();
+    }
+
+    auto LanguageServerImpl::GetServerInfo(grpc::ServerContext* server_context, const Empty* empty, ServerInfo* result) -> grpc::Status {
+        result->set_name("aaltitoad-ls");
+        result->set_language("hawk");
+        result->set_semanticversion(semver);
+        result->add_capabilities(Capability::CAPABILITY_DIFFS);
+        result->add_capabilities(Capability::CAPABILITY_PROGRESS);
+        result->add_capabilities(Capability::CAPABILITY_DIAGNOSTICS);
+        result->add_capabilities(Capability::CAPABILITY_NOTIFICATIONS);
+        // TODO: add CAPABILITY_PROJECT when you've implemented it
+        return grpc::Status::OK;
+    }
+
+    auto LanguageServerImpl::ProjectOpened(grpc::ServerContext* server_context, const Project* project, Empty* result) -> grpc::Status {
+        project->path();
+        return grpc::Status::OK;
+    }
+
+    auto LanguageServerImpl::BufferCreated(grpc::ServerContext* server_context, const Buffer* buffer, Empty* result) -> grpc::Status {
+        return grpc::Status::OK;
+    }
+
+    auto LanguageServerImpl::BufferDeleted(grpc::ServerContext* server_context, const Buffer* buffer, Empty* result) -> grpc::Status {
+        return grpc::Status::OK;
     }
 
     auto LanguageServerImpl::HandleDiff(grpc::ServerContext* server_context, const Diff* diff, Empty* result) -> grpc::Status {
@@ -83,18 +109,6 @@ namespace aaltitoad::lsp::proto {
             spdlog::error("unknown error");
             return grpc::Status(grpc::StatusCode::INTERNAL, "unknown error");
         }
-    }
-
-    auto LanguageServerImpl::GetServerInfo(grpc::ServerContext* server_context, const Empty* empty, ServerInfo* result) -> grpc::Status {
-        result->set_name("aaltitoad-ls");
-        result->set_language("hawk");
-        result->set_semanticversion(semver);
-        result->add_capabilities(Capability::CAPABILITY_DIFFS);
-        result->add_capabilities(Capability::CAPABILITY_PROGRESS);
-        result->add_capabilities(Capability::CAPABILITY_DIAGNOSTICS);
-        result->add_capabilities(Capability::CAPABILITY_NOTIFICATIONS);
-        // TODO: CAPABILITY_PROJECT
-        return grpc::Status::OK;
     }
 
     auto LanguageServerImpl::GetDiagnostics(grpc::ServerContext* server_context, const Empty* empty, grpc::ServerWriter<DiagnosticsList>* writer) -> grpc::Status {

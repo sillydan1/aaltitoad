@@ -55,8 +55,11 @@ namespace aaltitoad::lsp::proto {
         void notify_debug(const std::string& message);
         void notify_trace(const std::string& message);
 
-        auto HandleDiff(grpc::ServerContext* server_context, const Diff* diff, Empty* result) -> grpc::Status;
         auto GetServerInfo(grpc::ServerContext* server_context, const Empty* empty, ServerInfo* result) -> grpc::Status;
+        auto ProjectOpened(grpc::ServerContext* server_context, const Project* project, Empty* result) -> grpc::Status;
+        auto BufferCreated(grpc::ServerContext* server_context, const Buffer* buffer, Empty* result) -> grpc::Status;
+        auto BufferDeleted(grpc::ServerContext* server_context, const Buffer* buffer, Empty* result) -> grpc::Status;
+        auto HandleDiff(grpc::ServerContext* server_context, const Diff* diff, Empty* result) -> grpc::Status;
         auto GetDiagnostics(grpc::ServerContext* server_context, const Empty* empty, grpc::ServerWriter<DiagnosticsList>* writer) -> grpc::Status;
         auto GetNotifications(grpc::ServerContext* server_context, const Empty* empty, grpc::ServerWriter<Notification>* writer) -> grpc::Status;
         auto GetProgress(grpc::ServerContext* server_context, const Empty* empty, grpc::ServerWriter<ProgressReport>* writer) -> grpc::Status;
