@@ -19,20 +19,13 @@
 #include "spdlog/spdlog.h"
 
 namespace aaltitoad::lsp {
-    void from_json(const nlohmann::json& j, position_t& t) {
-        j.at("x").get_to(t.x);
-        j.at("y").get_to(t.y);
-    }
-
     void from_json(const nlohmann::json& j, nail_t& t) {
-        j.at("position").get_to(t.position);
         j.at("type").get_to(t.type);
         j.at("expression").at(1).at("message").get_to(t.expression);
         j.at("nickname").at(1).at("message").get_to(t.nickname);
     }
 
     void from_json(const nlohmann::json& j, location_t& t) {
-        j.at("position").get_to(t.position);
         j.at("type").get_to(t.type);
         j.at("nickname").at(1).at("message").get_to(t.nickname);
     }

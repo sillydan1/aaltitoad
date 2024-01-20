@@ -21,27 +21,19 @@
 #include <variant>
 
 namespace aaltitoad::lsp {
-    struct position_t {
-        double x;
-        double y;
-    };
-
     struct nail_t {
-        position_t position;
         std::string type;
         std::string expression;
         std::string nickname;
     };
 
     struct location_t {
-        position_t position;
         std::string type;
         std::string nickname;
     };
 
     using vertex_t = std::variant<location_t, nail_t>;
 
-    void from_json(const nlohmann::json& j, position_t& t);
     void from_json(const nlohmann::json& j, nail_t& t);
     void from_json(const nlohmann::json& j, location_t& t);
     void from_json(const nlohmann::json& j, vertex_t& t);
