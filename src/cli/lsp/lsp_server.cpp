@@ -89,6 +89,11 @@ namespace aaltitoad::lsp::proto {
         result->set_name("aaltitoad-ls");
         result->set_language("hawk");
         result->set_semanticversion(semver);
+        result->add_capabilities(Capability::CAPABILITY_DIFFS);
+        result->add_capabilities(Capability::CAPABILITY_PROGRESS);
+        result->add_capabilities(Capability::CAPABILITY_DIAGNOSTICS);
+        result->add_capabilities(Capability::CAPABILITY_NOTIFICATIONS);
+        // TODO: CAPABILITY_PROJECT
         return grpc::Status::OK;
     }
 
