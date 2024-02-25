@@ -14,7 +14,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
-project(detcheck VERSION 1.0.0)
+project(aaltitoad-detcheck VERSION 1.0.0)
 find_package(argvparse REQUIRED)
 add_executable(${PROJECT_NAME} main.cpp)
 target_link_libraries(${PROJECT_NAME} aaltitoad argvparse)

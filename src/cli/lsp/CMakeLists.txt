@@ -14,7 +14,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
-project(lsp VERSION 1.0.0)
+project(aaltitoad-lsp VERSION 1.0.0)
 find_package(argvparse REQUIRED)
 CPMAddPackage("gh:sillydan1/graphedit-protobuf@1.1.0")
 add_executable(${PROJECT_NAME} main.cpp lsp_server.cpp model.cpp)
