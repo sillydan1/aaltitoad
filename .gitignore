@@ -47,4 +47,4 @@ compile_commands.json
 Debug/
 Release/
 .cache/
-
+\*cmake-tools\*

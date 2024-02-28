@@ -128,4 +128,3 @@ install(DIRECTORY src/ntta src/plugin_system src/util src/verification src/parse
 if(NOT WIN32)
     target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
 endif()
-

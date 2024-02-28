@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: install dependencies
       run: sudo apt-get install -y flex bison make m4 cmake libfl-dev libbison-dev libgrpc-dev
     - name: create build environment
@@ -37,7 +37,7 @@ jobs:
       shell: bash
       run: cmake --install . --config $BUILD_TYPE --prefix ${{ github.workspace }}/install
     - name: upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: aaltitoad
         path: ${{ github.workspace }}/install/
