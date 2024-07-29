@@ -33,6 +33,9 @@ namespace aaltitoad::hawk::huppaal {
     private:
         auto should_ignore(const std::filesystem::directory_entry& entry, const std::vector<std::string>& ignore_list) const -> bool;
         auto should_ignore(const std::filesystem::directory_entry& entry, const std::string& ignore_regex) const -> bool;
+
+        auto scan_template(const std::string& filepath, const nlohmann::json& t) const -> scanning::template_t;
+        auto scan_parts(const nlohmann::json& t) const -> std::string;
     };
 
     class huppaal_parser : public aaltitoad::hawk::parser {

@@ -38,7 +38,7 @@ namespace aaltitoad::hawk {
         struct template_t {
             std::string identifier;
             std::string signature;
-            std::optional<std::string> declarations;
+            std::vector<std::string> declarations;
             std::vector<vertex> vertices;
             std::vector<edge> edges;
             std::vector<std::string> modifiers; // e.g. "MAIN"
@@ -104,7 +104,7 @@ namespace aaltitoad::hawk {
         struct template_t {
             std::string identifier;
             std::string signature;
-            std::optional<std::string> declarations; // TODO: should be expr compiled tree
+            std::vector<std::string> declarations; // TODO: should be expr compiled trees
             std::vector<location> locations;
             std::vector<edge> edges;
             std::vector<template_modifier> modifiers;
