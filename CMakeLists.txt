@@ -13,11 +13,12 @@
 #
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
-cmake_minimum_required(VERSION 3.16) # 3.16+ because of target_precompiled_header
+cmake_minimum_required(VERSION 3.20) # 3.20+ because of c++23
 project(aaltitoad VERSION 1.3.0)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(SPDLOG_BUILD_SHARED)
 set(CONFIG_IN_FILE src/config.h.in)
 set(CONFIG_OUT_FILE config.h)
@@ -34,7 +35,7 @@ find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
-CPMAddPackage(NAME expr VERSION 3.0.6 GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
+CPMAddPackage(NAME expr GIT_TAG dev GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
 CPMAddPackage("gh:sillydan1/ctl-expr@2.0.4")
 CPMAddPackage("gh:sillydan1/graphedit-protobuf@1.2.1")
 
