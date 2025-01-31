@@ -98,7 +98,7 @@ namespace aaltitoad::hawk::huppaal {
         };
     }
 
-    auto scan_vertex(const nlohmann::json& t) -> scanning::vertex {
+    auto scan_vertex(const nlohmann::json& t) -> scanning::vertex_t {
         std::string type{};
         std::vector<std::string> modifiers{};
         std::string tt = lower_case(t["type"]);
@@ -112,13 +112,13 @@ namespace aaltitoad::hawk::huppaal {
             type = "location";
             modifiers.push_back("final");
         }
-        return scanning::vertex{
+        return scanning::vertex_t{
             .identifer=t["id"],
             .type=type,
             .modifiers=modifiers,
             .debug={
                 .name=t["nickname"],
-                .position=position{
+                .position=position_t{
                     .x=t["x"],
                     .y=t["y"]
                 }
@@ -126,14 +126,14 @@ namespace aaltitoad::hawk::huppaal {
         };
     }
 
-    auto scan_edge(const nlohmann::json& t) -> scanning::edge {
+    auto scan_edge(const nlohmann::json& t) -> scanning::edge_t {
         std::optional<std::string> guard{};
         if(t["guard"] != "")
             guard = t["guard"];
         std::optional<std::string> update{};
         if(t["update"] != "")
             guard = t["update"];
-        return scanning::edge{
+        return scanning::edge_t{
             .identifier=t["uuid"],
             .source=t["source_location"],
             .guard=guard,
@@ -144,13 +144,13 @@ namespace aaltitoad::hawk::huppaal {
     }
 
     auto huppaal_scanner::scan_template(const std::string& filepath, const nlohmann::json& t) const -> scanning::template_t {
-        std::vector<scanning::vertex> vertices{};
+        std::vector<scanning::vertex_t> vertices{};
         for(auto& v : t["vertices"])
             vertices.push_back(scan_vertex(v));
         vertices.push_back(scan_vertex(t["initial_location"]));
         vertices.push_back(scan_vertex(t["final_location"]));
 
-        std::vector<scanning::edge> edges{};
+        std::vector<scanning::edge_t> edges{};
         for(auto& e : t["edges"])
             edges.push_back(scan_edge(e));
 
