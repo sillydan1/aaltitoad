@@ -71,8 +71,13 @@ Such a network is called simply a **n**etwork of **t**ick **t**ock **a**utomata 
 ## Compile (Linux)
 Aaltitoad is built using cmake. You must have a C++20 compatible compiler, `flex`, `bison` version 3.5+ and the standard template library installed. If you want to build the `lsp` cli, you must also have `grpc` installed.
 ```sh
-# all dependencies
+# Debian / Ubuntu
 apt-get install -y flex bison make m4 cmake libfl-dev libbison-dev libgrpc-dev
+```
+
+```sh
+# Arch Linux
+pacman -S z3 catch2 flex bison cmake m4
 ```
 
 All other dependencies are handled through the wonderful [CPM](https://github.com/cpm-cmake/CPM.cmake) package manager.
@@ -80,7 +85,7 @@ All other dependencies are handled through the wonderful [CPM](https://github.co
 cmake -DCMAKE_BUILD_TYPE=Release -B out/Release
 cmake --build out/Release
 ```
-If the CPM step is taking a long time, try rerunning with `-DCPM_SOURCE_CACHE=~/.cache/CPM`
+If the CPM step is taking a long time, try rerunning with `-DCPM_SOURCE_CACHE=~/.cache/CPM`.
 
 ### Test
 To run the unit tests, compile the `aaltitoad_tests` target
