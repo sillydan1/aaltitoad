@@ -48,9 +48,9 @@ CPMAddPackage("gh:yalibs/yasetwrappers@1.0.1")
 CPMAddPackage("gh:yalibs/yapermutation@1.1.3")
 
 CPMAddPackage("gh:bfgroup/lyra#1.6.1")
-CPMAddPackage("gh:gabime/spdlog@1.14.1")
+CPMAddPackage("gh:gabime/spdlog@1.15.0")
 CPMAddPackage("gh:nlohmann/json@3.11.3")
-CPMAddPackage("gh:neargye/magic_enum@0.9.5")
+CPMAddPackage("gh:neargye/magic_enum@0.9.7")
 
 CPMAddPackage("gh:cpm-cmake/CPMLicenses.cmake@0.0.7")
 cpm_licenses_create_disclaimer_target(write_licenses "${CMAKE_BINARY_DIR}/third_party.txt" "${CPM_PACKAGES}")
