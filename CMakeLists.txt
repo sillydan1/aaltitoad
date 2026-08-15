@@ -49,7 +49,7 @@ CPMAddPackage("gh:yalibs/yauuid@1.0.2")
 CPMAddPackage("gh:yalibs/yasetwrappers@1.0.1")
 CPMAddPackage("gh:yalibs/yapermutation@1.1.3")
 
-CPMAddPackage("gh:bfgroup/lyra#1.6.1")
+CPMAddPackage("gh:bfgroup/lyra#1.8.0")
 CPMAddPackage("gh:gabime/spdlog@1.15.0")
 CPMAddPackage("gh:nlohmann/json@3.11.3")
 CPMAddPackage("gh:neargye/magic_enum@0.9.7")
