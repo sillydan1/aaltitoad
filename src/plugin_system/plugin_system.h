@@ -17,9 +17,13 @@
  */
 #ifndef AALTITOAD_PLUGIN_SYSTEM_H
 #define AALTITOAD_PLUGIN_SYSTEM_H
+#include "parser.h"
 #include <dlfcn.h>
 #include <ntta/tta.h>
 
+// TODO: What if a plugin wants to provide multiple tockers? - plugins should provide a tocker factory...
+//       You could also define a plugin interface instead of this function mess.
+//
 //// ===== aaltitoad plugin system =====
 //// must implement the following extern
 //// C function symbols:
@@ -29,14 +33,15 @@
 //// Depending on the type, the plugin
 //// should also implement:
 ////   - tockers:
-////     - tocker_t* create_tocker(const std::string&, const ntta_t&)
+////     - tocker_t* create_tocker(const std::string& name, const ntta_t& ntta_ref)
 ////   - parsers:
-////     - ntta_t* load(const std::vector<std::string>&, const std::vector<std::string>&)
+////     - aaltitoad::plugin::parser* create_parser()
 ////
 enum class plugin_type : unsigned int {
     tocker = 0,
     parser
 };
+
 inline const char* plugin_type_name(const plugin_type& t) {
     switch (t) {
         case plugin_type::tocker: return "tocker";
@@ -44,12 +49,14 @@ inline const char* plugin_type_name(const plugin_type& t) {
         default: return "unknown/unsupported";
     }
 }
+
 using get_plugin_name_t = const char*(*)();
 using get_plugin_version_t = const char*(*)();
 using get_plugin_type_t = unsigned int(*)();
 using tocker_ctor_t = aaltitoad::tocker_t*(*)(const std::string&, const aaltitoad::ntta_t&);
-using parser_func_t = aaltitoad::ntta_t*(*)(const std::vector<std::string>&, const std::vector<std::string>&);
-using plugin_function_t = std::variant<tocker_ctor_t, parser_func_t>;
+using parser_ctor_t = aaltitoad::plugin::parser*(*)();
+using plugin_function_t = std::variant<tocker_ctor_t, parser_ctor_t>;
+
 struct plugin_t {
     plugin_type type;
     std::string version;
@@ -57,10 +64,11 @@ struct plugin_t {
 };
 
 using plugin_map_t = std::map<std::string, plugin_t>;
+
 std::ostream& operator<<(std::ostream&, const plugin_map_t&);
 
 namespace aaltitoad::plugins {
-    plugin_map_t load(const std::vector<std::string> &search_directories);
+    plugin_map_t load(const std::vector<std::string>& plugin_dirs);
 }
 
 #endif //AALTITOAD_PLUGIN_SYSTEM_H

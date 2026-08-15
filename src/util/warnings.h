@@ -17,6 +17,8 @@
  */
 #ifndef AALTITOAD_WARNINGS_H
 #define AALTITOAD_WARNINGS_H
+#include "lsp.pb.h"
+#include "plugin_system/parser.h"
 #include <unordered_map>
 #include <string>
 #include <vector>
@@ -38,6 +40,9 @@ namespace aaltitoad {
         static auto descriptions() -> std::unordered_map<w_t, std::string>;
         static void warn(const w_t& warning, const std::string& msg);
         static void warn(const w_t& warning, const std::string& msg, const std::vector<std::string>& extra_info_lines);
+
+        static void print_diagnostic(const Diagnostic& diagnostic);
+        static void print_warnings(const plugin::parse_result& parse_result);
     };
 }
 

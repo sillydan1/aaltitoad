@@ -19,7 +19,6 @@
 #include <nlohmann/json.hpp>
 #include <variant>
 #include "expr-wrappers/ctl-interpreter.h"
-#include "expr-wrappers/interpreter.h"
 #include "query_json_loader.h"
 #include "symbol_table.h"
 #include "util/warnings.h"
@@ -32,12 +31,12 @@ namespace aaltitoad {
             std::ifstream f(json_file);
             auto data = nlohmann::json::parse(f);
             for(auto& q : data) {
-                spdlog::trace("compiling query {0}", q["query"]);
+                spdlog::trace("compiling query {0}", std::string{q["query"]});
                 auto query = c.compile(q["query"]);
                 std::stringstream ss{}; ss << query;
                 spdlog::trace("resulting tree: {0}", ss.str());
                 if(!aaltitoad::is_query_searchable(query))
-                    warnings::warn(unsupported_query, std::string(q["query"])+" is not supported by aaltitoad - ignoring");
+                    warnings::warn(unsupported_query, std::string{q["query"]}+" is not supported by aaltitoad - ignoring");
                 else
                     result.emplace_back(std::move(query));
             }

@@ -31,8 +31,10 @@
 *.out
 *.app
 
-# Jetbrains IDE and common build folders
+# IDE and common build folders
 .idea/
+.run/
+.vscode/
 cmake-build-*/
 build/
 bin/
@@ -45,4 +47,8 @@ compile_commands.json
 Debug/
 Release/
 .cache/
+\*cmake-tools\*
+out
 
+# Assorted things
+PROGRESS.md

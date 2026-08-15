@@ -1,71 +1,120 @@
-.TH verifier 1 2022-09-23 "version v1.0.0" AALTITOAD
+.de AR
+.B \\$1
+.I \\$2
+..
+.de OP
+[
+.B \\$1
+.I \\$2
+\\$3
+]
+..
+.de op
+.TP
+.BR \\$1 ", " \\$2 " " \fI\\$3
+..
+.TH aaltitoad-verifier 1 2024-06-04 "version v1.2.2" AALTITOAD
 
-.SH NAME
-verifier \- tick tock automata model checker
+.SH
+NAME
+aaltitoad-verifier - tick tock automata model checker
 
-.SH SYNOPSIS
-.B verifier
-\fB\-f\fI path\fR
-[\fB\-h\fR]
-[\fB\-V\fR]
-[\fB\-v\fI level\fR]
-[\fB\-i\fI regex\fR]
-[\fB\-p\fI name\fR]+
-[\fB\-q\fI file\fR]
-[\fB\-Q\fI query\fR]+
-[\fB\-P\fI path\fR]+
-[\fB\-L\fR]
-[\fB\-w\fI name\fR]+
-[\fB\-W\fR]
-[\fB\-m\fR]
+.SH
+SYNOPSIS
+.B aaltitoad-verifier
+.AR -f path
+.OP -h
+.OP -V
+.OP -v level
+.OP -i regex
+.OP -p name +
+.OP -q file
+.OP -Q query +
+.OP -P path +
+.OP -L
+.OP -w name +
+.OP -W
+.OP -m
 
-.SH DESCRIPTION
+.SH
+DESCRIPTION
 This program can load networks of tick tock automata (see tta(7))
 and computation tree logic (CTL) based queries, and check if the
 provided queries are satisfied and/or reachable.
 
 .SH OPTIONS
-.TP
-.BR \-f ", " \-\-input " " \fIpath
+.op -f --input path
 (required) add a TTA model path to parse.
-.TP
-.BR \-h ", " \-\-help
+
+.op -h --help
 show help message and exit.
-.TP
-.BR \-V ", " \-\-version
+
+.op -V --version
 show version number and exit.
-.TP
-.BR \-v ", " \-\-verbosity " " \fIlevel
-set verbosity to \fIlevel\fR (6 for max verbosity). This can not mute stdout output.
-.TP
-.BR \-i ", " \-\-ignore " " \fIregex
-add GNU style \fIregex\fR of filename(s) to ignore during parse step. e.g. ".*\\.txt" to ignore all txt files.
-.TP
-.BR \-p ", " \-\-parser " " \fIname
-select which parser \fIname\fR to use during parsing. If you're unsure what parsers are available, you can use \fB\-L\fR to list what parsers can be found.
-.TP
-.BR \-q ", " \-\-query\-file " " \fIfile
-add \fIfile\fR containing queries to include in the model checking.
-.TP
-.BR \-Q ", " \-\-query " " \fIquery
-add \fIquery\fR computation tree logic (ctl) to include in the model checking.
-.TP
-.BR \-P ", " \-\-plugin\-dir " " \fIpath
-add \fIpath\fR to look for plugin files in.
-.TP
-.BR \-L ", " \-\-list\-plugins
+
+.op -v --verbosity level
+set verbosity to
+.I
+level
+(6 for max verbosity). This can not mute stdout output.
+
+.op -i --ignore regex
+add GNU style 
+.I
+regex
+of filename(s) to ignore during parse step. e.g. ".*\\.txt" to ignore all txt files.
+
+.op -p --parser name
+select which parser 
+.I
+name
+to use during parsing. If you're unsure what parsers are available, you can use 
+.B
+-L
+to list what parsers can be found.
+
+.op -q --query-file file
+add 
+.I
+file
+containing queries to include in the model checking.
+
+.op -Q --query query
+add 
+.I
+query
+computation tree logic (ctl) to include in the model checking.
+
+.op -P --plugin-dir path
+add 
+.I
+path
+to look for plugin files in.
+
+.op L --list-plugins
 list all valid plugins that can be found in the provided path(s).
-.TP
-.BR \-w ", " \-\-disable\-warn " " \fIname
-disable warnings of type \fIname\fR. You can list disable-able warnings with \fB\-W\fR.
-.TP
-.BR \-W ", " \-\-list\-warn
-list all warnings available. All warnings are enabled by default \- you can disable them individually with \fB\-w\fR or all of them with \fB\-m\fR.
-.TP
-.BR \-m ", " \-\-no\-warn
+
+.op -w --disable-warn name
+disable warnings of type 
+.I
+name
+. You can list disable-able warnings with 
+.B
+-W
+
+.op -W --list-warn
+list all warnings available. All warnings are enabled by default - you can disable them individually with
+.B
+-w
+or all of them with
+.B
+-m
+
+.op -m --no-warn
 disable all warnings.
 
-.SH PLUGINS
+.SH
+PLUGINS
 A plugin is a dynamically linked library (\fB*.so\fR, \fB*.dll\fR, or \fB*.dylib\fR files) that provide the symbols:
 .B const char* get_plugin_name() \fR,
 .B const char* get_plugin_version() \fRand
@@ -81,7 +130,7 @@ The \fBntta_t\fR and \fBtocker_t\fR types are be available in the \fIplugin_syst
 Asger Gitz\-Johansen <asger.gitz@hotmail.com>.
 
 .SH COPYRIGHT
-            Copyright (C) 2022  Asger Gitz-Johansen
+            Copyright (C) 2024  Asger Gitz-Johansen
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

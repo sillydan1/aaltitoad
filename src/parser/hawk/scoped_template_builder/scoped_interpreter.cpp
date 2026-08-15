@@ -15,13 +15,12 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "scoped_interpreter.h"
 #include "driver/evaluator.h"
 #include "expr-wrappers/interpreter.h"
 #include "expr-wrappers/parameterized-ast-factory.h"
-#include "expr-wrappers/parameterized-expr-evaluator.h"
 #include "language-builder.h"
 #include "operations/symbol-operator.h"
+#include "scoped_interpreter.h"
 #include "symbol_table.h"
 #include <utility>
 #include <vector>

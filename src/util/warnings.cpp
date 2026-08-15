@@ -16,7 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "warnings.h"
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 
 namespace aaltitoad {
     static bool default_value = false;
@@ -47,6 +47,7 @@ namespace aaltitoad {
             {w_t::overlap_idem, "warnings about overlapping non-idempotent symbol table changes"},
             {w_t::plugin_load_failed, "warnings about plugins failing to load"},
             {w_t::unsupported_query, "warnings about unsupported CTL query formats"},
+            {w_t::parser_warning, "warnings from the model parsing step"},
         };
     }
 
@@ -66,5 +67,39 @@ namespace aaltitoad {
             sep = "\n";
         }
         warn(warning, ss.str());
+    }
+
+    void warnings::print_diagnostic(const Diagnostic& diagnostic) {
+        std::stringstream ss{};
+        std::string sep = "";
+        for(auto& elem : diagnostic.affectedelements()) {
+            ss << sep << elem;
+            sep = ",";
+        }
+        switch(diagnostic.severity()) {
+            case SEVERITY_HINT:
+                spdlog::trace("[{1}]: [{0}]\n{2}", ss.str(), diagnostic.title(), diagnostic.description());
+                break;
+            case SEVERITY_INFO:
+                spdlog::info("[{1}]: [{0}]\n{2}", ss.str(), diagnostic.title(), diagnostic.description());
+                break;
+            case SEVERITY_WARNING:
+                spdlog::warn("[{1}]: [{0}]\n{2}", ss.str(), diagnostic.title(), diagnostic.description());
+                break;
+            case SEVERITY_ERROR:
+                spdlog::error("[{1}]: [{0}]\n{2}", ss.str(), diagnostic.title(), diagnostic.description());
+                break;
+            default:
+                break;
+        }
+    }
+
+    void warnings::print_warnings(const plugin::parse_result& parse_result) {
+        if(parse_result.has_value())
+            for(auto& d : parse_result.value().diagnostics)
+                print_diagnostic(d);
+        else
+            for(auto& d : parse_result.error().diagnostics)
+                print_diagnostic(d);
     }
 }
