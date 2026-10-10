@@ -359,9 +359,10 @@ namespace aaltitoad::debugger {
                 breakpoint.held = holds(breakpoint, breakpoint.definition.instance);
     }
 
-    auto runtime::state() -> nlohmann::json {
-        if(!state_id_) {
+    auto runtime::state(bool live) -> nlohmann::json {
+        if(!state_id_)
             state_id_ = "s" + std::to_string(next_state_++);
+        if(!live && !history_.contains(state_id_.value())) {
             history_[state_id_.value()] = take_snapshot();
             history_order_.push_back(state_id_.value());
             while(history_order_.size() > arguments_.history) {

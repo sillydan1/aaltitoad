@@ -114,8 +114,9 @@ namespace aaltitoad::debugger {
         // Replace the breakpoints. Hits are counted from the moment a breakpoint was set: breakpoints that stay the same
         // keep their hits.
         auto set_breakpoints(const std::vector<breakpoint_t>& breakpoints) -> std::vector<breakpoint_status_t>;
-        // The current state (the json of the debug protocol). Reporting a state makes it restorable.
-        auto state() -> nlohmann::json;
+        // The current state (the json of the debug protocol). Reporting a state makes it restorable, unless it is a live
+        // state (reported while the runtime runs, many times a second), which the history does not keep.
+        auto state(bool live = false) -> nlohmann::json;
         // Take a step: the choice of the current state with the id, or (std::nullopt) a choice of the policy. Throws
         // request_error (invalid_params) if there is no such choice. Returns how the step ended: step, breakpoint, stuck
         // (no step is possible) or error (the state did not change).
