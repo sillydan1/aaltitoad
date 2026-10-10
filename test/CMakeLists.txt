@@ -18,7 +18,7 @@ project(aaltitoad_tests)
 option(COVERAGE_ENABLE OFF)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 include(../cmake/CPM.cmake)
-CPMAddPackage("gh:catchorg/Catch2@3.0.0-preview4")
+CPMAddPackage("gh:catchorg/Catch2@3.5.4")
 find_package(Catch2 3 REQUIRED)
 add_compile_definitions(AALTITOAD_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
 add_executable(${PROJECT_NAME}
