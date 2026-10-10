@@ -412,6 +412,21 @@ namespace aaltitoad::debugger {
         }
         if(all.size() < 2)
             common.clear();
+        // NOTE: choices whose labels are the same (e.g. edges to locations without nicknames) are told apart by the
+        //       guards of their edges, or else by their ids
+        std::vector<std::string> labels{};
+        for(std::size_t i = 0; i < all.size() && i < max_choices; i++)
+            labels.push_back(label(all[i], common));
+        auto make_unique = [&labels](const std::function<std::string(std::size_t)>& relabel) {
+            std::map<std::string, int> count{};
+            for(auto& l : labels)
+                count[l]++;
+            for(std::size_t i = 0; i < labels.size(); i++)
+                if(count.at(labels[i]) > 1)
+                    labels[i] = relabel(i);
+        };
+        make_unique([this, &all, &common](std::size_t i) { return label(all[i], common, true); });
+        make_unique([&labels](std::size_t i) { return labels[i] + " (c" + std::to_string(i) + ")"; });
         auto choices_json = nlohmann::json::array();
         for(std::size_t i = 0; i < all.size() && i < max_choices; i++) {
             auto elements = nlohmann::json::array();
@@ -425,7 +440,7 @@ namespace aaltitoad::debugger {
                 for(auto& element : edge->edge.elements)
                     ids.push_back(element);
             }
-            choices_json.push_back({{"id", "c" + std::to_string(i)}, {"label", label(all[i], common)}, {"kind", "step"}, {"elements", elements}});
+            choices_json.push_back({{"id", "c" + std::to_string(i)}, {"label", labels[i]}, {"kind", "step"}, {"elements", elements}});
         }
         return {{"id", state_id_.value()}, {"message", message}, {"instances", instances}, {"variables", variables},
                 {"choices", choices_json}};
@@ -649,7 +664,12 @@ namespace aaltitoad::debugger {
         }
     }
 
-    auto runtime::label(const ntta_t::state_change_t& change, const std::set<const graphedit::instance_edge_t*>& common) const -> std::string {
+    auto runtime::label(const ntta_t::state_change_t& change, const std::set<const graphedit::instance_edge_t*>& common,
+                        bool detailed) const -> std::string {
+        constexpr std::size_t max_expression = 40;
+        auto shortened = [](const std::string& text) {
+            return text.size() <= max_expression ? text : text.substr(0, max_expression - 3) + "...";
+        };
         auto short_name = [this](const std::string& model, const std::string& location) -> std::string {
             const auto* found = network_.models.at(model).find_location(location);
             if(found == nullptr)
@@ -666,11 +686,16 @@ namespace aaltitoad::debugger {
                 omitted++;
                 continue;
             }
-            parts.push_back(edge->instance + ": " + short_name(edge->model, edge->edge.source) + " \u2192 " +
-                            short_name(edge->model, edge->edge.target));
+            auto part = edge->instance + ": " + short_name(edge->model, edge->edge.source) + " \u2192 " +
+                        short_name(edge->model, edge->edge.target);
+            if(detailed && !edge->edge.guard.empty())
+                part += " if " + shortened(edge->edge.guard);
+            else if(detailed && !edge->edge.update.empty())
+                part += " do " + shortened(edge->edge.update);
+            parts.push_back(part);
         }
         if(parts.empty())
-            return omitted > 0 ? label(change) : "tick";
+            return omitted > 0 ? label(change, {}, detailed) : "tick";
         std::string result{};
         for(std::size_t i = 0; i < parts.size() && i < max_label_edges; i++)
             result += (i == 0 ? "" : ", ") + parts[i];

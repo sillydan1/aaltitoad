@@ -186,8 +186,10 @@ namespace aaltitoad::debugger {
         auto element_hit(const active_breakpoint_t& breakpoint, const graphedit::instance_t& instance,
                          const step_effect_t& effect) const -> std::optional<std::string>;
         auto location_name(const std::string& model, const std::string& location) const -> std::string;
-        // A label for a step: the edges that it takes, leaving out those that every choice of the state takes (common)
-        auto label(const ntta_t::state_change_t& change, const std::set<const graphedit::instance_edge_t*>& common = {}) const -> std::string;
+        // A label for a step: the edges that it takes, leaving out those that every choice of the state takes (common),
+        // with their guards (or updates) if detailed
+        auto label(const ntta_t::state_change_t& change, const std::set<const graphedit::instance_edge_t*>& common = {},
+                   bool detailed = false) const -> std::string;
         // The edges of a step, ordered by their instances (parents before the instances that they instantiate)
         auto edges_of(const ntta_t::state_change_t& change) const -> std::vector<const graphedit::instance_edge_t*>;
         auto variable_of(const std::string& symbol) const -> variable_name_t;
