@@ -64,10 +64,11 @@ namespace aaltitoad {
         location_t::graph_key_t initial_location;
         graph_node_iterator_t current_location;
 
-        tta_t() : graph{}, initial_location{}, current_location{graph->nodes.end()} {}
+        // NOTE: a tta without a graph has no current location (a singular iterator)
+        tta_t() : graph{}, initial_location{}, current_location{decltype(graph_t::nodes)::iterator{}} {}
         tta_t(std::shared_ptr<graph_t> graph, location_t::graph_key_t initial_location)
-                : initial_location{std::move(initial_location)},
-                  current_location{graph->nodes.end()}, graph{std::move(graph)}
+                : graph{std::move(graph)}, initial_location{std::move(initial_location)},
+                  current_location{this->graph->nodes.end()}
         {
             auto it = this->graph->nodes.find(this->initial_location);
             if(it == this->graph->nodes.end())
