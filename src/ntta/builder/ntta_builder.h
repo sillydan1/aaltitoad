@@ -27,6 +27,8 @@ namespace aaltitoad {
         struct edge_construction_element {
             std::string source, target;
             std::optional<std::string> guard, update;
+            // identifies the edge in the network (edges without one get a generated identifier)
+            std::optional<std::string> identifier{};
         };
         explicit tta_builder(expression_driver* expression_compiler);
         auto set_name(const std::string& name) -> tta_builder&;

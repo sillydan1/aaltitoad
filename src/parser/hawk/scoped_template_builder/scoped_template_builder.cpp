@@ -140,19 +140,30 @@ namespace aaltitoad::hawk {
             builder.add_locations(locations);
             builder.set_starting_location(instance_template.initial_location.id);
 
-            // Add edges
-            call_func_aggregate_errors(instance_template.edges, [&builder](auto& edge){
+            // Add edges, identified by the instance and their ids (which must be unique in the template)
+            scoped_instance_t built{.name=scoped_name, .instance=instance, .parent=parent_name, .local_identifiers=locals,
+                                    .parameters=interpreter.get_parameters(), .edge_identifiers={}};
+            std::unordered_map<std::string, int> edge_id_count{};
+            for(auto& edge : instance_template.edges)
+                edge_id_count[edge.id]++;
+            call_func_aggregate_errors(instance_template.edges, [&builder, &built, &edge_id_count, &scoped_name](auto& edge){
                 std::optional<std::string> guard{};
                 if(!trim_copy(edge.guard).empty())
                     guard = edge.guard;
                 std::optional<std::string> update{};
                 if(!trim_copy(edge.update).empty())
                     update = edge.update;
-                builder.add_edge({.source=edge.source, .target=edge.target, .guard=guard, .update=update});
+                std::optional<std::string> identifier{};
+                if(!edge.id.empty() && edge_id_count.at(edge.id) == 1) {
+                    identifier = scoped_name + "." + edge.id;
+                    built.edge_identifiers[edge.id] = identifier.value();
+                }
+                builder.add_edge({.source=edge.source, .target=edge.target, .guard=guard, .update=update, .identifier=identifier});
             });
 
             // Add the tta to the network
             network_builder.add_tta(builder);
+            built_instances.push_back(std::move(built));
 
         } catch (std::exception& e) {
             spdlog::error("instantiating '{0}': {1}", scoped_name, e.what());
@@ -170,6 +181,7 @@ namespace aaltitoad::hawk {
                                 .invocation=main_it->first};
         spdlog::trace("building ntta from main component: '{0}'", main_it->second.name);
         local_identifiers.clear();
+        built_instances.clear();
         ntta_builder builder{};
         for(auto& decl : global_symbol_declarations)
             external_symbols += expression_driver{}.parse(decl).get_symbol_table();
@@ -178,6 +190,10 @@ namespace aaltitoad::hawk {
         builder.add_symbols(internal_symbols);
         builder.add_external_symbols(external_symbols);
         return builder.build_heap();
+    }
+
+    auto scoped_template_builder::get_instances() const -> const std::vector<scoped_instance_t>& {
+        return built_instances;
     }
 
     auto scoped_template_builder::generate_dependency_graph() -> ya::graph<std::string,std::string,std::string> {

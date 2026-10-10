@@ -24,6 +24,24 @@
 #include <ntta/builder/ntta_builder.h>
 
 namespace aaltitoad::hawk {
+    // An instance of a template in a network that a scoped_template_builder built
+    struct scoped_instance_t {
+        // the scoped name of the instance, which is the name of its tta in the network (e.g. "Main.lamp(1)")
+        std::string name;
+        // what instantiated it (the main template is an instance of itself)
+        model::tta_instance_t instance;
+        // the scoped name of the instance that instantiated it (empty for the main template)
+        std::string parent;
+        // the private identifiers of the instance as the template declares them (their symbols are named
+        // "<name>.<identifier>")
+        std::vector<std::string> local_identifiers;
+        // the parameters of the template, with their arguments
+        expr::symbol_table_t parameters;
+        // the ids of the edges of the template -> the identifiers of their edges in the network ("<name>.<id>"). Edges
+        // without an id, or with the id of another edge of the template, get generated identifiers and are not listed
+        std::unordered_map<std::string, std::string> edge_identifiers;
+    };
+
     class scoped_template_builder {
         std::unordered_map<std::string, model::tta_template> templates{};
         std::vector<std::string> global_symbol_declarations{};
@@ -33,11 +51,14 @@ namespace aaltitoad::hawk {
         std::regex arg_split{R"([\""].*[\""]|[^,]+)"};
         // scoped name -> the private identifiers of the instance
         std::unordered_map<std::string, std::vector<std::string>> local_identifiers{};
+        std::vector<scoped_instance_t> built_instances{};
     public:
         auto add_template(const model::tta_template& t) -> scoped_template_builder&;
         auto add_global_symbols(const std::vector<model::part_t>& parts) -> scoped_template_builder&;
         auto add_global_symbols(const std::string& d) -> scoped_template_builder&;
         auto build_heap() -> ntta_t*;
+        // The instances of the network that build_heap built (in no particular order)
+        auto get_instances() const -> const std::vector<scoped_instance_t>&;
     private:
         auto construct_interpreter_from_scope(const model::tta_instance_t& instance, const std::string& scoped_name) -> scoped_interpreter;
         void parse_declarations_recursively(const model::tta_instance_t& instance, const std::string& parent_name);

@@ -47,7 +47,10 @@ namespace aaltitoad {
         return *this;
     }
     auto tta_builder::add_edge(const edge_construction_element& e) -> tta_builder& {
-        factory.add_edge(e.source, e.target, {.guard=compile_guard(e.guard), .updates=compile_update(e.update)});
+        edge_t edge{.guard=compile_guard(e.guard), .updates=compile_update(e.update)};
+        if(e.identifier.has_value())
+            edge.identifier = e.identifier.value();
+        factory.add_edge(e.source, e.target, edge);
         return *this;
     }
     auto tta_builder::add_edges(const std::vector<edge_construction_element>& es) -> tta_builder& {
