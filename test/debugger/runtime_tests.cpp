@@ -352,6 +352,28 @@ SCENARIO("debugging a network of graphedit models", "[debugger]") {
             REQUIRE(r.state().at("choices").at(0).at("label") == "Main: b \u2192 a, Main.t(1): y \u2192 x, Main.t(2): y \u2192 x and 2 more");
         }
     }
+    GIVEN("choices that lead to locations without nicknames") {
+        auto main = model_builder{"main.json", "Main", true}
+                .declarations("public int n := 0")
+                .location("a", "a", "initial").location("x", "").location("y", "").location("z", "").location("end", "", "final")
+                .edge("ax", "a", "x", "n >= 0", "").edge("ay", "a", "y", "n < 100", "")
+                .edge("az1", "a", "z", "", "n := 1").edge("az2", "a", "z", "", "n := 1");
+        runtime r{aaltitoad::graphedit::build_network({{"main.json", main.model()}}), {}};
+        THEN("their labels name the guards or updates of their edges, or else their ids") {
+            std::set<std::string> labels{};
+            auto state = r.state();
+            INFO(state.at("message").get<std::string>());
+            for(auto& choice : state.at("choices"))
+                labels.insert(choice.at("label").get<std::string>());
+            REQUIRE(labels.size() == 4);
+            REQUIRE(labels.contains("Main: a \u2192 location if n >= 0"));
+            REQUIRE(labels.contains("Main: a \u2192 location if n < 100"));
+            auto by_id = std::count_if(labels.begin(), labels.end(), [](const std::string& l) {
+                return l.starts_with("Main: a \u2192 location do n := 1 (c");
+            });
+            REQUIRE(by_id == 2);
+        }
+    }
     GIVEN("a guard that is not boolean") {
         auto main = model_builder{"main.json", "Main", true}
                 .declarations("public int count := 0")
