@@ -26,6 +26,7 @@ namespace aaltitoad {
     auto ntta_t::state_change_t::operator+=(const choice_t& v) -> state_change_t & {
         location_changes.push_back(v.location_change);
         symbol_changes += v.symbol_changes;
+        edges.push_back(v.edge->first.identifier);
         return *this;
     }
 

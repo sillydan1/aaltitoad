@@ -55,6 +55,13 @@ namespace {
         builder.add_global_symbols("button.1 := true; button.2 := false");
         return std::unique_ptr<aaltitoad::ntta_t>{builder.build_heap()};
     }
+
+    auto edge_identifiers(const aaltitoad::tta_t& tta) -> std::set<std::string> {
+        std::set<std::string> result{};
+        for(auto& edge : tta.graph->edges)
+            result.insert(edge.first.identifier);
+        return result;
+    }
 }
 
 SCENARIO("building networks of scoped templates", "[scoped_template_builder]") {
@@ -74,6 +81,48 @@ SCENARIO("building networks of scoped templates", "[scoped_template_builder]") {
             REQUIRE(std::get<bool>(n->symbols.at("Main.lamp(1).on")));
             REQUIRE_FALSE(std::get<bool>(n->symbols.at("Main.lamp(2).on")));
             REQUIRE(std::get<int>(n->symbols.at("count")) == 1);
+        }
+        THEN("edges are identified by their instance and their id") {
+            REQUIRE(edge_identifiers(n->components.at("Main")) == std::set<std::string>{"Main.e1"});
+            REQUIRE(edge_identifiers(n->components.at("Main.lamp(1)")) ==
+                    std::set<std::string>{"Main.lamp(1).e1", "Main.lamp(1).e2"});
+        }
+        THEN("state changes tell which edges they take") {
+            auto changes = n->tick();
+            REQUIRE(changes.size() == 1);
+            auto edges = std::set<std::string>{changes[0].edges.begin(), changes[0].edges.end()};
+            REQUIRE(edges == std::set<std::string>{"Main.e1", "Main.lamp(1).e1"});
+        }
+        THEN("the instances are reported with their scopes") {
+            const auto& instances = builder.get_instances();
+            REQUIRE(instances.size() == 3);
+            auto lamp = std::find_if(instances.begin(), instances.end(),
+                                     [](const auto& i){ return i.name == "Main.lamp(2)"; });
+            REQUIRE(lamp != instances.end());
+            REQUIRE(lamp->instance.id == "i2");
+            REQUIRE(lamp->instance.tta_template_name == "Light(id)");
+            REQUIRE(lamp->parent == "Main");
+            REQUIRE(lamp->local_identifiers == std::vector<std::string>{"on"});
+            REQUIRE(std::get<int>(lamp->parameters.at("id")) == 2);
+            REQUIRE(lamp->edge_identifiers.at("e2") == "Main.lamp(2).e2");
+            auto main = std::find_if(instances.begin(), instances.end(),
+                                     [](const auto& i){ return i.name == "Main"; });
+            REQUIRE(main != instances.end());
+            REQUIRE(main->parent.empty());
+        }
+    }
+    GIVEN("a template whose edges have no ids, or the same id") {
+        auto light = light_template();
+        light.edges[0].id = "";
+        light.edges[1].id = "";
+        scoped_template_builder builder{};
+        builder.add_template(main_template()).add_template(light);
+        builder.add_global_symbols("button.1 := true; button.2 := false");
+        std::unique_ptr<aaltitoad::ntta_t> n{builder.build_heap()};
+        THEN("the edges get identifiers of their own") {
+            auto identifiers = edge_identifiers(n->components.at("Main.lamp(1)"));
+            REQUIRE(identifiers.size() == 2);
+            REQUIRE_FALSE(identifiers.contains("Main.lamp(1)."));
         }
     }
     GIVEN("a guard that is not an expression") {

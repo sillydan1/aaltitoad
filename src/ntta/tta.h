@@ -96,6 +96,8 @@ namespace aaltitoad {
         struct state_change_t {
             std::vector<location_change_t> location_changes;
             expr::symbol_table_t symbol_changes;
+            // the identifiers of the edges that the change takes
+            std::vector<std::string> edges{};
             auto operator+=(const choice_t&) -> state_change_t&;
         };
 
