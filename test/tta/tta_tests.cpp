@@ -335,3 +335,23 @@ SCENARIO("ticking result in maximal behavior (no tockers registered)", "[tick-ma
         }
     }
 }
+
+SCENARIO("constructing TTAs", "[tta_t-construction]") {
+    auto factory = aaltitoad::tta_t::graph_builder{};
+    factory.add_nodes({{"L0"},{"L1"}});
+    THEN("a tta starts in its initial location") {
+        aaltitoad::tta_t tta{std::move(factory.build_heap()), "L1"};
+        REQUIRE(tta.current_location->first == "L1");
+        REQUIRE(tta.initial_location == "L1");
+    }
+    THEN("the initial location must be a location of the graph") {
+        REQUIRE_THROWS_AS((aaltitoad::tta_t{std::move(factory.build_heap()), "L9"}), std::out_of_range);
+    }
+    THEN("a tta without a graph can be constructed (e.g. by maps of ttas)") {
+        aaltitoad::tta_t tta{};
+        REQUIRE(tta.graph == nullptr);
+        aaltitoad::ntta_t::tta_map_t components{};
+        components["A"] = aaltitoad::tta_t{std::move(factory.build_heap()), "L0"};
+        REQUIRE(components.at("A").current_location->first == "L0");
+    }
+}
