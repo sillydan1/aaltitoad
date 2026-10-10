@@ -31,6 +31,8 @@ namespace aaltitoad::hawk {
         expr::symbol_table_t external_symbols{};
         std::regex param_section{R"(\(.+(,.+)*\))"};
         std::regex arg_split{R"([\""].*[\""]|[^,]+)"};
+        // scoped name -> the private identifiers of the instance
+        std::unordered_map<std::string, std::vector<std::string>> local_identifiers{};
     public:
         auto add_template(const model::tta_template& t) -> scoped_template_builder&;
         auto add_global_symbols(const std::vector<model::part_t>& parts) -> scoped_template_builder&;
