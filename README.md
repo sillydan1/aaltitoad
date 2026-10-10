@@ -76,7 +76,8 @@ mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 ```
-If the CPM step is taking a long time, try rerunning with `-DCPM_SOURCE_CACHE=~/.cache/CPM`
+If the CPM step is taking a long time, try rerunning with `-DCPM_SOURCE_CACHE=~/.cache/CPM`.
+CMake 4 needs `-DCMAKE_POLICY_VERSION_MINIMUM=3.5`, since some of the dependencies still declare older versions of CMake.
 
 ### Test
 To run the unit tests, compile the `aaltitoad_tests` target
@@ -95,10 +96,43 @@ Aaltitoad provides three primary compilation targets. All commandline interfaces
    - use this if you want to analyze your NTTA
  - `simulator`: A runtime command line interface
    - use this if you want to execute your NTTA and link with your custom tockers (see below)
+ - `aaltitoad-ls`: The language server for [graphedit](https://git.gtz.dk/gtz-agent/graphedit-qt)
+   - use this to check and debug NTTA models in graphedit (see [graphedit](#graphedit))
  - `aaltitoad`: A library with all things aaltitoad
    - use this to create your own NTTA-based applications e.g. another verifier, runtime or even compiler
 
 ------
+
+## graphedit
+[graphedit](https://git.gtz.dk/gtz-agent/graphedit-qt) edits NTTA models with the NTTA plugin
+([graphedit-ntta](https://git.gtz.dk/gtz-agent/graphedit-ntta)), and runs `aaltitoad-ls` as the language server of the
+models, speaking the graph language server protocol of graphedit (JSON-RPC on the standard input and output):
+```shell
+AALTITOAD_LANGUAGE_SERVER="aaltitoad-ls" graphedit my-project/
+```
+`aaltitoad-ls` reads the models of the project (the model files, and the open models as they are edited), builds their
+network as aaltitoad would run it, and reports what keeps aaltitoad from running it on the models and their elements
+(the `AALTITOAD-...` diagnostics, see `src/parser/graphedit/problems.h` and the documentation of graphedit-ntta): for
+example guards that it cannot parse, subcomponents that do not match their templates, and variables that are used but
+not declared. Models without vertices declare the variables of the environment (`extern bool button := false`).
+
+It also debugs networks: **Debug > Start Debugging** in graphedit starts a runtime that stops before its first tick.
+When a tick can take several sets of edges, those sets are the choices of the step. Breakpoints go on locations and
+edges, with optional conditions and hit counts. While the runtime is stopped, variables can be changed, instances can be
+put into other locations, and earlier states can be restored. Instances are named after their scope (`Main.lamp(1)`).
+Nails are graphedit syntax for drawing an edge with its guard and update, so a breakpoint on any part of an edge is a
+breakpoint on the whole edge.
+
+The runtime has no tockers: the environment only changes when its variables are changed in the debugger, and clocks and
+timers do not advance by themselves. When no edge is enabled, the runtime stops (`stuck`) until a variable changes. The
+arguments of a debug configuration of graphedit change how it runs:
+
+| Argument  | Meaning                                                                           |
+|-----------|-----------------------------------------------------------------------------------|
+| `policy`  | How the runtime chooses between the choices of a step: `first` (the default) or `random` |
+| `seed`    | The seed of the random choices, so that random runs can be repeated               |
+| `delay`   | Milliseconds between two steps when the runtime runs (default 0: as fast as possible) |
+| `history` | How many states can be restored (default 1000)                                    |
 
 ## Tocker plugins
 Aaltitoad supports third party "tocker" libraries, so you can inject custom integrations directly into the runtime.

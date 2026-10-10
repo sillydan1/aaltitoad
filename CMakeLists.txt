@@ -109,6 +109,8 @@ add_subdirectory(src/cli/simulator)
 add_subdirectory(src/cli/verifier)
 add_subdirectory(src/cli/detcheck)
 add_subdirectory(src/parser)
+add_subdirectory(src/lsp)
+add_subdirectory(src/cli/language-server)
 add_subdirectory(test)
 
 install(TARGETS ${PROJECT_NAME} expr_lang ctl_lang verifier simulator detcheck)

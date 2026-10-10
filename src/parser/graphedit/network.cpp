@@ -351,9 +351,13 @@ namespace aaltitoad::graphedit {
     }
 
     auto parse_expression(const std::string& text) -> parse_result_t {
+        return parse_with([&text](){ return expression_driver{}.parse(text); });
+    }
+
+    auto parse_with(const std::function<expression_driver::language_result()>& parse) -> parse_result_t {
         cerr_capture capture{};
         try {
-            return {expression_driver{}.parse(text), {}};
+            return {parse(), {}};
         } catch(const std::exception& e) {
             auto reported = capture.text();
             auto line = trimmed(reported.substr(0, reported.find('\n')));
