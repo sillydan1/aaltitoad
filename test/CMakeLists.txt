@@ -28,10 +28,16 @@ add_executable(${PROJECT_NAME}
         parser/scoped_template_builder_tests.cpp
         graphedit/ntta_model_tests.cpp
         graphedit/network_tests.cpp
+        debugger/runtime_tests.cpp
+        lsp/project_tests.cpp
+        lsp/language_server_tests.cpp
         verification/forward_reachability_tests.cpp
         algorithms/tarjan_tests.cpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC aaltitoad hawk_parser graphedit_parser Catch2::Catch2WithMain)
+target_link_libraries(${PROJECT_NAME} PUBLIC aaltitoad hawk_parser graphedit_parser aaltitoad_language_server Catch2::Catch2WithMain)
 if(${CODE_COVERAGE})
     target_link_options(${PROJECT_NAME} PUBLIC --coverage)
     target_compile_options(${PROJECT_NAME} PUBLIC --coverage)
 endif()
+# the end-to-end tests run the language server program
+target_compile_definitions(${PROJECT_NAME} PRIVATE AALTITOAD_LS_PROGRAM="$<TARGET_FILE:aaltitoad-ls>")
+add_dependencies(${PROJECT_NAME} aaltitoad-ls)

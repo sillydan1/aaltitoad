@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-// Models of the NTTA syntax of graphedit (https://github.com/sillydan1/graphedit-ntta), as graphedit writes them
+// Models of the NTTA syntax of graphedit (https://git.gtz.dk/gtz-agent/graphedit-ntta), as graphedit writes them
 // (model files of format version 2) and sends them to language servers (buffers). Every model is a template of a tick
 // tock automaton; models without vertices only declare symbols.
 namespace aaltitoad::graphedit {

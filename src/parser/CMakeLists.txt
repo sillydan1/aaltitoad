@@ -27,7 +27,7 @@ if(${CODE_COVERAGE})
 endif()
 install(TARGETS hawk_parser DESTINATION lib)
 
-# reading the NTTA models of graphedit (https://github.com/sillydan1/graphedit-ntta) and building their networks
+# reading the NTTA models of graphedit (https://git.gtz.dk/gtz-agent/graphedit-ntta) and building their networks
 add_library(graphedit_parser STATIC
         graphedit/ntta_model.cpp
         graphedit/network.cpp)

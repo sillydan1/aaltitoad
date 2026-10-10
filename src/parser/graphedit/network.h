@@ -19,6 +19,7 @@
 #define AALTITOAD_GRAPHEDIT_NETWORK_H
 #include "ntta_model.h"
 #include <ntta/tta.h>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -80,6 +81,9 @@ namespace aaltitoad::graphedit {
         std::string error{};
     };
     auto parse_expression(const std::string& text) -> parse_result_t;
+    // Parse with a parser of aaltitoad's expression language (e.g. a scoped compiler), which reports syntax errors on
+    // std::cerr: the result, or what went wrong
+    auto parse_with(const std::function<expression_driver::language_result()>& parse) -> parse_result_t;
 
     // Declarations without the modifiers extern and persistent (which aaltitoad does not know), and whether there were
     // any. String literals are left as they are.

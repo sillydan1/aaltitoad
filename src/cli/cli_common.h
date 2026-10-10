@@ -30,10 +30,10 @@ int print_required_args() {
     return 1;
 }
 
-int print_help(const std::string& program_name, const std::vector<option_t>& options) {
+int print_help(const std::string& program_name, const std::vector<option_t>& options, const std::string& usage = "-f /path/to/tta/dir [OPTIONS]") {
     std::cout << get_license() << std::endl;
     std::cout << PROJECT_NAME << " v" << PROJECT_VER << std::endl;
-    std::cout << "USAGE: " << program_name << " -f /path/to/tta/dir [OPTIONS] \n" << std::endl;
+    std::cout << "USAGE: " << program_name << " " << usage << " \n" << std::endl;
     std::cout << "OPTIONS: " << std::endl;
     print_argument_help(options);
     return 0;
