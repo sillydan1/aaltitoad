@@ -89,6 +89,7 @@ namespace aaltitoad::hawk {
             // FIX: An instantiation cannot have a declaration that references a parent's declaration(s) - which _should_ be a feature of the hawk language, but is considered out of scope for aaltitoad v1.1.0
             auto interpreter = construct_interpreter_from_scope(instance, scoped_name);
             auto decls = interpreter.parse_declarations(instance_template.declarations);
+            local_identifiers[scoped_name] = interpreter.get_local_identifiers();
             if(internal_symbols.is_overlapping(decls))
                 warnings::warn(parser_warning, "double declaration detected");
             internal_symbols += decls;
@@ -115,8 +116,10 @@ namespace aaltitoad::hawk {
                 instantiate_tta_recursively(template_instance, scoped_name, network_builder);
             });
 
+            // NOTE: the private identifiers were found when the declarations of the instance were parsed
             auto interpreter = construct_interpreter_from_scope(instance, scoped_name);
-            scoped_compiler c{interpreter.get_local_identifiers(), interpreter.get_parameters(), scoped_name + ".", {internal_symbols, external_symbols}};
+            auto locals = local_identifiers.contains(scoped_name) ? local_identifiers.at(scoped_name) : std::vector<std::string>{};
+            scoped_compiler c{locals, interpreter.get_parameters(), scoped_name + ".", {internal_symbols, external_symbols}};
             tta_builder builder{&c};
             builder.set_name(scoped_name);
 
@@ -166,6 +169,7 @@ namespace aaltitoad::hawk {
                                 .tta_template_name=main_it->first,
                                 .invocation=main_it->first};
         spdlog::trace("building ntta from main component: '{0}'", main_it->second.name);
+        local_identifiers.clear();
         ntta_builder builder{};
         for(auto& decl : global_symbol_declarations)
             external_symbols += expression_driver{}.parse(decl).get_symbol_table();

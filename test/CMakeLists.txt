@@ -25,6 +25,7 @@ add_executable(${PROJECT_NAME}
         tta/tta_tests.cpp
         tta/tocker_tests.cpp
         verification/parser_tests.cpp
+        parser/scoped_template_builder_tests.cpp
         verification/forward_reachability_tests.cpp
         algorithms/tarjan_tests.cpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC aaltitoad hawk_parser Catch2::Catch2WithMain)
