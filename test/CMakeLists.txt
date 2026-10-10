@@ -26,9 +26,11 @@ add_executable(${PROJECT_NAME}
         tta/tocker_tests.cpp
         verification/parser_tests.cpp
         parser/scoped_template_builder_tests.cpp
+        graphedit/ntta_model_tests.cpp
+        graphedit/network_tests.cpp
         verification/forward_reachability_tests.cpp
         algorithms/tarjan_tests.cpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC aaltitoad hawk_parser Catch2::Catch2WithMain)
+target_link_libraries(${PROJECT_NAME} PUBLIC aaltitoad hawk_parser graphedit_parser Catch2::Catch2WithMain)
 if(${CODE_COVERAGE})
     target_link_options(${PROJECT_NAME} PUBLIC --coverage)
     target_compile_options(${PROJECT_NAME} PUBLIC --coverage)

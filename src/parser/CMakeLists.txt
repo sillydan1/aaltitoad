@@ -26,3 +26,10 @@ if(${CODE_COVERAGE})
     target_compile_options(hawk_parser PUBLIC --coverage)
 endif()
 install(TARGETS hawk_parser DESTINATION lib)
+
+# reading the NTTA models of graphedit (https://github.com/sillydan1/graphedit-ntta) and building their networks
+add_library(graphedit_parser STATIC
+        graphedit/ntta_model.cpp
+        graphedit/network.cpp)
+target_link_libraries(graphedit_parser PUBLIC hawk_parser aaltitoad nlohmann_json::nlohmann_json)
+target_include_directories(graphedit_parser PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
