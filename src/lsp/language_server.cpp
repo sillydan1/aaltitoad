@@ -357,7 +357,7 @@ namespace aaltitoad::lsp {
             report_stop(stop.value());
         } else if(clock::now() - last_live_state_ >= live_state_interval) {
             last_live_state_ = clock::now();
-            notify("debug/stateChanged", {{"state", runtime_->state()}});
+            notify("debug/stateChanged", {{"state", runtime_->state(true)}});
         }
     }
 

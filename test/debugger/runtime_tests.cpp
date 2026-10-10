@@ -282,6 +282,15 @@ SCENARIO("debugging a network of graphedit models", "[debugger]") {
             r.restore(second);
             REQUIRE(variable(r.state(), "count") == 1);
         }
+        THEN("live states are not kept, unless they are reported again") {
+            auto live = r.state(true).at("id").get<std::string>();
+            REQUIRE(live == second);
+            r.step(std::nullopt);
+            auto running = r.state(true).at("id").get<std::string>();
+            REQUIRE_THROWS_AS(r.restore(running), request_error);
+            REQUIRE(r.state().at("id") == running);
+            REQUIRE_NOTHROW(r.restore(running));
+        }
         THEN("only as many as the history holds") {
             r.step(std::nullopt);
             r.state();
