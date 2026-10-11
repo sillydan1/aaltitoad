@@ -1,5 +1,5 @@
 # aaltitoad - a verification engine for tick tock automata models
-#   Copyright (C) 2023 Asger Gitz-Johansen
+#   Copyright (C) 2026 Asger Gitz-Johansen
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
