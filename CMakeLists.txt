@@ -18,7 +18,6 @@ project(aaltitoad VERSION 1.2.1)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CXX_STANDARD_REQUIRED ON)
-set(SPDLOG_BUILD_SHARED)
 set(CONFIG_IN_FILE src/config.h.in)
 # where the plugins (e.g. the hawk parser) are installed, relative to the installation prefix (on windows, next to the
 # programs, which find them there and link with the hawk parser)
@@ -55,7 +54,15 @@ CPMAddPackage("gh:yalibs/yauuid@1.0.1")
 CPMAddPackage("gh:yalibs/yasetwrappers@1.0.0")
 CPMAddPackage("gh:yalibs/yapermutation@1.1.2")
 
-CPMAddPackage("gh:gabime/spdlog@1.15.3")
+# NOTE: with the header-only spdlog, every DLL on windows would have a logger registry of its own (so the programs could
+#       not configure the logging of the libraries, e.g. aaltitoad-ls, which logs to the standard error), so spdlog is a
+#       shared library there (and header-only elsewhere, where the shared libraries share the registry)
+if(WIN32)
+    set(AALTITOAD_SHARED_SPDLOG ON)
+else()
+    set(AALTITOAD_SHARED_SPDLOG OFF)
+endif()
+CPMAddPackage(NAME spdlog VERSION 1.15.3 GITHUB_REPOSITORY gabime/spdlog OPTIONS "SPDLOG_BUILD_SHARED ${AALTITOAD_SHARED_SPDLOG}")
 CPMAddPackage("gh:nlohmann/json@3.11.2")
 CPMAddPackage("gh:neargye/magic_enum@0.9.3")
 
@@ -81,6 +88,9 @@ if(${CODE_COVERAGE})
 endif()
 find_package(Threads REQUIRED)
 target_link_libraries(${PROJECT_NAME} PUBLIC expr_lang ${CMAKE_DL_LIBS} Threads::Threads ctl_lang)
+if(AALTITOAD_SHARED_SPDLOG)
+    target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
+endif()
 target_include_directories(${PROJECT_NAME} PUBLIC
         ${CMAKE_BINARY_DIR}
         ${CMAKE_CURRENT_BINARY_DIR}
