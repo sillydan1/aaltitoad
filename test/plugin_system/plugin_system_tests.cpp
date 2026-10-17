@@ -53,6 +53,19 @@ SCENARIO("loading plugins", "[plugin_system]") {
             }
         }
     }
+    GIVEN("a plugin in a directory that is given twice (with different paths)") {
+        std::filesystem::copy_file(AALTITOAD_HAWK_PARSER_PLUGIN, directory.path / "libhawk_parser.so");
+        WHEN("loading the plugins of the directories") {
+            captured_log_t log{};
+            auto plugins = aaltitoad::plugins::load({directory.path.string(), (directory.path / "." ).string()});
+            THEN("the plugin is loaded once, and nothing is warned about") {
+                REQUIRE(plugins.size() == 1);
+                REQUIRE(plugins.contains("hawk_parser"));
+                INFO(log.text.str());
+                REQUIRE(log.text.str().find("[warning]") == std::string::npos);
+            }
+        }
+    }
     GIVEN("files that are not plugins, although their names contain '.so'") {
         directory.write_text("notes.so.txt", "not a shared library");
         std::filesystem::copy_file(AALTITOAD_NON_PLUGIN_LIBRARY, directory.path / "libnot-a-plugin.so");

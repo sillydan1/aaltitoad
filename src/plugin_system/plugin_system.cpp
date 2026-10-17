@@ -16,6 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <dlfcn.h>
+#include <set>
 #include <util/warnings.h>
 #include "plugin_system.h"
 
@@ -71,9 +72,16 @@ namespace aaltitoad::plugins {
 
     plugin_map_t load(const std::vector<std::string> &search_directories) {
         plugin_map_t loaded_plugins{};
+        // NOTE: a directory can be given several times (e.g. "lib" from the installation prefix, and the plugin
+        //       directory of the installation), and its plugins would then already be loaded
+        std::set<std::filesystem::path> searched{};
         for (auto &directory: search_directories) {
             if (!std::filesystem::exists(directory)) {
                 spdlog::trace("does not exist: {0}", directory);
+                continue;
+            }
+            if (!searched.insert(std::filesystem::canonical(directory)).second) {
+                spdlog::trace("already searched: {0}", directory);
                 continue;
             }
             spdlog::trace("searching for plugins in: {0}", directory);
