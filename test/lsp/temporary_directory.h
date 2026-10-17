@@ -42,7 +42,9 @@ namespace aaltitoad::test {
         void write_text(const std::string& key, const std::string& text) const {
             auto file = path / key;
             std::filesystem::create_directories(file.parent_path());
-            std::ofstream{file} << text;
+            // NOTE: binary, since the messages of the protocol are framed by their lengths in bytes (and windows would
+            //       translate the line endings)
+            std::ofstream{file, std::ios::binary} << text;
         }
         void write(const std::string& key, const nlohmann::json& json) const {
             write_text(key, json.dump(4));
