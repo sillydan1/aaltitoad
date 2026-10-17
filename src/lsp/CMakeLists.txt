@@ -19,6 +19,8 @@ add_library(aaltitoad_language_server STATIC
         json_rpc.cpp
         project.cpp
         language_server.cpp
+        query.cpp
+        search.cpp
         ../debugger/describer.cpp
         ../debugger/runtime.cpp)
 target_link_libraries(aaltitoad_language_server PUBLIC graphedit_parser)

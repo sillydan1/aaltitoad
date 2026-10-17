@@ -97,7 +97,7 @@ Aaltitoad provides three primary compilation targets. All commandline interfaces
  - `simulator`: A runtime command line interface
    - use this if you want to execute your NTTA and link with your custom tockers (see below)
  - `aaltitoad-ls`: The language server for [graphedit](https://git.gtz.dk/gtz-agent/graphedit-qt)
-   - use this to check and debug NTTA models in graphedit (see [graphedit](#graphedit))
+   - use this to check, debug and verify NTTA models in graphedit (see [graphedit](#graphedit))
  - `aaltitoad`: A library with all things aaltitoad
    - use this to create your own NTTA-based applications e.g. another verifier, runtime or even compiler
 
@@ -133,6 +133,23 @@ arguments of a debug configuration of graphedit change how it runs:
 | `seed`    | The seed of the random choices, so that random runs can be repeated               |
 | `delay`   | Milliseconds between two steps when the runtime runs (default 0: as fast as possible) |
 | `history` | How many states can be restored (default 1000)                                    |
+
+It also answers the queries of graphedit (the **Queries** panel, `graphedit-cli verify` and the `verify.*` methods of
+the agent api), in the CTL of the `verifier`:
+
+| Query     | Asks                                                        | Trace                                               |
+|-----------|-------------------------------------------------------------|-----------------------------------------------------|
+| `E F p`   | Can a state in which `p` holds be reached? (also `E<> p`)   | a witness: a shortest run to such a state           |
+| `A G p`   | Does `p` hold in every state that can be reached? (also `A[] p`) | a counterexample: a shortest run to a state where `p` does not hold |
+
+`p` is an expression over the variables of the network (private variables are named after their instance, e.g.
+`Main.lamp(1).on`), or a location id. Locations are also named `<instance>@<location>` in expressions, by their
+nickname or their id: `E F Main.lamp(1)@on && !button.1`. Like the `verifier`, the search takes the ticks of the
+network and the changes of its environment that the interesting tocker finds (values of the external variables that
+make the guards of the current locations hold or not); unlike it, the environment may also stay as it is after a tick.
+The states are searched breadth first, so the traces are as short as possible; a trace is shown in graphedit's debugger,
+with the changes of the environment as steps of the kind input. The option `maxStates` of a query (default 100000)
+bounds the search: a query whose answer needs more states is answered unknown.
 
 ## Tocker plugins
 Aaltitoad supports third party "tocker" libraries, so you can inject custom integrations directly into the runtime.
