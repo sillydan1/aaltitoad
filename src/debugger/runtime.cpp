@@ -30,36 +30,6 @@ namespace aaltitoad::debugger {
             return value;
         }
 
-        auto type_of(const expr::symbol_value_t& value) -> std::string {
-            const auto& v = base(value);
-            if(std::holds_alternative<int>(v))
-                return "int";
-            if(std::holds_alternative<float>(v))
-                return "float";
-            if(std::holds_alternative<bool>(v))
-                return "bool";
-            if(std::holds_alternative<std::string>(v))
-                return "string";
-            return "clock";
-        }
-
-        auto value_to_json(const expr::symbol_value_t& value) -> nlohmann::json {
-            const auto& v = base(value);
-            if(const auto* i = std::get_if<int>(&v))
-                return *i;
-            if(const auto* f = std::get_if<float>(&v)) {
-                // NOTE: the shortest text that is the float (0.1f is 0.1, not 0.10000000149011612)
-                char buffer[64]{};
-                auto [end, error] = std::to_chars(buffer, buffer + sizeof(buffer), *f);
-                return error == std::errc{} ? std::stod(std::string{buffer, end}) : static_cast<double>(*f);
-            }
-            if(const auto* b = std::get_if<bool>(&v))
-                return *b;
-            if(const auto* s = std::get_if<std::string>(&v))
-                return *s;
-            return std::get<expr::clock_t>(v).time_units;
-        }
-
         // The value of a variable that is now the current value, from json (std::nullopt if it cannot take it)
         auto value_from_json(const nlohmann::json& json, const expr::symbol_value_t& current) -> std::optional<expr::symbol_value_t> {
             const auto& v = base(current);
@@ -82,10 +52,6 @@ namespace aaltitoad::debugger {
                 return expr::symbol_value_t{clock};
             }
             return std::nullopt;
-        }
-
-        auto variable_json(const expr::symbol_value_t& value) -> nlohmann::json {
-            return {{"value", value_to_json(value)}, {"type", type_of(value)}, {"writable", true}};
         }
 
         auto string_member(const nlohmann::json& object, const char* key, const std::string& context) -> std::string {
@@ -216,13 +182,10 @@ namespace aaltitoad::debugger {
     }
 
     runtime::runtime(graphedit::network_t network, arguments_t arguments)
-            : network_{std::move(network)}, arguments_{arguments},
+            : network_{std::move(network)}, describer_{network_}, arguments_{arguments},
               random_{arguments.seed.has_value() ? arguments.seed.value() : std::random_device{}()} {
         if(!network_.automata)
             throw std::invalid_argument("aaltitoad could not build the network");
-        for(auto& [name, instance] : network_.instances)
-            for(auto& local : instance.local_identifiers)
-                private_symbols_[name + "." + local] = {name, local};
     }
 
     auto runtime::arguments() const -> const arguments_t& {
@@ -370,25 +333,7 @@ namespace aaltitoad::debugger {
                 history_order_.pop_front();
             }
         }
-        const auto& automata = *network_.automata;
-        auto variables = nlohmann::json::object();
-        std::map<std::string, nlohmann::json> instance_variables{};
-        for(auto& [name, value] : automata.symbols) {
-            auto variable = variable_of(name);
-            if(variable.instance.empty())
-                variables[name] = variable_json(value);
-            else
-                instance_variables[variable.instance][variable.name] = variable_json(value);
-        }
-        for(auto& [name, value] : automata.external_symbols)
-            variables[name] = variable_json(value);
-        auto instances = nlohmann::json::array();
-        for(auto& [name, instance] : network_.instances) {
-            auto variables_of_instance = instance_variables.contains(name) ? instance_variables.at(name) : nlohmann::json::object();
-            instances.push_back({{"name", name}, {"model", instance.model},
-                                 {"active", {automata.components.at(name).current_location->first}},
-                                 {"variables", variables_of_instance}});
-        }
+        auto described = describer_.state(*network_.automata);
         const auto& all = choices();
         std::string message{};
         if(!choices_error_.empty())
@@ -400,7 +345,7 @@ namespace aaltitoad::debugger {
         // NOTE: the edges that every choice takes do not tell the choices apart, so their labels leave them out
         std::set<const graphedit::instance_edge_t*> common{};
         for(std::size_t i = 0; i < all.size() && i < max_choices; i++) {
-            auto edges = edges_of(all[i]);
+            auto edges = describer_.edges_of(all[i].edges);
             std::set<const graphedit::instance_edge_t*> taken{edges.begin(), edges.end()};
             if(i == 0) {
                 common = taken;
@@ -416,7 +361,7 @@ namespace aaltitoad::debugger {
         //       guards of their edges, or else by their ids
         std::vector<std::string> labels{};
         for(std::size_t i = 0; i < all.size() && i < max_choices; i++)
-            labels.push_back(label(all[i], common));
+            labels.push_back(describer_.label(all[i].edges, common));
         auto make_unique = [&labels](const std::function<std::string(std::size_t)>& relabel) {
             std::map<std::string, int> count{};
             for(auto& l : labels)
@@ -425,25 +370,15 @@ namespace aaltitoad::debugger {
                 if(count.at(labels[i]) > 1)
                     labels[i] = relabel(i);
         };
-        make_unique([this, &all, &common](std::size_t i) { return label(all[i], common, true); });
+        make_unique([this, &all, &common](std::size_t i) { return describer_.label(all[i].edges, common, true); });
         make_unique([&labels](std::size_t i) { return labels[i] + " (c" + std::to_string(i) + ")"; });
         auto choices_json = nlohmann::json::array();
         for(std::size_t i = 0; i < all.size() && i < max_choices; i++) {
-            auto elements = nlohmann::json::array();
-            std::map<std::string, std::size_t> index_of{};
-            for(const auto* edge : edges_of(all[i])) {
-                if(!index_of.contains(edge->instance)) {
-                    index_of[edge->instance] = elements.size();
-                    elements.push_back({{"instance", edge->instance}, {"model", edge->model}, {"ids", nlohmann::json::array()}});
-                }
-                auto& ids = elements[index_of.at(edge->instance)]["ids"];
-                for(auto& element : edge->edge.elements)
-                    ids.push_back(element);
-            }
+            auto elements = describer_.elements_of(all[i].edges);
             choices_json.push_back({{"id", "c" + std::to_string(i)}, {"label", labels[i]}, {"kind", "step"}, {"elements", elements}});
         }
-        return {{"id", state_id_.value()}, {"message", message}, {"instances", instances}, {"variables", variables},
-                {"choices", choices_json}};
+        return {{"id", state_id_.value()}, {"message", message}, {"instances", described.at("instances")},
+                {"variables", described.at("variables")}, {"choices", choices_json}};
     }
 
     auto runtime::step(const std::optional<std::string>& choice) -> stop_t {
@@ -492,7 +427,7 @@ namespace aaltitoad::debugger {
 
     auto runtime::take(std::size_t choice) -> stop_t {
         auto change = choices().at(choice);
-        auto description = label(change);
+        auto description = describer_.label(change.edges);
         try {
             network_.automata->apply(change);
         } catch(const std::exception& e) {
@@ -560,7 +495,7 @@ namespace aaltitoad::debugger {
 
         auto entered = effect.entered.find(instance.name);
         if(entered != effect.entered.end() && breakpoint.locations.contains(entered->second))
-            return "Breakpoint at " + location_name(definition.model, entered->second) + " in " + instance.name;
+            return "Breakpoint at " + describer_.location_name(definition.model, entered->second) + " in " + instance.name;
 
         auto taken = effect.taken.find(instance.name);
         if(taken == effect.taken.end())
@@ -568,8 +503,8 @@ namespace aaltitoad::debugger {
         for(auto* edge : taken->second) {
             if(!breakpoint.edges.contains(edge->id))
                 continue;
-            return "Breakpoint at the edge from " + location_name(definition.model, edge->source) + " to " +
-                   location_name(definition.model, edge->target) + " in " + instance.name;
+            return "Breakpoint at the edge from " + describer_.location_name(definition.model, edge->source) + " to " +
+                   describer_.location_name(definition.model, edge->target) + " in " + instance.name;
         }
         return std::nullopt;
     }
@@ -587,7 +522,7 @@ namespace aaltitoad::debugger {
                 if(!network_.instances.contains(instance))
                     throw request_error(invalid_params, "the network has no instance '" + instance + "'");
                 symbol = instance + "." + name.substr(colon + 1);
-                if(!private_symbols_.contains(symbol))
+                if(!describer_.is_private(symbol))
                     throw request_error(invalid_params, "'" + name.substr(colon + 1) + "' is not a variable of " + instance);
             }
             expr::symbol_table_t* table = nullptr;
@@ -595,7 +530,7 @@ namespace aaltitoad::debugger {
                 table = &automata.symbols;
             else if(automata.external_symbols.contains(symbol))
                 table = &automata.external_symbols;
-            if(table == nullptr || (name.find(':') == std::string::npos && private_symbols_.contains(symbol)))
+            if(table == nullptr || (name.find(':') == std::string::npos && describer_.is_private(symbol)))
                 throw request_error(invalid_params, "'" + name + "' is not a variable");
             auto value = value_from_json(json, table->at(symbol));
             if(!value)
@@ -649,79 +584,6 @@ namespace aaltitoad::debugger {
             }
         }
         return choices_.value();
-    }
-
-    auto runtime::location_name(const std::string& model, const std::string& location) const -> std::string {
-        const auto* found = network_.models.at(model).find_location(location);
-        if(found == nullptr)
-            return "a location";
-        if(!found->nickname.empty())
-            return "'" + found->nickname + "'";
-        switch(found->kind) {
-            case graphedit::location_kind_t::initial: return "the initial location";
-            case graphedit::location_kind_t::final: return "the final location";
-            default: return "a location";
-        }
-    }
-
-    auto runtime::label(const ntta_t::state_change_t& change, const std::set<const graphedit::instance_edge_t*>& common,
-                        bool detailed) const -> std::string {
-        constexpr std::size_t max_expression = 40;
-        auto shortened = [](const std::string& text) {
-            return text.size() <= max_expression ? text : text.substr(0, max_expression - 3) + "...";
-        };
-        auto short_name = [this](const std::string& model, const std::string& location) -> std::string {
-            const auto* found = network_.models.at(model).find_location(location);
-            if(found == nullptr)
-                return "?";
-            if(!found->nickname.empty())
-                return found->nickname;
-            return found->kind == graphedit::location_kind_t::initial ? "initial"
-                 : found->kind == graphedit::location_kind_t::final ? "final" : "location";
-        };
-        std::vector<std::string> parts{};
-        std::size_t omitted = 0;
-        for(const auto* edge : edges_of(change)) {
-            if(common.contains(edge)) {
-                omitted++;
-                continue;
-            }
-            auto part = edge->instance + ": " + short_name(edge->model, edge->edge.source) + " \u2192 " +
-                        short_name(edge->model, edge->edge.target);
-            if(detailed && !edge->edge.guard.empty())
-                part += " if " + shortened(edge->edge.guard);
-            else if(detailed && !edge->edge.update.empty())
-                part += " do " + shortened(edge->edge.update);
-            parts.push_back(part);
-        }
-        if(parts.empty())
-            return omitted > 0 ? label(change, {}, detailed) : "tick";
-        std::string result{};
-        for(std::size_t i = 0; i < parts.size() && i < max_label_edges; i++)
-            result += (i == 0 ? "" : ", ") + parts[i];
-        if(parts.size() > max_label_edges)
-            result += " and " + std::to_string(parts.size() - max_label_edges) + " more";
-        if(omitted == 1)
-            result += " (and the edge that every step takes)";
-        else if(omitted > 1)
-            result += " (and the " + std::to_string(omitted) + " edges that every step takes)";
-        return result;
-    }
-
-    auto runtime::edges_of(const ntta_t::state_change_t& change) const -> std::vector<const graphedit::instance_edge_t*> {
-        std::vector<const graphedit::instance_edge_t*> result{};
-        for(auto& identifier : change.edges)
-            if(auto edge = network_.edges.find(identifier); edge != network_.edges.end())
-                result.push_back(&edge->second);
-        std::sort(result.begin(), result.end(), [](const auto* a, const auto* b) {
-            return std::tie(a->instance, a->edge.id) < std::tie(b->instance, b->edge.id);
-        });
-        return result;
-    }
-
-    auto runtime::variable_of(const std::string& symbol) const -> variable_name_t {
-        auto it = private_symbols_.find(symbol);
-        return it == private_symbols_.end() ? variable_name_t{"", symbol} : it->second;
     }
 
     auto runtime::take_snapshot() const -> snapshot_t {

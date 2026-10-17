@@ -17,6 +17,7 @@
  */
 #ifndef AALTITOAD_DEBUGGER_RUNTIME_H
 #define AALTITOAD_DEBUGGER_RUNTIME_H
+#include "describer.h"
 #include <parser/graphedit/network.h>
 #include <nlohmann/json.hpp>
 #include <chrono>
@@ -103,8 +104,6 @@ namespace aaltitoad::debugger {
     public:
         // How many choices a state lists (a tick may enable many combinations of edges)
         static constexpr std::size_t max_choices = 100;
-        // How many edges the label of a step names (a tick of a large network takes many)
-        static constexpr std::size_t max_label_edges = 3;
 
         // Throws std::invalid_argument if the network was not built
         runtime(graphedit::network_t network, arguments_t arguments);
@@ -157,12 +156,6 @@ namespace aaltitoad::debugger {
             std::map<std::string, std::string> entered{};
             std::map<std::string, std::vector<const graphedit::edge_t*>> taken{};
         };
-        // A variable of a state: where it is (global or an instance) and its name there
-        struct variable_name_t {
-            std::string instance{};
-            std::string name{};
-        };
-
         void changed();
         auto choices() -> const std::vector<ntta_t::state_change_t>&;
         auto take(std::size_t choice) -> stop_t;
@@ -185,23 +178,15 @@ namespace aaltitoad::debugger {
         // A breakpoint on an element is hit when the instance enters its location or takes one of its edges
         auto element_hit(const active_breakpoint_t& breakpoint, const graphedit::instance_t& instance,
                          const step_effect_t& effect) const -> std::optional<std::string>;
-        auto location_name(const std::string& model, const std::string& location) const -> std::string;
-        // A label for a step: the edges that it takes, leaving out those that every choice of the state takes (common),
-        // with their guards (or updates) if detailed
-        auto label(const ntta_t::state_change_t& change, const std::set<const graphedit::instance_edge_t*>& common = {},
-                   bool detailed = false) const -> std::string;
-        // The edges of a step, ordered by their instances (parents before the instances that they instantiate)
-        auto edges_of(const ntta_t::state_change_t& change) const -> std::vector<const graphedit::instance_edge_t*>;
-        auto variable_of(const std::string& symbol) const -> variable_name_t;
         auto take_snapshot() const -> snapshot_t;
         void apply_snapshot(const snapshot_t& snapshot);
 
         graphedit::network_t network_;
+        // NOTE: after the network, which it describes
+        describer describer_;
         arguments_t arguments_;
         std::mt19937 random_;
         std::vector<active_breakpoint_t> breakpoints_{};
-        // private symbol -> its instance and name
-        std::map<std::string, variable_name_t> private_symbols_{};
         // the choices of the current state (computed when needed), or why they could not be computed
         std::optional<std::vector<ntta_t::state_change_t>> choices_{};
         std::string choices_error_{};
