@@ -23,7 +23,8 @@
 
 namespace aaltitoad {
     auto is_satisfied(const ctl::syntax_tree_t& ast, const ntta_t& state) -> bool {
-        // TODO: This does not work if the ast is more complex than E F predicate (https://github.com/sillydan1/aaltitoad/issues/41)
+        // NOTE: This only evaluates the state formula of a query in the given state. The forward reachability searcher
+        //       handles the path formulas 'E F' and 'A G' (other path formulas are searched for like 'E F')
         return std::visit(ya::overload(
                               [&](const expr::syntax_tree_t& v) -> bool {
                                   auto s = state.symbols + state.external_symbols;

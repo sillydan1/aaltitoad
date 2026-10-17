@@ -30,10 +30,19 @@ namespace aaltitoad {
     public:
         using solution_t = traceable_multimap<ntta_t>::iterator_t;
         using compiled_query_t = ctl::syntax_tree_t;
+        // How a query is answered: a reachability query (E F p) is proven by a state where p holds (a witness), and a
+        // safety query (A G p) is disproven by a state where p does not hold (a counterexample)
+        enum class query_kind_t { reachability, safety };
         struct query_solution_t {
             compiled_query_t query;
+            query_kind_t kind;
+            // the witness (reachability) or the counterexample (safety) of the query, if one was found
             std::optional<solution_t> solution;
-            query_solution_t(compiled_query_t query) : query{std::move(query)}, solution{} {}
+            explicit query_solution_t(compiled_query_t query);
+            // Reachability queries are satisfied once a witness is found, safety queries until a counterexample is found
+            auto satisfied() const -> bool;
+            // Whether the state is a witness or a counterexample of the query
+            auto is_solution(const ntta_t& state) const -> bool;
         };
         using solutions_t = std::vector<query_solution_t>;
         explicit forward_reachability_searcher(const pick_strategy& strategy = pick_strategy::first);

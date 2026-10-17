@@ -169,3 +169,96 @@ SCENARIO("basic reachability", "[frs]") {
         }
     }
 }
+
+SCENARIO("safety queries are disproven by counterexamples", "[frs]") {
+    GIVEN("one tta with a simple count-down loop from 5") {
+        aaltitoad::ntta_builder builder{};
+        aaltitoad::expression_driver compiler{builder.symbols, builder.external_symbols};
+        auto n = builder
+                .add_symbols({{"x", 5}})
+                .add_tta("A", aaltitoad::tta_builder{&compiler}
+                        .add_locations({"L0", "L1"})
+                        .set_starting_location("L0")
+                        .add_edges({{"L0", "L1", "x > 0", "x := x - 1"}, {"L1", "L0"}}))
+                .build_with_interesting_tocker();
+        auto s = n.symbols + n.external_symbols;
+        GIVEN("an invariant that holds in every reachable state 'A G x >= 0'") {
+            auto query = aaltitoad::ctl_interpreter{s}.compile("A G x >= 0");
+            WHEN("searching through the state-space with forward reachability search") {
+                aaltitoad::forward_reachability_searcher frs{};
+                auto results = frs.is_reachable(n, query);
+                THEN("the query is satisfied without a counterexample") {
+                    REQUIRE(results.size() == 1);
+                    REQUIRE(results.begin()->satisfied());
+                    REQUIRE_FALSE(results.begin()->solution.has_value());
+                }
+            }
+        }
+        GIVEN("an invariant that is violated when x reaches zero 'A G x > 0'") {
+            auto query = aaltitoad::ctl_interpreter{s}.compile("A G x > 0");
+            WHEN("searching through the state-space with forward reachability search") {
+                aaltitoad::forward_reachability_searcher frs{};
+                auto results = frs.is_reachable(n, query);
+                THEN("the query is not satisfied") {
+                    REQUIRE(results.size() == 1);
+                    REQUIRE_FALSE(results.begin()->satisfied());
+                }
+                AND_THEN("the counterexample is a state where x is 0") {
+                    REQUIRE(results.begin()->solution.has_value());
+                    REQUIRE(std::get<bool>(results.begin()->solution.value()->second.data.symbols.at("x") == 0));
+                }
+            }
+        }
+        GIVEN("an invariant on a location that is always left again 'A G L0'") {
+            auto query = aaltitoad::ctl_interpreter{s}.compile("A G L0");
+            WHEN("searching through the state-space with forward reachability search") {
+                aaltitoad::forward_reachability_searcher frs{};
+                auto results = frs.is_reachable(n, query);
+                THEN("the query is not satisfied, and the counterexample is in L1") {
+                    REQUIRE_FALSE(results.begin()->satisfied());
+                    REQUIRE(results.begin()->solution.has_value());
+                    REQUIRE(results.begin()->solution.value()->second.data.components["A"].current_location->first == "L1");
+                }
+            }
+        }
+        GIVEN("a reachability query and a safety query that are both satisfied") {
+            std::vector<ctl::syntax_tree_t> queries{
+                aaltitoad::ctl_interpreter{s}.compile("E F x == 0"),
+                aaltitoad::ctl_interpreter{s}.compile("A G x <= 5")};
+            WHEN("searching through the state-space with forward reachability search") {
+                aaltitoad::forward_reachability_searcher frs{};
+                auto results = frs.is_reachable(n, queries);
+                THEN("both queries are satisfied") {
+                    REQUIRE(results.size() == 2);
+                    REQUIRE(results[0].satisfied());
+                    REQUIRE(results[0].solution.has_value());
+                    REQUIRE(results[1].satisfied());
+                    REQUIRE_FALSE(results[1].solution.has_value());
+                }
+            }
+        }
+    }
+    GIVEN("one looping tta and no symbol manipulation") {
+        aaltitoad::ntta_builder builder{};
+        aaltitoad::expression_driver compiler{builder.symbols, builder.external_symbols};
+        auto n = builder
+                .add_symbol({"x", 0})
+                .add_tta("A", aaltitoad::tta_builder{&compiler}
+                        .add_location("L0")
+                        .set_starting_location("L0")
+                        .add_edge({"L0", "L0"}))
+                .build_with_interesting_tocker();
+        GIVEN("an unreachable state 'E F x == 1'") {
+            auto s = n.symbols + n.external_symbols;
+            auto query = aaltitoad::ctl_interpreter{s}.compile("E F x == 1");
+            WHEN("searching through the state-space with forward reachability search") {
+                aaltitoad::forward_reachability_searcher frs{};
+                auto results = frs.is_reachable(n, query);
+                THEN("the query is not satisfied") {
+                    REQUIRE_FALSE(results.begin()->satisfied());
+                    REQUIRE_FALSE(results.begin()->solution.has_value());
+                }
+            }
+        }
+    }
+}
