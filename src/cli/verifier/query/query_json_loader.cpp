@@ -32,7 +32,7 @@ namespace aaltitoad {
             std::ifstream f(json_file);
             auto data = nlohmann::json::parse(f);
             for(auto& q : data) {
-                spdlog::trace("compiling query {0}", q["query"]);
+                spdlog::trace("compiling query {0}", q["query"].get<std::string>());
                 auto query = c.compile(q["query"]);
                 std::stringstream ss{}; ss << query;
                 spdlog::trace("resulting tree: {0}", ss.str());
