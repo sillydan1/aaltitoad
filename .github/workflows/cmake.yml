@@ -19,15 +19,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: install dependencies
-      run: sudo apt-get install -y flex bison make m4 cmake libfl-dev libbison-dev
+      run: sudo apt-get install -y flex bison make m4 cmake libfl-dev libbison-dev libz3-dev
     - name: create build environment
       run: cmake -E make_directory ${{ github.workspace }}/build
     - name: configure
       shell: bash
       working-directory: ${{ github.workspace }}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install -DCMAKE_POLICY_VERSION_MINIMUM=3.5
     - name: build
       working-directory: ${{ github.workspace }}/build
       shell: bash
@@ -37,7 +37,7 @@ jobs:
       shell: bash
       run: cmake --install . --config $BUILD_TYPE --prefix ${{ github.workspace }}/install
     - name: upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: aaltitoad
         path: ${{ github.workspace }}/install/
