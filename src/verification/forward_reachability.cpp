@@ -43,7 +43,13 @@ namespace aaltitoad {
 
     }
 
+    auto forward_reachability_searcher::query_solution_t::is_decided() const -> bool {
+        return solution.has_value() || is_exhaustive;
+    }
+
     auto forward_reachability_searcher::query_solution_t::satisfied() const -> bool {
+        if(!is_decided())
+            return false;
         if(kind == query_kind_t::safety)
             return !solution.has_value();
         return solution.has_value();
@@ -56,8 +62,8 @@ namespace aaltitoad {
         return holds;
     }
 
-    forward_reachability_searcher::forward_reachability_searcher(const aaltitoad::pick_strategy& strategy)
-     : W{}, P{}, solutions{}, strategy{strategy} {
+    forward_reachability_searcher::forward_reachability_searcher(const aaltitoad::pick_strategy& strategy, std::function<bool()> interrupted)
+     : W{}, P{}, solutions{}, strategy{strategy}, interrupted{std::move(interrupted)} {
 
     }
 
@@ -66,7 +72,6 @@ namespace aaltitoad {
     }
 
     auto forward_reachability_searcher::is_reachable(const aaltitoad::ntta_t& s0, const std::vector<compiled_query_t>& q) -> solutions_t {
-        // TODO: Catch SIGTERM (ctrl-c) and write statistics (info)
         W = {s0}; P = {}; solutions = empty_solution_set(q);
         auto s0_it = P.add(s0);
         for(auto& l : s0.tock()) {
@@ -75,6 +80,8 @@ namespace aaltitoad {
                 W.add_if_not_contains(s0_it, sp);
         }
         while(!W.empty()) {
+            if(is_interrupted())
+                return get_results();
             /// Select the next state to search
             auto s = W.pop(strategy);
             auto s_it = P.add(s.parent, s.data);
@@ -82,6 +89,8 @@ namespace aaltitoad {
                 return get_results();
             /// Add successors
             for(auto& si : s.data.tick()) {
+                if(is_interrupted())
+                    return get_results();
                 auto sn = s.data + si;
                 if(P.contains(sn))
                     continue;
@@ -106,7 +115,16 @@ namespace aaltitoad {
         }
         /// Searched through all of the reachable state-space from s0
         spdlog::debug("end of reachable state-space");
+        for(auto& solution : solutions)
+            solution.is_exhaustive = true;
         return get_results();
+    }
+
+    auto forward_reachability_searcher::is_interrupted() -> bool {
+        if(!interrupted || !interrupted())
+            return false;
+        spdlog::warn("the search was interrupted after searching {0} states ({1} states were waiting)", P.size(), W.size());
+        return true;
     }
 
     auto forward_reachability_searcher::empty_solution_set(const std::vector<compiled_query_t>& qs) -> solutions_t {

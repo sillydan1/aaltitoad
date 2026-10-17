@@ -65,6 +65,14 @@ list all warnings available. All warnings are enabled by default \- you can disa
 .BR \-m ", " \-\-no\-warn
 disable all warnings.
 
+.SH SIGNALS
+The first \fBSIGINT\fR (ctrl\-c) or \fBSIGTERM\fR interrupts the search: the verifier finishes the state that it is searching (which can take a while for large models) and prints the results found so far.
+Queries that the search did not decide are printed as \fIunknown\fR (\fBnull\fR with \fB\-j\fR).
+A second signal ends the verifier right away, without results.
+
+.SH EXIT STATUS
+\fB0\fR when the search finished, \fB128\fR plus the number of the signal when it was interrupted (\fB130\fR for \fBSIGINT\fR, \fB143\fR for \fBSIGTERM\fR), and \fB1\fR on errors.
+
 .SH PLUGINS
 A plugin is a dynamically linked library (\fB*.so\fR, \fB*.dll\fR, or \fB*.dylib\fR files) that provide the symbols:
 .B const char* get_plugin_name() \fR,

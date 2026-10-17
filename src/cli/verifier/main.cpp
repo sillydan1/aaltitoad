@@ -33,9 +33,75 @@
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"
 #include "verification/pick_strategy.h"
+#include <atomic>
+#include <csignal>
+#include <pthread.h>
+#include <thread>
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
 void trace_log_ntta(const aaltitoad::ntta_t& n);
+
+namespace {
+    // The exit status of a program that a signal ended, as shells report it (e.g. 130 for SIGINT)
+    constexpr auto signal_exit_status(int signal) -> int {
+        return 128 + signal;
+    }
+
+    // Interrupts the search on SIGINT or SIGTERM while it exists, so that the results found so far are printed. A second
+    // signal ends the program right away. The signals are blocked and waited for by a thread of their own rather than
+    // handled, since z3 replaces the SIGINT handler while it solves (to cancel only the query that it is solving)
+    class search_interrupter {
+    public:
+        search_interrupter() {
+            sigemptyset(&signals);
+            sigaddset(&signals, SIGINT);
+            sigaddset(&signals, SIGTERM);
+            sigaddset(&signals, SIGUSR1); // NOTE: stops the waiting thread
+            pthread_sigmask(SIG_BLOCK, &signals, &previous_mask);
+            waiter = std::thread{[this]{ wait(); }};
+        }
+        search_interrupter(const search_interrupter&) = delete;
+        auto operator=(const search_interrupter&) -> search_interrupter& = delete;
+        ~search_interrupter() {
+            stopping = true;
+            pthread_kill(waiter.native_handle(), SIGUSR1);
+            waiter.join();
+            pthread_sigmask(SIG_SETMASK, &previous_mask, nullptr);
+        }
+        // the signal that interrupted the search (0 if it was not interrupted)
+        auto received() const -> int {
+            return signal;
+        }
+
+    private:
+        void wait() {
+            while(true) {
+                int received_signal = 0;
+                if(sigwait(&signals, &received_signal) != 0)
+                    return;
+                if(received_signal == SIGUSR1) {
+                    if(stopping)
+                        return;
+                    continue;
+                }
+                // NOTE: std::_Exit rather than std::exit, which would run the destructors of static objects (e.g. the
+                //       loggers) and the atexit handlers on this thread, while the search still uses them on the main
+                //       thread. This ends the program like the default action of the signal does
+                if(signal != 0)
+                    std::_Exit(signal_exit_status(received_signal));
+                spdlog::warn("{0} received: interrupting the search (send it again to quit right away)",
+                             received_signal == SIGINT ? "SIGINT" : "SIGTERM");
+                signal = received_signal;
+            }
+        }
+
+        sigset_t signals{};
+        sigset_t previous_mask{};
+        std::atomic<int> signal{0};
+        std::atomic<bool> stopping{false};
+        std::thread waiter{};
+    };
+}
 
 int main(int argc, char** argv) {
     try {
@@ -101,8 +167,12 @@ int main(int argc, char** argv) {
         n->add_tocker(std::make_unique<aaltitoad::interesting_tocker>());
         spdlog::trace("starting reachability search for {0} queries", queries.size());
         t.start();
-        aaltitoad::forward_reachability_searcher frs{strategy};
+        // NOTE: the traces of the results point into the searcher, so it outlives the interrupter
+        std::optional<search_interrupter> interrupter{std::in_place};
+        aaltitoad::forward_reachability_searcher frs{strategy, [&interrupter]{ return interrupter->received() != 0; }};
         auto results = frs.is_reachable(*n, queries);
+        auto interrupt_signal = interrupter->received();
+        interrupter.reset();
         spdlog::info("reachability search took {0}ms", t.milliseconds_elapsed());
 
         // open the results file (std::cout by default)
@@ -120,7 +190,8 @@ int main(int argc, char** argv) {
                 nlohmann::json res{};
                 std::stringstream ss{}; ss << result.query;
                 res["query"] = ss.str();
-                res["satisfied"] = result.satisfied();
+                // queries that an interrupted search did not answer are neither satisfied nor unsatisfied
+                res["satisfied"] = result.is_decided() ? nlohmann::json(result.satisfied()) : nlohmann::json(nullptr);
                 // the trace to the witness (E F) or the counterexample (A G) of the query
                 if(result.solution.has_value())
                     res["trace"] = to_json(result.solution.value());
@@ -130,12 +201,20 @@ int main(int argc, char** argv) {
         } else {
             spdlog::trace("printing resuls data (non-json)");
             for(auto& result : results) {
-                *trace_stream << result.query << ": " << std::boolalpha << result.satisfied();
+                *trace_stream << result.query << ": ";
+                if(result.is_decided())
+                    *trace_stream << std::boolalpha << result.satisfied();
+                else
+                    *trace_stream << "unknown (the search was interrupted)";
+                *trace_stream << "\n";
                 if(result.solution.has_value())
                     *trace_stream << result.solution.value();
             }
         }
 
+        // like a program that the signal ended, but with the results found so far
+        if(interrupt_signal != 0)
+            return signal_exit_status(interrupt_signal);
         return 0;
     } catch (std::exception& any) {
         spdlog::error(any.what());
