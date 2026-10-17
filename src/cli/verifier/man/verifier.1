@@ -74,7 +74,7 @@ A second signal ends the verifier right away, without results.
 \fB0\fR when the search finished, \fB128\fR plus the number of the signal when it was interrupted (\fB130\fR for \fBSIGINT\fR, \fB143\fR for \fBSIGTERM\fR), and \fB1\fR on errors.
 
 .SH PLUGINS
-A plugin is a dynamically linked library (\fB*.so\fR, \fB*.dll\fR, or \fB*.dylib\fR files) that provide the symbols:
+A plugin is a dynamically linked library, whatever the name of its file, that provides the symbols:
 .B const char* get_plugin_name() \fR,
 .B const char* get_plugin_version() \fRand
 .B plugin_type get_plugin_type() \fR// plugin_type is enum: \fB0\fR (tocker plugin) or \fB1\fR (parser plugin).
