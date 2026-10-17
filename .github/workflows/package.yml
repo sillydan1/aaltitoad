@@ -12,7 +12,10 @@ on:
       - master
     paths:
       - '.github/workflows/package.yml'
-      - 'cmake/Package.cmake'
+      - 'cmake/**'
+      - 'CMakeLists.txt'
+      - 'Formula/**'
+      - 'src/**'
   workflow_dispatch:
 
 jobs:
@@ -60,3 +63,58 @@ jobs:
       run: |
         gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --generate-notes
         gh release upload "$GITHUB_REF_NAME" build/aaltitoad_*.deb --clobber
+
+  homebrew:
+    name: homebrew formula (macos-latest)
+    runs-on: macos-latest
+    steps:
+    - name: checkout repository
+      uses: actions/checkout@v4
+    - name: tap the formula, with the source of this checkout
+      run: |
+        version=$(sed -n 's/^project(aaltitoad VERSION \([0-9.]*\))$/\1/p' CMakeLists.txt)
+        git archive --format=tar.gz --prefix="aaltitoad-$version/" -o "$RUNNER_TEMP/aaltitoad.tar.gz" HEAD
+        sha=$(shasum -a 256 "$RUNNER_TEMP/aaltitoad.tar.gz" | cut -d' ' -f1)
+        brew tap-new --no-git local/aaltitoad
+        sed -e "s|^  url .*|  url \"file://$RUNNER_TEMP/aaltitoad.tar.gz\"|" -e "s|^  sha256 .*|  sha256 \"$sha\"|" \
+            Formula/aaltitoad.rb > "$(brew --repository local/aaltitoad)/Formula/aaltitoad.rb"
+    - name: install the formula
+      run: brew install --build-from-source --verbose local/aaltitoad/aaltitoad
+    - name: test the formula
+      run: brew test local/aaltitoad/aaltitoad
+    - name: try the programs
+      working-directory: ${{ runner.temp }}
+      run: |
+        verifier -f "$GITHUB_WORKSPACE/test/verification/fischer-suite/fischer-2" -i '.*\.ignore\.txt' -Q "A G ctr <= 1" -m | grep -F ": true"
+
+  windows:
+    name: windows installer (windows-latest)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - name: checkout repository
+      uses: actions/checkout@v4
+    - name: install msys2 and the dependencies
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: >-
+          flex
+          bison
+          git
+        pacboy: >-
+          gcc:p
+          cmake:p
+          ninja:p
+          z3:p
+          nsis:p
+    - name: configure
+      run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+    - name: build
+      run: cmake --build build
+    - name: test
+      working-directory: build
+      run: ./aaltitoad_tests.exe
