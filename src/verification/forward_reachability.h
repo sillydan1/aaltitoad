@@ -22,6 +22,7 @@
 #include "traceable_multimap.h"
 #include <ctl_syntax_tree.h>
 #include <nlohmann/json.hpp>
+#include <functional>
 #include <vector>
 #include <utility>
 
@@ -38,14 +39,21 @@ namespace aaltitoad {
             query_kind_t kind;
             // the witness (reachability) or the counterexample (safety) of the query, if one was found
             std::optional<solution_t> solution;
+            // whether the whole reachable state space was searched (it was not if the search was interrupted)
+            bool is_exhaustive{false};
             explicit query_solution_t(compiled_query_t query);
-            // Reachability queries are satisfied once a witness is found, safety queries until a counterexample is found
+            // Whether the search answered the query: it found a solution, or searched the whole state space without one
+            auto is_decided() const -> bool;
+            // Reachability queries are satisfied once a witness is found, safety queries if the whole state space has no
+            // counterexample. Queries that are not decided are not satisfied
             auto satisfied() const -> bool;
             // Whether the state is a witness or a counterexample of the query
             auto is_solution(const ntta_t& state) const -> bool;
         };
         using solutions_t = std::vector<query_solution_t>;
-        explicit forward_reachability_searcher(const pick_strategy& strategy = pick_strategy::first);
+        // The search stops (with the queries that it answered so far) when interrupted returns true, e.g. after SIGINT
+        explicit forward_reachability_searcher(const pick_strategy& strategy = pick_strategy::first,
+                                               std::function<bool()> interrupted = {});
         auto is_reachable(const ntta_t& s0, const compiled_query_t& q) -> solutions_t;
         auto is_reachable(const ntta_t& s0, const std::vector<compiled_query_t>& q) -> solutions_t;
 
@@ -53,7 +61,10 @@ namespace aaltitoad {
         traceable_multimap<ntta_t> W{}, P{};
         solutions_t solutions{};
         pick_strategy strategy{};
+        std::function<bool()> interrupted{};
 
+        // Whether the search should stop (checked between states, and before the tocks of each successor)
+        auto is_interrupted() -> bool;
         static auto empty_solution_set(const std::vector<compiled_query_t>& q) -> solutions_t;
         auto check_satisfactions(const solution_t& s) -> bool;
         auto count_solutions() -> size_t;

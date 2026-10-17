@@ -262,3 +262,60 @@ SCENARIO("safety queries are disproven by counterexamples", "[frs]") {
         }
     }
 }
+
+SCENARIO("interrupting the search", "[frs]") {
+    GIVEN("one tta with a simple count-down loop from 5") {
+        aaltitoad::ntta_builder builder{};
+        aaltitoad::expression_driver compiler{builder.symbols, builder.external_symbols};
+        auto n = builder
+                .add_symbols({{"x", 5}})
+                .add_tta("A", aaltitoad::tta_builder{&compiler}
+                        .add_locations({"L0", "L1"})
+                        .set_starting_location("L0")
+                        .add_edges({{"L0", "L1", "x > 0", "x := x - 1"}, {"L1", "L0"}}))
+                .build_with_interesting_tocker();
+        auto s = n.symbols + n.external_symbols;
+        std::vector<ctl::syntax_tree_t> queries{
+            aaltitoad::ctl_interpreter{s}.compile("E F x == 5"),
+            aaltitoad::ctl_interpreter{s}.compile("E F x == 0"),
+            aaltitoad::ctl_interpreter{s}.compile("A G x >= 0")};
+        WHEN("the search is interrupted before it starts") {
+            aaltitoad::forward_reachability_searcher frs{aaltitoad::pick_strategy::first, []{ return true; }};
+            auto results = frs.is_reachable(n, queries);
+            THEN("no query is decided, and none is satisfied") {
+                REQUIRE(results.size() == 3);
+                for(auto& result : results) {
+                    REQUIRE_FALSE(result.is_decided());
+                    REQUIRE_FALSE(result.satisfied());
+                    REQUIRE_FALSE(result.solution.has_value());
+                }
+            }
+        }
+        WHEN("the search is interrupted after two states") {
+            auto checks = 0;
+            aaltitoad::forward_reachability_searcher frs{aaltitoad::pick_strategy::first, [&checks]{ return ++checks > 2; }};
+            auto results = frs.is_reachable(n, queries);
+            THEN("the query that holds in the initial state is decided") {
+                REQUIRE(results[0].is_decided());
+                REQUIRE(results[0].satisfied());
+            }
+            AND_THEN("the queries that need the rest of the state space are not decided") {
+                REQUIRE_FALSE(results[1].is_decided());
+                REQUIRE_FALSE(results[1].satisfied());
+                REQUIRE_FALSE(results[2].is_decided());
+                REQUIRE_FALSE(results[2].satisfied());
+                REQUIRE_FALSE(results[2].solution.has_value());
+            }
+        }
+        WHEN("the search is not interrupted") {
+            aaltitoad::forward_reachability_searcher frs{aaltitoad::pick_strategy::first, []{ return false; }};
+            auto results = frs.is_reachable(n, queries);
+            THEN("every query is decided and satisfied") {
+                for(auto& result : results) {
+                    REQUIRE(result.is_decided());
+                    REQUIRE(result.satisfied());
+                }
+            }
+        }
+    }
+}
