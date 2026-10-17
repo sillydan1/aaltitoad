@@ -43,6 +43,11 @@ namespace aaltitoad {
 
     }
 
+    forward_reachability_searcher::query_solution_t::query_solution_t(compiled_query_t query, predicate_t predicate)
+     : query{std::move(query)}, kind{kind_of(this->query)}, solution{}, predicate{std::move(predicate)} {
+
+    }
+
     auto forward_reachability_searcher::query_solution_t::is_decided() const -> bool {
         return solution.has_value() || is_exhaustive;
     }
@@ -56,7 +61,7 @@ namespace aaltitoad {
     }
 
     auto forward_reachability_searcher::query_solution_t::is_solution(const ntta_t& state) const -> bool {
-        auto holds = aaltitoad::is_satisfied(query, state);
+        auto holds = predicate ? predicate(state) : aaltitoad::is_satisfied(query, state);
         if(kind == query_kind_t::safety)
             return !holds;
         return holds;
@@ -72,57 +77,79 @@ namespace aaltitoad {
     }
 
     auto forward_reachability_searcher::is_reachable(const aaltitoad::ntta_t& s0, const std::vector<compiled_query_t>& q) -> solutions_t {
-        W = {s0}; P = {}; solutions = empty_solution_set(q);
+        start(s0, empty_solution_set(q));
+        while(!step());
+        return get_results();
+    }
+
+    void forward_reachability_searcher::start(const ntta_t& s0, solutions_t queries) {
+        W = {s0}; P = {}; solutions = std::move(queries);
         auto s0_it = P.add(s0);
         for(auto& l : s0.tock()) {
             auto sp = s0 + l;
             if(!P.contains(sp))
                 W.add_if_not_contains(s0_it, sp);
         }
-        while(!W.empty()) {
+    }
+
+    auto forward_reachability_searcher::step() -> bool {
+        if(W.empty() || all_solved() || is_interrupted())
+            return true;
+        /// Select the next state to search
+        auto s = W.pop(strategy);
+        /// P is a multimap that does not check what it has: the initial state and the states after ticks with
+        /// interesting tocks (see below) were added to P when they were found, and are not stored twice
+        auto passed = P.find(s.data);
+        auto s_it = passed ? passed.value() : P.add(s.parent, s.data);
+        if(check_satisfactions(s_it))
+            return true;
+        /// Add successors
+        for(auto& si : s.data.tick()) {
             if(is_interrupted())
-                return get_results();
-            /// Select the next state to search
-            auto s = W.pop(strategy);
-            /// states that were passed when they were found (see below) are not passed again
-            auto passed = P.find(s.data);
-            auto s_it = passed ? passed.value() : P.add(s.parent, s.data);
-            if(check_satisfactions(s_it))
-                return get_results();
-            /// Add successors
-            for(auto& si : s.data.tick()) {
-                if(is_interrupted())
-                    return get_results();
-                auto sn = s.data + si;
-                if(P.contains(sn))
-                    continue;
-                /// Calculate interesting tock changes
-                auto sn_tocks = sn.tock();
-                /// if nothing interesting is possible, just add tick-space state to W
-                if(sn_tocks.empty()) {
-                    W.add_if_not_contains(s_it, sn);
-                    continue;
-                }
-                /// Add tock-space states to W
-                spdlog::trace("{0} tock values available", sn_tocks.size());
-                auto sn_it = P.add(s_it, sn);
-                if(check_satisfactions(sn_it))
-                    return get_results();
-                /// the environment may also stay as it is: sn is searched further as well (the tock that changes
-                /// nothing leads to sn, which is passed already)
+                return true;
+            auto sn = s.data + si;
+            if(P.contains(sn))
+                continue;
+            /// Calculate interesting tock changes
+            auto sn_tocks = sn.tock();
+            /// if nothing interesting is possible, just add tick-space state to W
+            if(sn_tocks.empty()) {
                 W.add_if_not_contains(s_it, sn);
-                for(auto& so : sn_tocks) {
-                    auto sp = sn + so;
-                    if(!P.contains(sp))
-                        W.add_if_not_contains(sn_it, sp);
-                }
+                continue;
+            }
+            /// Add tock-space states to W
+            spdlog::trace("{0} tock values available", sn_tocks.size());
+            auto sn_it = P.add(s_it, sn);
+            if(check_satisfactions(sn_it))
+                return true;
+            /// the environment may also stay as it is, so sn is searched as well: the tocks below do not search it,
+            /// since the tock that keeps the environment as it is leads to sn, which is in P now
+            W.add_if_not_contains(s_it, sn);
+            for(auto& so : sn_tocks) {
+                auto sp = sn + so;
+                if(!P.contains(sp))
+                    W.add_if_not_contains(sn_it, sp);
             }
         }
+        if(!W.empty())
+            return false;
         /// Searched through all of the reachable state-space from s0
         spdlog::debug("end of reachable state-space");
         for(auto& solution : solutions)
             solution.is_exhaustive = true;
-        return get_results();
+        return true;
+    }
+
+    auto forward_reachability_searcher::results() const -> const solutions_t& {
+        return solutions;
+    }
+
+    auto forward_reachability_searcher::passed() const -> size_t {
+        return P.size();
+    }
+
+    auto forward_reachability_searcher::waiting() const -> size_t {
+        return W.size();
     }
 
     auto forward_reachability_searcher::is_interrupted() -> bool {
@@ -145,6 +172,10 @@ namespace aaltitoad {
             if(solution.is_solution(s->second.data))
                 solution.solution = s;
         }
+        return all_solved();
+    }
+
+    auto forward_reachability_searcher::all_solved() const -> bool {
         return std::all_of(solutions.begin(), solutions.end(), [](const query_solution_t& sol){ return sol.solution.has_value(); });
     }
 

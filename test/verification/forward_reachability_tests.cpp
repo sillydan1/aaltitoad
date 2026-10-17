@@ -355,3 +355,57 @@ SCENARIO("the environment may stay as it is after a tick", "[frs]") {
         }
     }
 }
+
+SCENARIO("searching step by step", "[frs]") {
+    GIVEN("one tta with a simple count-down loop from 5") {
+        aaltitoad::ntta_builder builder{};
+        aaltitoad::expression_driver compiler{builder.symbols, builder.external_symbols};
+        auto n = builder
+                .add_symbols({{"x", 5}})
+                .add_tta("A", aaltitoad::tta_builder{&compiler}
+                        .add_locations({"L0", "L1"})
+                        .set_starting_location("L0")
+                        .add_edges({{"L0", "L1", "x > 0", "x := x - 1"}, {"L1", "L0"}}))
+                .build_with_interesting_tocker();
+        auto s = n.symbols + n.external_symbols;
+        WHEN("searching for 'E F x == 0' one state after the other") {
+            aaltitoad::forward_reachability_searcher frs{};
+            frs.start(n, {aaltitoad::forward_reachability_searcher::query_solution_t{aaltitoad::ctl_interpreter{s}.compile("E F x == 0")}});
+            std::size_t steps = 1;
+            while(!frs.step())
+                steps++;
+            THEN("the search ends with the solution, after it searched each state once") {
+                REQUIRE(frs.results().size() == 1);
+                REQUIRE(frs.results().begin()->solution.has_value());
+                REQUIRE(std::get<bool>(frs.results().begin()->solution.value()->second.data.symbols.at("x") == 0));
+                REQUIRE(frs.passed() == steps);
+                REQUIRE(frs.waiting() == 0);
+            }
+            AND_THEN("further steps do not search further") {
+                REQUIRE(frs.step());
+                REQUIRE(frs.passed() == steps);
+            }
+        }
+        WHEN("searching all states for a counterexample of 'A G x >= 0' one state after the other") {
+            aaltitoad::forward_reachability_searcher frs{};
+            frs.start(n, {aaltitoad::forward_reachability_searcher::query_solution_t{aaltitoad::ctl_interpreter{s}.compile("A G x >= 0")}});
+            while(!frs.step());
+            THEN("the query is decided and satisfied, since every reachable state was searched") {
+                REQUIRE(frs.waiting() == 0);
+                REQUIRE(frs.results().begin()->is_decided());
+                REQUIRE(frs.results().begin()->is_satisfied());
+            }
+        }
+        WHEN("searching with a predicate in place of the state formula of the query") {
+            aaltitoad::forward_reachability_searcher frs{};
+            auto x_is_2 = [](const aaltitoad::ntta_t& state) { return std::get<bool>(state.symbols.at("x") == 2); };
+            frs.start(n, {aaltitoad::forward_reachability_searcher::query_solution_t{aaltitoad::ctl_interpreter{s}.compile("A G x == 0"), x_is_2}});
+            while(!frs.step());
+            THEN("the predicate decides, and the query decides that it is a safety query") {
+                REQUIRE(frs.results().begin()->kind == aaltitoad::forward_reachability_searcher::query_kind_t::safety);
+                REQUIRE(frs.results().begin()->solution.has_value());
+                REQUIRE(std::get<bool>(frs.results().begin()->solution.value()->second.data.symbols.at("x") == 5));
+            }
+        }
+    }
+}
