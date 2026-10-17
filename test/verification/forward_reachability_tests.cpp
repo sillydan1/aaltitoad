@@ -189,7 +189,7 @@ SCENARIO("safety queries are disproven by counterexamples", "[frs]") {
                 auto results = frs.is_reachable(n, query);
                 THEN("the query is satisfied without a counterexample") {
                     REQUIRE(results.size() == 1);
-                    REQUIRE(results.begin()->satisfied());
+                    REQUIRE(results.begin()->is_satisfied());
                     REQUIRE_FALSE(results.begin()->solution.has_value());
                 }
             }
@@ -201,7 +201,7 @@ SCENARIO("safety queries are disproven by counterexamples", "[frs]") {
                 auto results = frs.is_reachable(n, query);
                 THEN("the query is not satisfied") {
                     REQUIRE(results.size() == 1);
-                    REQUIRE_FALSE(results.begin()->satisfied());
+                    REQUIRE_FALSE(results.begin()->is_satisfied());
                 }
                 AND_THEN("the counterexample is a state where x is 0") {
                     REQUIRE(results.begin()->solution.has_value());
@@ -215,7 +215,7 @@ SCENARIO("safety queries are disproven by counterexamples", "[frs]") {
                 aaltitoad::forward_reachability_searcher frs{};
                 auto results = frs.is_reachable(n, query);
                 THEN("the query is not satisfied, and the counterexample is in L1") {
-                    REQUIRE_FALSE(results.begin()->satisfied());
+                    REQUIRE_FALSE(results.begin()->is_satisfied());
                     REQUIRE(results.begin()->solution.has_value());
                     REQUIRE(results.begin()->solution.value()->second.data.components["A"].current_location->first == "L1");
                 }
@@ -230,9 +230,9 @@ SCENARIO("safety queries are disproven by counterexamples", "[frs]") {
                 auto results = frs.is_reachable(n, queries);
                 THEN("both queries are satisfied") {
                     REQUIRE(results.size() == 2);
-                    REQUIRE(results[0].satisfied());
+                    REQUIRE(results[0].is_satisfied());
                     REQUIRE(results[0].solution.has_value());
-                    REQUIRE(results[1].satisfied());
+                    REQUIRE(results[1].is_satisfied());
                     REQUIRE_FALSE(results[1].solution.has_value());
                 }
             }
@@ -255,7 +255,7 @@ SCENARIO("safety queries are disproven by counterexamples", "[frs]") {
                 aaltitoad::forward_reachability_searcher frs{};
                 auto results = frs.is_reachable(n, query);
                 THEN("the query is not satisfied") {
-                    REQUIRE_FALSE(results.begin()->satisfied());
+                    REQUIRE_FALSE(results.begin()->is_satisfied());
                     REQUIRE_FALSE(results.begin()->solution.has_value());
                 }
             }
@@ -286,7 +286,7 @@ SCENARIO("interrupting the search", "[frs]") {
                 REQUIRE(results.size() == 3);
                 for(auto& result : results) {
                     REQUIRE_FALSE(result.is_decided());
-                    REQUIRE_FALSE(result.satisfied());
+                    REQUIRE_FALSE(result.is_satisfied());
                     REQUIRE_FALSE(result.solution.has_value());
                 }
             }
@@ -297,13 +297,13 @@ SCENARIO("interrupting the search", "[frs]") {
             auto results = frs.is_reachable(n, queries);
             THEN("the query that holds in the initial state is decided") {
                 REQUIRE(results[0].is_decided());
-                REQUIRE(results[0].satisfied());
+                REQUIRE(results[0].is_satisfied());
             }
             AND_THEN("the queries that need the rest of the state space are not decided") {
                 REQUIRE_FALSE(results[1].is_decided());
-                REQUIRE_FALSE(results[1].satisfied());
+                REQUIRE_FALSE(results[1].is_satisfied());
                 REQUIRE_FALSE(results[2].is_decided());
-                REQUIRE_FALSE(results[2].satisfied());
+                REQUIRE_FALSE(results[2].is_satisfied());
                 REQUIRE_FALSE(results[2].solution.has_value());
             }
         }
@@ -313,7 +313,7 @@ SCENARIO("interrupting the search", "[frs]") {
             THEN("every query is decided and satisfied") {
                 for(auto& result : results) {
                     REQUIRE(result.is_decided());
-                    REQUIRE(result.satisfied());
+                    REQUIRE(result.is_satisfied());
                 }
             }
         }

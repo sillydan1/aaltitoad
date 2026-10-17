@@ -47,7 +47,7 @@ namespace aaltitoad {
         return solution.has_value() || is_exhaustive;
     }
 
-    auto forward_reachability_searcher::query_solution_t::satisfied() const -> bool {
+    auto forward_reachability_searcher::query_solution_t::is_satisfied() const -> bool {
         if(!is_decided())
             return false;
         if(kind == query_kind_t::safety)
@@ -56,7 +56,7 @@ namespace aaltitoad {
     }
 
     auto forward_reachability_searcher::query_solution_t::is_solution(const ntta_t& state) const -> bool {
-        auto holds = is_satisfied(query, state);
+        auto holds = aaltitoad::is_satisfied(query, state);
         if(kind == query_kind_t::safety)
             return !holds;
         return holds;

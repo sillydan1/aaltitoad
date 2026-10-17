@@ -191,7 +191,7 @@ int main(int argc, char** argv) {
                 std::stringstream ss{}; ss << result.query;
                 res["query"] = ss.str();
                 // queries that an interrupted search did not answer are neither satisfied nor unsatisfied
-                res["satisfied"] = result.is_decided() ? nlohmann::json(result.satisfied()) : nlohmann::json(nullptr);
+                res["satisfied"] = result.is_decided() ? nlohmann::json(result.is_satisfied()) : nlohmann::json(nullptr);
                 // the trace to the witness (E F) or the counterexample (A G) of the query
                 if(result.solution.has_value())
                     res["trace"] = to_json(result.solution.value());
@@ -203,7 +203,7 @@ int main(int argc, char** argv) {
             for(auto& result : results) {
                 *trace_stream << result.query << ": ";
                 if(result.is_decided())
-                    *trace_stream << std::boolalpha << result.satisfied();
+                    *trace_stream << std::boolalpha << result.is_satisfied();
                 else
                     *trace_stream << "unknown (the search was interrupted)";
                 *trace_stream << "\n";

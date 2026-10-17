@@ -46,7 +46,7 @@ namespace aaltitoad {
             auto is_decided() const -> bool;
             // Reachability queries are satisfied once a witness is found, safety queries if the whole state space has no
             // counterexample. Queries that are not decided are not satisfied
-            auto satisfied() const -> bool;
+            auto is_satisfied() const -> bool;
             // Whether the state is a witness or a counterexample of the query
             auto is_solution(const ntta_t& state) const -> bool;
         };
