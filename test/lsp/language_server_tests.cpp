@@ -67,8 +67,10 @@ namespace {
         }
         // Wait for the work that is due, and do it
         void work() {
+            // NOTE: sleep_until can wake up a little before the steady clock reaches the time (e.g. on windows)
             if(auto due = server.next_work())
-                std::this_thread::sleep_until(due.value());
+                while(std::chrono::steady_clock::now() < due.value())
+                    std::this_thread::sleep_until(due.value());
             server.work();
         }
         void initialize(const std::filesystem::path& project = {}) {
@@ -373,7 +375,7 @@ SCENARIO("the aaltitoad-ls program speaks the protocol on its standard input and
         REQUIRE(WIFEXITED(status));
         REQUIRE(WEXITSTATUS(status) == 0);
 #endif
-        std::ifstream file{directory.path / "output"};
+        std::ifstream file{directory.path / "output", std::ios::binary};
         std::string output{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
         message_reader reader{};
         reader.feed(output);
@@ -417,7 +419,7 @@ SCENARIO("the aaltitoad-ls program does its work while it waits for messages", "
         std::fflush(server);
     };
     auto output = [&directory]() {
-        std::ifstream file{directory.path / "output"};
+        std::ifstream file{directory.path / "output", std::ios::binary};
         return std::string{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
     };
     WHEN("a runtime runs with a delay between its steps, and no message arrives") {
