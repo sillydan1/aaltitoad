@@ -114,8 +114,9 @@ add_subdirectory(src/lsp)
 add_subdirectory(src/cli/language-server)
 add_subdirectory(test)
 
-install(TARGETS ${PROJECT_NAME} expr_lang ctl_lang verifier simulator detcheck)
-install(FILES src/man/tta.7 DESTINATION man/man7)
+# NOTE: expr and ctl are the shared libraries of the expr and ctl-expr dependencies, which the programs link with
+install(TARGETS ${PROJECT_NAME} expr ctl expr_lang ctl_lang verifier simulator detcheck)
+install(FILES src/man/tta.7 DESTINATION share/man/man7)
 install(DIRECTORY src/ntta src/plugin_system src/util src/verification src/parser DESTINATION include FILES_MATCHING PATTERN "*.h")
 
 if(NOT WIN32)
