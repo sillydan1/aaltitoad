@@ -198,6 +198,7 @@ namespace aaltitoad::lsp {
         if(path.children().size() != 1)
             throw fail("aaltitoad-ls answers E F p (can p become true?) and A G p (does p always hold?)");
         result.kind_ = reachability ? kind_t::reachability : kind_t::safety;
+        result.tree_ = tree;
         result.predicate_ = predicate_of(path.children()[0]);
 
         for(auto& [identifier, location] : named)
@@ -234,6 +235,10 @@ namespace aaltitoad::lsp {
         return kind_;
     }
 
+    auto query_t::tree() const -> const ctl::syntax_tree_t& {
+        return tree_;
+    }
+
     auto query_t::holds(const ntta_t& state) const -> bool {
         auto in = [&state](const places_t& places) {
             return std::any_of(places.begin(), places.end(), [&state](const auto& place) {
@@ -251,8 +256,4 @@ namespace aaltitoad::lsp {
                 expression_driver{environment}.evaluate(std::get<expr::syntax_tree_t>(predicate_))));
     }
 
-    auto query_t::decides(const ntta_t& state) const -> bool {
-        auto result = holds(state);
-        return kind_ == kind_t::reachability ? result : !result;
-    }
 }

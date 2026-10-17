@@ -18,6 +18,7 @@
 #ifndef AALTITOAD_LSP_QUERY_H
 #define AALTITOAD_LSP_QUERY_H
 #include <parser/graphedit/network.h>
+#include <ctl_syntax_tree.h>
 #include <map>
 #include <string>
 #include <utility>
@@ -48,16 +49,18 @@ namespace aaltitoad::lsp {
         static auto compile(const std::string& text, const graphedit::network_t& network) -> query_t;
 
         auto kind() const -> kind_t;
+        // The query in the CTL of aaltitoad (with placeholders for the locations that the predicate names), for the
+        // verifier's search, which evaluates the predicate with holds
+        auto tree() const -> const ctl::syntax_tree_t&;
         // Whether the predicate (p) holds in a state of the network. Throws if it cannot be evaluated.
         auto holds(const ntta_t& state) const -> bool;
-        // Whether a state proves (reachability) or disproves (safety) the query
-        auto decides(const ntta_t& state) const -> bool;
 
     private:
         // the instances and the locations in which a location of the predicate holds
         using places_t = std::vector<std::pair<std::string, std::string>>;
 
         kind_t kind_{kind_t::reachability};
+        ctl::syntax_tree_t tree_{};
         // the predicate: an expression, or a location id
         std::variant<expr::syntax_tree_t, std::string> predicate_{};
         // the identifiers that stand for the locations that the predicate names (<instance>@<location>)

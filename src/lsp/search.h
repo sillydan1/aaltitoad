@@ -19,20 +19,16 @@
 #define AALTITOAD_LSP_SEARCH_H
 #include "query.h"
 #include <debugger/describer.h>
+#include <verification/forward_reachability.h>
 #include <nlohmann/json.hpp>
 #include <chrono>
-#include <deque>
-#include <optional>
-#include <unordered_map>
 #include <vector>
 
 namespace aaltitoad::lsp {
-    // Answers a query about a network by forward reachability, as aaltitoad's verifier does: it searches the states that
-    // the network reaches by its ticks and by the changes of its environment that the interesting tocker finds (values of
-    // the external variables that make the guards of the current locations hold or not), until a state decides the query
-    // (see query_t::decides) or every reachable state was searched. As in the verifier, the environment may also stay as
-    // it is after a tick. The states are searched breadth first, so that the traces are as short as possible, and in
-    // slices (see run), so that the server keeps handling messages meanwhile.
+    // Answers a query about a network with the forward reachability search of aaltitoad's verifier: it searches the
+    // states that the network reaches by its ticks and by the changes of its environment that the interesting tocker
+    // finds, until a state decides the query or every reachable state was searched. The search is taken a state at a time in slices (see run), so that the server keeps handling messages
+    // meanwhile, and stops without an answer after a number of states.
     class search {
     public:
         enum class status_t {
@@ -58,53 +54,31 @@ namespace aaltitoad::lsp {
         auto status() const -> status_t;
         // Why the search ended, for the user
         auto message() const -> const std::string&;
-        // How many states were found, and how many of them were searched
+        // How many states were searched, and how many wait to be searched
         auto states() const -> std::size_t;
-        auto searched() const -> std::size_t;
+        auto waiting() const -> std::size_t;
         // The result of verify/run, once the answer is known: {"status", "message", "statistics", "trace"}
         auto result() const -> nlohmann::json;
 
     private:
-        // A state that the search found, and how: from which state, by which edges (a tick) or by which changes of the
-        // environment (a tock); the first state has neither
-        struct node_t {
-            ntta_t state;
-            std::optional<std::size_t> parent{};
-            std::vector<std::string> edges{};
-            std::optional<expr::symbol_table_t> input{};
-        };
-
-        // Add a state that was found (unless it was found before). Returns its index, or std::nullopt if it is not new.
-        auto add(ntta_t state, std::optional<std::size_t> parent, std::vector<std::string> edges,
-                 std::optional<expr::symbol_table_t> input) -> std::optional<std::size_t>;
-        // Whether a state that was added decides the query (and ends the search)
-        auto decides(std::size_t node) -> bool;
-        // Add the states that the environment can change a state into (to be searched later). Returns whether the search
-        // ended.
-        auto add_inputs(std::size_t node, const std::vector<expr::symbol_table_t>& inputs) -> bool;
-        // Search the successors of a state. Returns whether the search ended.
-        auto expand(std::size_t node) -> bool;
-        void finish(status_t status, std::string message, std::optional<std::size_t> decided = std::nullopt);
-        // The number of steps from the first state to a state
-        auto depth(std::size_t node) const -> std::size_t;
-        auto trace(std::size_t node) const -> nlohmann::json;
+        // The answer of the searcher, once its search ended
+        void conclude();
+        void finish(status_t status, std::string message);
+        // The step from a state of a trace to the next one: a tick, or a change of the environment
+        auto step_between(const ntta_t& from, const ntta_t& to) const -> nlohmann::json;
+        auto trace() const -> nlohmann::json;
 
         graphedit::network_t network_;
         // NOTE: after the network, which it describes
         debugger::describer describer_;
         query_t query_;
         std::size_t max_states_;
-        std::deque<node_t> nodes_{};
-        // hash -> the states with that hash
-        std::unordered_map<std::size_t, std::vector<std::size_t>> known_{};
-        std::deque<std::size_t> frontier_{};
-        std::size_t searched_{0};
-        std::size_t transitions_{0};
+        forward_reachability_searcher searcher_{};
         bool started_{false};
         status_t status_{status_t::searching};
         std::string message_{};
-        // the state that decided the query
-        std::optional<std::size_t> decided_{};
+        // the states from the initial state to the state that decided the query
+        std::vector<ntta_t> trace_{};
     };
 }
 

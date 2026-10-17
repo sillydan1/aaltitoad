@@ -384,8 +384,8 @@ namespace aaltitoad::lsp {
         if(clock::now() - last_progress_ < progress_interval)
             return;
         last_progress_ = clock::now();
-        notify("verify/progress", {{"id", search_run_}, {"message", std::to_string(search_->states()) + " states found, " +
-                                                              std::to_string(search_->searched()) + " searched"}});
+        notify("verify/progress", {{"id", search_run_}, {"message", std::to_string(search_->states()) + " states searched, " +
+                                                              std::to_string(search_->waiting()) + " waiting"}});
     }
 
     void language_server::answer(nlohmann::json response) {
