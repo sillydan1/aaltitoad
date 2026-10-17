@@ -25,7 +25,11 @@ if(${CODE_COVERAGE})
     target_link_options(hawk_parser PUBLIC --coverage)
     target_compile_options(hawk_parser PUBLIC --coverage)
 endif()
-install(TARGETS hawk_parser DESTINATION ${AALTITOAD_PLUGIN_INSTALL_DIR})
+# NOTE: the import library of the plugin (on windows) is installed with the other libraries, not next to the plugin
+install(TARGETS hawk_parser
+        RUNTIME DESTINATION ${AALTITOAD_PLUGIN_INSTALL_DIR}
+        LIBRARY DESTINATION ${AALTITOAD_PLUGIN_INSTALL_DIR}
+        ARCHIVE DESTINATION lib)
 
 # reading the NTTA models of graphedit (https://git.gtz.dk/gtz-agent/graphedit-ntta) and building their networks
 add_library(graphedit_parser STATIC
