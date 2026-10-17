@@ -110,7 +110,8 @@ jobs:
         cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
               -DFLEX_INCLUDE_DIR="$(cygpath -m "$PWD/flex-include")"
     - name: build
-      run: cmake --build build
+      # NOTE: -k 0 reports every error of the build, rather than only the first
+      run: cmake --build build -- -k 0
     - name: test
       working-directory: build
       run: ./aaltitoad_tests.exe
