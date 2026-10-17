@@ -1,8 +1,8 @@
 name: aaltitoad packages
 
-# Builds the packages of aaltitoad, tries them, and attaches them to the GitHub release of a version tag (v1.2.3, which
-# must be the version in CMakeLists.txt). The release is made if the tag does not have one yet. The packages are also
-# uploaded as artifacts, e.g. when the workflow is run by hand.
+# Builds the packages of aaltitoad (a debian package, a homebrew formula and a windows installer), tries them, and
+# uploads them as artifacts. For a version tag (v1.2.3, which must be the version in CMakeLists.txt) it attaches them to
+# the GitHub release of the tag (made if the tag does not have one yet), with the homebrew formula of the tag's source.
 on:
   push:
     tags:
@@ -22,16 +22,9 @@ jobs:
   debian:
     name: debian package (ubuntu-latest)
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
     - name: checkout repository
       uses: actions/checkout@v4
-    - name: check that the tag is the version
-      if: startsWith(github.ref, 'refs/tags/v')
-      run: |
-        version=$(sed -n 's/^project(aaltitoad VERSION \([0-9.]*\))$/\1/p' CMakeLists.txt)
-        test "$GITHUB_REF_NAME" = "v$version" || { echo "the tag $GITHUB_REF_NAME is not the version v$version of CMakeLists.txt"; exit 1; }
     - name: install dependencies
       run: sudo apt-get update && sudo apt-get install -y flex bison make m4 cmake libfl-dev libbison-dev libz3-dev dpkg-dev
     - name: configure
@@ -55,14 +48,6 @@ jobs:
       with:
         name: aaltitoad-deb
         path: build/aaltitoad_*.deb
-    - name: attach the package to the release
-      if: startsWith(github.ref, 'refs/tags/v')
-      env:
-        GH_TOKEN: ${{ github.token }}
-        GH_REPO: ${{ github.repository }}
-      run: |
-        gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --generate-notes
-        gh release upload "$GITHUB_REF_NAME" build/aaltitoad_*.deb --clobber
 
   homebrew:
     name: homebrew formula (macos-latest)
@@ -125,3 +110,58 @@ jobs:
     - name: test
       working-directory: build
       run: ./aaltitoad_tests.exe
+    - name: package
+      working-directory: build
+      run: cpack -G NSIS
+    - name: install and try the installer, outside of msys2
+      shell: pwsh
+      run: |
+        $installer = (Get-ChildItem build/aaltitoad-*.exe | Select-Object -First 1).FullName
+        Start-Process -FilePath $installer -ArgumentList '/S', '/D=C:\aaltitoad' -Wait
+        Set-Location $env:RUNNER_TEMP
+        $verifier = 'C:\aaltitoad\bin\verifier.exe'
+        & $verifier --version
+        if ($LASTEXITCODE -ne 0) { exit 1 }
+        & 'C:\aaltitoad\bin\aaltitoad-ls.exe' --version
+        if ($LASTEXITCODE -ne 0) { exit 1 }
+        $plugins = & $verifier -L -f . -Q 'E F true' | Out-String
+        if ($plugins -notmatch 'hawk_parser') { Write-Error "the hawk parser was not found: $plugins"; exit 1 }
+        $result = & $verifier -f "$env:GITHUB_WORKSPACE\test\verification\fischer-suite\fischer-2" -i '.*\.ignore\.txt' -Q 'A G ctr <= 1' -m | Out-String
+        if ($result -notmatch ': true') { Write-Error "unexpected result: $result"; exit 1 }
+    - name: upload the installer
+      uses: actions/upload-artifact@v4
+      with:
+        name: aaltitoad-windows
+        path: build/aaltitoad-*.exe
+
+  release:
+    name: attach the packages to the release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [debian, homebrew, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: checkout repository
+      uses: actions/checkout@v4
+    - name: check that the tag is the version
+      run: |
+        version=$(sed -n 's/^project(aaltitoad VERSION \([0-9.]*\))$/\1/p' CMakeLists.txt)
+        test "$GITHUB_REF_NAME" = "v$version" || { echo "the tag $GITHUB_REF_NAME is not the version v$version of CMakeLists.txt"; exit 1; }
+    - name: download the packages
+      uses: actions/download-artifact@v4
+      with:
+        path: packages
+        merge-multiple: true
+    - name: make the homebrew formula of the tag's source
+      run: |
+        url="https://github.com/$GITHUB_REPOSITORY/archive/refs/tags/$GITHUB_REF_NAME.tar.gz"
+        sha=$(curl -sSfL "$url" | sha256sum | cut -d' ' -f1)
+        sed -e "s|^  url .*|  url \"$url\"|" -e "s|^  sha256 .*|  sha256 \"$sha\"|" Formula/aaltitoad.rb > packages/aaltitoad.rb
+    - name: attach the packages to the release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+      run: |
+        gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --generate-notes
+        gh release upload "$GITHUB_REF_NAME" packages/* --clobber
