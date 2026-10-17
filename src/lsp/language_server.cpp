@@ -104,8 +104,13 @@ namespace aaltitoad::lsp {
         }
         nlohmann::json response{{"jsonrpc", "2.0"}, {"id", message.at("id")}};
         handling_request_ = true;
+        auto answered = true;
         try {
-            response["result"] = request(method->get<std::string>(), params);
+            auto result = request(message.at("id"), method->get<std::string>(), params);
+            if(result)
+                response["result"] = std::move(result.value());
+            else
+                answered = false;
         } catch(const request_error& e) {
             response["error"] = {{"code", e.code}, {"message", e.what()}};
         } catch(const nlohmann::json::exception& e) {
@@ -115,7 +120,8 @@ namespace aaltitoad::lsp {
             response["error"] = {{"code", internal_error}, {"message", e.what()}};
         }
         handling_request_ = false;
-        send(response);
+        if(answered)
+            send(response);
         auto pending = std::move(pending_);
         pending_.clear();
         for(auto& notification : pending)
@@ -134,7 +140,11 @@ namespace aaltitoad::lsp {
         return runtime_ && running_;
     }
 
-    auto language_server::request(const std::string& method, const nlohmann::json& params) -> nlohmann::json {
+    auto language_server::is_verifying() const -> bool {
+        return search_ != nullptr;
+    }
+
+    auto language_server::request(const nlohmann::json& id, const std::string& method, const nlohmann::json& params) -> std::optional<nlohmann::json> {
         if(shutdown_)
             throw request_error(invalid_request, "the server is shutting down");
         if(method == "initialize")
@@ -144,10 +154,16 @@ namespace aaltitoad::lsp {
         if(method == "shutdown") {
             shutdown_ = true;
             end_session();
+            if(search_)
+                answer({{"error", {{"code", request_cancelled}, {"message", "the server shuts down"}}}});
             return nullptr;
         }
         if(method.starts_with("debug/"))
             return debug_request(method, params);
+        if(method == "verify/run") {
+            verify(id, params);
+            return std::nullopt;
+        }
         throw request_error(method_not_found, "aaltitoad-ls does not know the method '" + method + "'");
     }
 
@@ -175,6 +191,8 @@ namespace aaltitoad::lsp {
         } else if(method == "graph/didClose") {
             buffers_.erase(params.at("key").get<std::string>());
             schedule_analysis();
+        } else if(method == "verify/cancel") {
+            cancel_verification(params.at("id").get<std::string>());
         }
     }
 
@@ -198,7 +216,12 @@ namespace aaltitoad::lsp {
                 {"capabilities", {{"sync", "full"}, {"diagnostics", true}, {"progress", false}, {"notifications", false},
                                   {"debug", {{"launch", true}, {"attach", false}, {"chooseSteps", true}, {"history", true},
                                              {"setVariables", true}, {"setActive", true}, {"breakpoints", true},
-                                             {"conditionBreakpoints", true}, {"hitCounts", true}, {"liveState", true}}}}}};
+                                             {"conditionBreakpoints", true}, {"hitCounts", true}, {"liveState", true}}},
+                                  {"verification", {{"traces", true}, {"cancel", true}, {"examples", {
+                                          {{"query", "E F Main@done"}, {"description", "Can the main template reach its location 'done'?"}},
+                                          {{"query", "A G count <= 10"}, {"description", "Does the variable count stay at most 10?"}},
+                                          {{"query", "E F Main.lamp(1)@on && !button.1"},
+                                           {"description", "Can the instance lamp(1) be in its location 'on' while button.1 is false?"}}}}}}}}};
     }
 
     auto language_server::debug_request(const std::string& method, const nlohmann::json& params) -> nlohmann::json {
@@ -271,31 +294,8 @@ namespace aaltitoad::lsp {
             if(auto it = configuration->find("arguments"); it != configuration->end())
                 arguments = *it;
         auto parsed_arguments = debugger::arguments_from_json(arguments);
-        auto models_json = params.find("models");
-        if(models_json == params.end() || !models_json->is_array())
-            throw request_error(invalid_params, "'models' must be an array of models");
-        std::map<std::string, graphedit::ntta_model_t> models{};
-        for(auto& buffer : *models_json) {
-            try {
-                auto model = graphedit::read_buffer(buffer);
-                models[model.key] = std::move(model);
-            } catch(const std::invalid_argument& e) {
-                throw request_error(invalid_params, e.what());
-            }
-        }
         auto breakpoints = breakpoints_of(params);
-        auto network = graphedit::build_network(std::move(models));
-        if(!network.automata) {
-            std::vector<std::string> reasons{};
-            for(auto& [key, problems] : network.problems)
-                for(auto& problem : problems)
-                    if(problem.severity == graphedit::severity_t::error && reasons.size() < 3)
-                        reasons.push_back(key + ": " + problem.title + " (" + problem.message + ")");
-            std::string text{"aaltitoad cannot run the network"};
-            for(std::size_t i = 0; i < reasons.size(); i++)
-                text += (i == 0 ? ": " : "; ") + reasons[i];
-            throw request_error(invalid_params, text);
-        }
+        auto network = network_of(params);
         runtime_ = std::make_unique<debugger::runtime>(std::move(network), parsed_arguments);
         auto statuses = runtime_->set_breakpoints(breakpoints);
         auto stop_on_entry = params.contains("stopOnEntry") && params.at("stopOnEntry").is_boolean()
@@ -309,6 +309,93 @@ namespace aaltitoad::lsp {
             notify("debug/continued", nlohmann::json::object());
         }
         return statuses_json(statuses);
+    }
+
+    auto language_server::network_of(const nlohmann::json& params) -> graphedit::network_t {
+        auto models_json = params.find("models");
+        if(models_json == params.end() || !models_json->is_array())
+            throw request_error(invalid_params, "'models' must be an array of models");
+        std::map<std::string, graphedit::ntta_model_t> models{};
+        for(auto& buffer : *models_json) {
+            try {
+                auto model = graphedit::read_buffer(buffer);
+                models[model.key] = std::move(model);
+            } catch(const std::invalid_argument& e) {
+                throw request_error(invalid_params, e.what());
+            }
+        }
+        auto network = graphedit::build_network(std::move(models));
+        if(network.automata)
+            return network;
+        std::vector<std::string> reasons{};
+        for(auto& [key, problems] : network.problems)
+            for(auto& problem : problems)
+                if(problem.severity == graphedit::severity_t::error && reasons.size() < 3)
+                    reasons.push_back(key + ": " + problem.title + " (" + problem.message + ")");
+        std::string text{"aaltitoad cannot run the network"};
+        for(std::size_t i = 0; i < reasons.size(); i++)
+            text += (i == 0 ? ": " : "; ") + reasons[i];
+        throw request_error(invalid_params, text);
+    }
+
+    void language_server::verify(const nlohmann::json& id, const nlohmann::json& params) {
+        if(search_)
+            throw request_error(request_failed, "another query is being verified (aaltitoad-ls answers one at a time)");
+        auto run = string_param(params, "id");
+        auto text = string_param(params, "query");
+        auto max_states = default_max_states;
+        if(auto options = params.find("options"); options != params.end() && options->is_object())
+            if(auto it = options->find("maxStates"); it != options->end() && !it->is_null()) {
+                if(!it->is_number_integer() || it->get<long long>() < 1)
+                    throw request_error(invalid_params, "the option maxStates must be a whole number that is at least 1");
+                max_states = it->get<std::size_t>();
+            }
+        auto network = network_of(params);
+        std::optional<query_t> query{};
+        try {
+            query = query_t::compile(text, network);
+        } catch(const std::invalid_argument& e) {
+            throw request_error(invalid_params, e.what());
+        }
+        spdlog::info("verifying '{}' ({})", text, run);
+        search_ = std::make_unique<search>(std::move(network), std::move(query.value()), max_states);
+        search_request_ = id;
+        search_run_ = run;
+        last_progress_ = clock::now();
+    }
+
+    void language_server::cancel_verification(const std::string& run) {
+        if(!search_ || run != search_run_)
+            return;
+        spdlog::info("verifying {} was cancelled", run);
+        answer({{"error", {{"code", request_cancelled}, {"message", "the verification was cancelled"}}}});
+    }
+
+    void language_server::search_further() {
+        if(!search_)
+            return;
+        if(search_->run(clock::now() + run_slice)) {
+            if(search_->status() == search::status_t::failed)
+                answer({{"error", {{"code", request_failed}, {"message", search_->message()}}}});
+            else
+                answer({{"result", search_->result()}});
+            return;
+        }
+        if(clock::now() - last_progress_ < progress_interval)
+            return;
+        last_progress_ = clock::now();
+        notify("verify/progress", {{"id", search_run_}, {"message", std::to_string(search_->states()) + " states found, " +
+                                                              std::to_string(search_->searched()) + " searched"}});
+    }
+
+    void language_server::answer(nlohmann::json response) {
+        response["jsonrpc"] = "2.0";
+        response["id"] = search_request_;
+        search_.reset();
+        search_request_ = nullptr;
+        search_run_.clear();
+        // NOTE: the answer of a request that is being handled (e.g. a run cancelled by shutdown) waits for its response
+        notify_message(std::move(response));
     }
 
     void language_server::report_stop(const debugger::stop_t& stop) {
@@ -330,6 +417,8 @@ namespace aaltitoad::lsp {
         std::optional<clock::time_point> result = analysis_due_;
         if(runtime_ && running_ && (!result || next_step_ < result.value()))
             result = next_step_;
+        if(search_)
+            result = clock::now();
         return result;
     }
 
@@ -337,6 +426,7 @@ namespace aaltitoad::lsp {
         auto now = clock::now();
         if(analysis_due_ && now >= analysis_due_.value())
             analyze();
+        search_further();
         if(!runtime_ || !running_ || now < next_step_)
             return;
         std::optional<debugger::stop_t> stop{};
@@ -405,7 +495,10 @@ namespace aaltitoad::lsp {
     }
 
     void language_server::notify(const std::string& method, nlohmann::json params) {
-        nlohmann::json message{{"jsonrpc", "2.0"}, {"method", method}, {"params", std::move(params)}};
+        notify_message({{"jsonrpc", "2.0"}, {"method", method}, {"params", std::move(params)}});
+    }
+
+    void language_server::notify_message(nlohmann::json message) {
         if(handling_request_)
             pending_.push_back(std::move(message));
         else

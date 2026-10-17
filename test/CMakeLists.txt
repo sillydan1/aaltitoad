@@ -31,6 +31,7 @@ add_executable(${PROJECT_NAME}
         debugger/runtime_tests.cpp
         lsp/project_tests.cpp
         lsp/language_server_tests.cpp
+        lsp/verification_tests.cpp
         verification/forward_reachability_tests.cpp
         algorithms/tarjan_tests.cpp
         plugin_system/plugin_system_tests.cpp)

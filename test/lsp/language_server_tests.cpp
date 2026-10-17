@@ -345,6 +345,87 @@ SCENARIO("debugging with the language server", "[lsp]") {
     }
 }
 
+SCENARIO("verifying with the language server", "[lsp][verification]") {
+    client_t client{};
+    auto initialized = client.result("initialize", {{"processId", 1}, {"capabilities", nlohmann::json::object()}});
+    client.notify("initialized");
+    // Send verify/run and return its answer, which comes once the search ended
+    auto verify = [&client](const nlohmann::json& params) -> nlohmann::json {
+        auto id = client.next_id++;
+        client.server.handle(nlohmann::json{{"jsonrpc", "2.0"}, {"id", id}, {"method", "verify/run"}, {"params", params}}.dump());
+        for(auto i = 0; i < 1000; i++) {
+            for(auto& message : client.messages)
+                if(message.contains("id") && message.at("id") == id)
+                    return message;
+            client.work();
+        }
+        FAIL("verify/run was not answered");
+        return {};
+    };
+    auto run = [](const std::string& id, const std::string& query, const nlohmann::json& models,
+                  const nlohmann::json& options = nlohmann::json::object()) -> nlohmann::json {
+        return {{"id", id}, {"query", query}, {"options", options}, {"models", models}};
+    };
+    THEN("initialize announces what the server can verify") {
+        auto verification = initialized.at("capabilities").at("verification");
+        REQUIRE(verification.at("traces") == true);
+        REQUIRE(verification.at("cancel") == true);
+        REQUIRE_FALSE(verification.at("examples").empty());
+    }
+    THEN("verify/run is answered with the result when the search ended") {
+        auto answer = verify(run("r1", "E F count == 3", light_buffers()));
+        INFO(answer.dump());
+        REQUIRE(answer.at("result").at("status") == "satisfied");
+        REQUIRE(answer.at("result").at("trace").at("steps").size() == 4);
+        REQUIRE_FALSE(client.server.is_verifying());
+        THEN("a safety query that holds has no trace") {
+            auto safe = verify(run("r2", "A[] count <= 3", light_buffers()));
+            REQUIRE(safe.at("result").at("status") == "satisfied");
+            REQUIRE_FALSE(safe.at("result").contains("trace"));
+        }
+    }
+    THEN("invalid queries and networks that aaltitoad cannot run are refused right away") {
+        auto invalid = client.request("verify/run", run("r1", "E F nothing", light_buffers()));
+        REQUIRE(invalid.at("error").at("code") == invalid_params);
+        REQUIRE(invalid.at("error").at("message").get<std::string>().starts_with("'nothing' is not a variable"));
+        REQUIRE(client.error_code("verify/run", run("r2", "E F count == 1", nlohmann::json::array())) == invalid_params);
+        REQUIRE(client.error_code("verify/run", run("r3", "E F count == 1", light_buffers(), {{"maxStates", 0}})) == invalid_params);
+        REQUIRE(client.error_code("verify/run", {{"query", "E F count == 1"}, {"models", light_buffers()}}) == invalid_params);
+    }
+    THEN("one query is verified at a time, and a run can be cancelled") {
+        auto endless = run("long", "E F count < 0", endless_buffers(), {{"maxStates", 1000000}});
+        auto id = client.next_id++;
+        client.server.handle(nlohmann::json{{"jsonrpc", "2.0"}, {"id", id}, {"method", "verify/run"}, {"params", endless}}.dump());
+        REQUIRE(client.server.is_verifying());
+        REQUIRE(client.server.next_work().has_value());
+        REQUIRE(client.error_code("verify/run", run("other", "E F count == 1", light_buffers())) == -32000);
+        // the progress is reported while the search runs
+        auto start = std::chrono::steady_clock::now();
+        while(client.notifications("verify/progress").empty() && std::chrono::steady_clock::now() - start < std::chrono::seconds{10})
+            client.work();
+        auto progress = client.notifications("verify/progress");
+        REQUIRE_FALSE(progress.empty());
+        REQUIRE(progress.front().at("id") == "long");
+        // cancelling another run does nothing
+        client.notify("verify/cancel", {{"id", "other"}});
+        REQUIRE(client.server.is_verifying());
+        client.notify("verify/cancel", {{"id", "long"}});
+        REQUIRE_FALSE(client.server.is_verifying());
+        auto& answer = client.messages.back();
+        REQUIRE(answer.at("id") == id);
+        REQUIRE(answer.at("error").at("code") == -32800);
+    }
+    THEN("shutting down answers the run that is verified") {
+        auto id = client.next_id++;
+        client.server.handle(nlohmann::json{{"jsonrpc", "2.0"}, {"id", id}, {"method", "verify/run"},
+                                            {"params", run("long", "E F count < 0", endless_buffers())}}.dump());
+        client.result("shutdown");
+        REQUIRE_FALSE(client.server.is_verifying());
+        REQUIRE(client.messages.back().at("id") == id);
+        REQUIRE(client.messages.back().at("error").at("code") == -32800);
+    }
+}
+
 #ifdef AALTITOAD_LS_PROGRAM
 SCENARIO("the aaltitoad-ls program speaks the protocol on its standard input and output", "[lsp]") {
     aaltitoad::test::temporary_directory_t directory{};

@@ -30,6 +30,10 @@ namespace aaltitoad::lsp {
     inline constexpr int invalid_params = -32602;
     inline constexpr int internal_error = -32603;
     inline constexpr int server_not_initialized = -32002;
+    // a request that failed (e.g. a query whose states cannot be searched)
+    inline constexpr int request_failed = -32000;
+    // a request that the client cancelled (verify/cancel), as in the language server protocol
+    inline constexpr int request_cancelled = -32800;
 
     // Splits a stream of bytes into messages
     class message_reader {
