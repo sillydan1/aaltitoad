@@ -48,6 +48,9 @@ set(CPACK_NSIS_CONTACT ${CPACK_PACKAGE_CONTACT})
 if(WIN32)
     get_filename_component(AALTITOAD_COMPILER_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
     install(CODE "
+        if(POLICY CMP0207)
+            cmake_policy(SET CMP0207 NEW) # match the (normalized) paths of the system DLLs with forward slashes
+        endif()
         file(GET_RUNTIME_DEPENDENCIES
              EXECUTABLES $<TARGET_FILE:verifier> $<TARGET_FILE:simulator> $<TARGET_FILE:detcheck> $<TARGET_FILE:aaltitoad-ls>
              LIBRARIES $<TARGET_FILE:hawk_parser>

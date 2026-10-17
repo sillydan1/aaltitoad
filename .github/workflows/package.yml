@@ -81,6 +81,10 @@ jobs:
       run:
         shell: msys2 {0}
     steps:
+    - name: check out the sources with their line endings
+      # NOTE: otherwise the git of msys2 finds the checkout (with CRLF line endings) changed, and the version is "dirty"
+      shell: pwsh
+      run: git config --global core.autocrlf false
     - name: checkout repository
       uses: actions/checkout@v4
     - name: install msys2 and the dependencies
@@ -117,7 +121,7 @@ jobs:
     - name: install and try the installer, outside of msys2
       shell: pwsh
       run: |
-        $installer = (Get-ChildItem build/aaltitoad-*.exe | Select-Object -First 1).FullName
+        $installer = (Get-ChildItem build/aaltitoad-*-win64.exe | Select-Object -First 1).FullName
         Start-Process -FilePath $installer -ArgumentList '/S', '/D=C:\aaltitoad' -Wait
         Set-Location $env:RUNNER_TEMP
         $verifier = 'C:\aaltitoad\bin\verifier.exe'
@@ -133,7 +137,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: aaltitoad-windows
-        path: build/aaltitoad-*.exe
+        path: build/aaltitoad-*-win64.exe
 
   release:
     name: attach the packages to the release
