@@ -82,8 +82,30 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
 cmake --build build
 cd build && cpack -G DEB
 ```
-Pushing a version tag (e.g. `v1.2.1`, the version in `CMakeLists.txt`) builds the package in CI and attaches it to the
-release of the tag.
+Pushing a version tag (e.g. `v1.2.1`, the version in `CMakeLists.txt`) builds the packages (this one, the Homebrew
+formula and the Windows installer) in CI, tries them, and attaches them to the release of the tag.
+
+## Install (macOS, Homebrew)
+The [releases](https://github.com/sillydan1/aaltitoad/releases) have a Homebrew formula (`aaltitoad.rb`) that builds
+aaltitoad from the source of the release. Homebrew installs formulae from taps, so put it in a local one:
+```shell
+brew tap-new --no-git $USER/local
+cp aaltitoad.rb "$(brew --repository $USER/local)/Formula/"
+brew install $USER/local/aaltitoad
+```
+
+## Install (Windows)
+The [releases](https://github.com/sillydan1/aaltitoad/releases) have an installer (`aaltitoad-<version>-win64.exe`)
+with the programs, the hawk parser plugin and the DLLs that they need. It can add the programs to the `PATH`.
+To build the installer yourself, use the UCRT64 environment of [MSYS2](https://www.msys2.org/) (the scanners of the
+dependencies need `FlexLexer.h`, which the `flex` of MSYS2 installs among the headers of MSYS2 itself):
+```shell
+pacman -S flex bison git mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,z3,nsis}
+mkdir flex-include && cp /usr/include/FlexLexer.h flex-include/
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DFLEX_INCLUDE_DIR="$(cygpath -m "$PWD/flex-include")"
+cmake --build build
+cd build && cpack -G NSIS
+```
 
 ## Compile (Linux)
 Aaltitoad is built using cmake. You must have a C++20 compatible compiler, `flex`, `bison` version 3.5+, [Z3](https://github.com/Z3Prover/z3) (e.g. `libz3-dev`) and the standard template library installed.
