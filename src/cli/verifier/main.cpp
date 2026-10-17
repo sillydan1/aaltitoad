@@ -120,6 +120,8 @@ int main(int argc, char** argv) {
                 nlohmann::json res{};
                 std::stringstream ss{}; ss << result.query;
                 res["query"] = ss.str();
+                res["satisfied"] = result.satisfied();
+                // the trace to the witness (E F) or the counterexample (A G) of the query
                 if(result.solution.has_value())
                     res["trace"] = to_json(result.solution.value());
                 json_results.push_back(res);
@@ -128,7 +130,7 @@ int main(int argc, char** argv) {
         } else {
             spdlog::trace("printing resuls data (non-json)");
             for(auto& result : results) {
-                *trace_stream << result.query << ": " << std::boolalpha << result.solution.has_value();
+                *trace_stream << result.query << ": " << std::boolalpha << result.satisfied();
                 if(result.solution.has_value())
                     *trace_stream << result.solution.value();
             }

@@ -21,6 +21,41 @@
 #include "verification/traceable_multimap.h"
 
 namespace aaltitoad {
+    namespace {
+        // A G p is a safety query. Every other query is searched for like E F p
+        auto kind_of(const ctl::syntax_tree_t& query) -> forward_reachability_searcher::query_kind_t {
+            auto node = [](const ctl::syntax_tree_t& tree) -> const ctl::underlying_syntax_node_t& { return tree.node; };
+            const auto* tree = &query;
+            while(std::holds_alternative<expr::root_t>(node(*tree)) && tree->children().size() == 1)
+                tree = &tree->children()[0];
+            const auto* modal = std::get_if<ctl::modal_t>(&node(*tree));
+            if(modal == nullptr || modal->operator_type != ctl::modal_op_t::A || tree->children().size() != 1)
+                return forward_reachability_searcher::query_kind_t::reachability;
+            const auto* quantifier = std::get_if<ctl::quantifier_t>(&node(tree->children()[0]));
+            if(quantifier == nullptr || quantifier->operator_type != ctl::quantifier_op_t::G)
+                return forward_reachability_searcher::query_kind_t::reachability;
+            return forward_reachability_searcher::query_kind_t::safety;
+        }
+    }
+
+    forward_reachability_searcher::query_solution_t::query_solution_t(compiled_query_t query)
+     : query{std::move(query)}, kind{kind_of(this->query)}, solution{} {
+
+    }
+
+    auto forward_reachability_searcher::query_solution_t::satisfied() const -> bool {
+        if(kind == query_kind_t::safety)
+            return !solution.has_value();
+        return solution.has_value();
+    }
+
+    auto forward_reachability_searcher::query_solution_t::is_solution(const ntta_t& state) const -> bool {
+        auto holds = is_satisfied(query, state);
+        if(kind == query_kind_t::safety)
+            return !holds;
+        return holds;
+    }
+
     forward_reachability_searcher::forward_reachability_searcher(const aaltitoad::pick_strategy& strategy)
      : W{}, P{}, solutions{}, strategy{strategy} {
 
@@ -77,16 +112,14 @@ namespace aaltitoad {
     auto forward_reachability_searcher::empty_solution_set(const std::vector<compiled_query_t>& qs) -> solutions_t {
         solutions_t s{};
         for(auto& q : qs)
-            s.push_back({q});
+            s.emplace_back(q);
         return s;
     }
 
     auto forward_reachability_searcher::check_satisfactions(const solution_t& s) -> bool {
-        // TODO: With AG queries, they are always "true" until you find a counter-example, then they are "false", but with a solution
-        //       right now, we are doing the opposite (https://github.com/sillydan1/aaltitoad/issues/41)
         for(auto& solution : solutions) {
             if(solution.solution.has_value()) continue;
-            if(is_satisfied(solution.query, s->second.data))
+            if(solution.is_solution(s->second.data))
                 solution.solution = s;
         }
         return std::all_of(solutions.begin(), solutions.end(), [](const query_solution_t& sol){ return sol.solution.has_value(); });
