@@ -164,17 +164,12 @@ the agent api), in the CTL of the `verifier`:
 
 | Query     | Asks                                                        | Trace                                               |
 |-----------|-------------------------------------------------------------|-----------------------------------------------------|
-| `E F p`   | Can a state in which `p` holds be reached? (also `E<> p`)   | a witness: a shortest run to such a state           |
-| `A G p`   | Does `p` hold in every state that can be reached? (also `A[] p`) | a counterexample: a shortest run to a state where `p` does not hold |
+| `E F p`   | Can a state in which `p` holds be reached? (also `E<> p`)   | a witness: a run to such a state                    |
+| `A G p`   | Does `p` hold in every state that can be reached? (also `A[] p`) | a counterexample: a run to a state where `p` does not hold |
 
-`p` is an expression over the variables of the network (private variables are named after their instance, e.g.
-`Main.lamp(1).on`), or a location id. Locations are also named `<instance>@<location>` in expressions, by their
-nickname or their id: `E F Main.lamp(1)@on && !button.1`. Like the `verifier`, the search takes the ticks of the
-network and the changes of its environment that the interesting tocker finds (values of the external variables that
-make the guards of the current locations hold or not), and the environment may also stay as it is after a tick. The
-states are searched breadth first, so the traces are as short as possible; a trace is shown in graphedit's debugger,
-with the changes of the environment as steps of the kind input. The option `maxStates` of a query (default 100000)
-bounds the search: a query whose answer needs more states is answered unknown.
+`p` is an expression over the variables of the network, in which locations are named `<instance>@<location>`:
+`E F Main.lamp(1)@on && !button.1`. The forward reachability search of the `verifier` answers the queries; the manual
+page `aaltitoad-ls(1)` describes the details.
 
 ## Tocker plugins
 Aaltitoad supports third party "tocker" libraries, so you can inject custom integrations directly into the runtime.

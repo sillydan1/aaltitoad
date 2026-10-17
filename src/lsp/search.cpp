@@ -17,7 +17,6 @@
  */
 #include "search.h"
 #include <ntta/interesting_tocker.h>
-#include <hashcombine>
 #include <algorithm>
 #include <stdexcept>
 
@@ -32,6 +31,10 @@ namespace aaltitoad::lsp {
             if(dynamic_cast<const std::bad_variant_access*>(&e) != nullptr)
                 return "an expression has a value of the wrong type (e.g. a guard that is not boolean)";
             return e.what();
+        }
+
+        auto value_of(const expr::symbol_value_t& value) -> const expr::underlying_symbol_value_t& {
+            return static_cast<const expr::underlying_symbol_value_t&>(value);
         }
     }
 
@@ -50,11 +53,11 @@ namespace aaltitoad::lsp {
     }
 
     auto search::states() const -> std::size_t {
-        return nodes_.size();
+        return searcher_.passed();
     }
 
-    auto search::searched() const -> std::size_t {
-        return searched_;
+    auto search::waiting() const -> std::size_t {
+        return searcher_.waiting();
     }
 
     auto search::run(std::chrono::steady_clock::time_point deadline) -> bool {
@@ -64,23 +67,17 @@ namespace aaltitoad::lsp {
                 // the environment changes as the interesting tocker of aaltitoad's verifier finds
                 auto initial = *network_.automata;
                 initial.add_tocker(std::make_shared<interesting_tocker>());
-                auto first = add(std::move(initial), std::nullopt, {}, std::nullopt);
-                frontier_.push_back(first.value());
-                if(decides(first.value()) || add_inputs(first.value(), nodes_[first.value()].state.tock()))
-                    return true;
+                auto holds = [this](const ntta_t& state) { return query_.holds(state); };
+                searcher_.start(initial, {forward_reachability_searcher::query_solution_t{query_.tree(), holds}});
             }
             while(status_ == status_t::searching) {
-                if(frontier_.empty()) {
-                    auto all = count(nodes_.size(), "state", "states");
-                    if(query_.kind() == query_t::kind_t::reachability)
-                        finish(status_t::violated, "No reachable state satisfies the predicate (" + all + " searched).");
-                    else
-                        finish(status_t::satisfied, "The predicate holds in all " + all + " that can be reached.");
-                    break;
-                }
-                auto node = frontier_.front();
-                frontier_.pop_front();
-                if(expand(node) || std::chrono::steady_clock::now() >= deadline)
+                if(searcher_.step())
+                    conclude();
+                else if(searcher_.passed() >= max_states_)
+                    finish(status_t::unknown, "The search stopped after " + count(max_states_, "state", "states") +
+                                              " (the option maxStates) without an answer.");
+                else if(std::chrono::steady_clock::now() >= deadline)
+                    // NOTE: between the slices, the server reports the progress (language_server::search_further)
                     break;
             }
         } catch(const std::exception& e) {
@@ -89,100 +86,58 @@ namespace aaltitoad::lsp {
         return status_ != status_t::searching;
     }
 
-    auto search::add(ntta_t state, std::optional<std::size_t> parent, std::vector<std::string> edges,
-                     std::optional<expr::symbol_table_t> input) -> std::optional<std::size_t> {
-        // NOTE: the hash of aaltitoad leaves the external variables out, which tell the changes of the environment apart
-        auto hash = ya::hash_combine(std::hash<ntta_t>{}(state), state.external_symbols);
-        auto& same = known_[hash];
-        if(std::any_of(same.begin(), same.end(), [this, &state](std::size_t other) { return nodes_[other].state == state; }))
-            return std::nullopt;
-        if(nodes_.size() >= max_states_) {
-            finish(status_t::unknown, "The search stopped after " + count(max_states_, "state", "states") +
-                                      " (the option maxStates) without an answer.");
-            return std::nullopt;
+    void search::conclude() {
+        const auto& answer = searcher_.results().front();
+        auto reachability = answer.kind == forward_reachability_searcher::query_kind_t::reachability;
+        if(!answer.solution) {
+            // every reachable state was searched
+            auto all = count(searcher_.passed(), "state", "states");
+            if(reachability)
+                finish(status_t::violated, "No reachable state satisfies the predicate (" + all + " searched).");
+            else
+                finish(status_t::satisfied, "The predicate holds in all " + all + " that can be reached.");
+            return;
         }
-        nodes_.push_back({std::move(state), parent, std::move(edges), std::move(input)});
-        same.push_back(nodes_.size() - 1);
-        return nodes_.size() - 1;
-    }
-
-    auto search::decides(std::size_t node) -> bool {
-        if(!query_.decides(nodes_[node].state))
-            return false;
-        auto steps = depth(node);
+        for(auto it = std::optional{answer.solution.value()}; it.has_value(); it = it.value()->second.parent)
+            trace_.push_back(it.value()->second.data);
+        std::reverse(trace_.begin(), trace_.end());
+        auto steps = trace_.size() - 1;
         auto when = steps == 0 ? std::string{"in the initial state"} : "in " + count(steps, "step", "steps");
-        if(query_.kind() == query_t::kind_t::reachability)
-            finish(status_t::satisfied, "A state that satisfies the predicate is reached " + when + ".", node);
+        if(reachability)
+            finish(status_t::satisfied, "A state that satisfies the predicate is reached " + when + ".");
         else
-            finish(status_t::violated, "A state that violates the predicate is reached " + when + ".", node);
-        return true;
+            finish(status_t::violated, "A state that violates the predicate is reached " + when + ".");
     }
 
-    auto search::add_inputs(std::size_t node, const std::vector<expr::symbol_table_t>& inputs) -> bool {
-        for(const auto& input : inputs) {
-            transitions_++;
-            auto changed = add(nodes_[node].state + input, node, {}, input);
-            if(status_ != status_t::searching)
-                return true;
-            if(!changed)
-                continue;
-            frontier_.push_back(changed.value());
-            if(decides(changed.value()))
-                return true;
-        }
-        return false;
-    }
-
-    auto search::expand(std::size_t node) -> bool {
-        searched_++;
-        // NOTE: after a tick, the environment may change or stay as it is: a state after a tick is searched further as
-        //       it is, and changed by the environment
-        for(auto& change : nodes_[node].state.tick()) {
-            transitions_++;
-            auto next = add(nodes_[node].state + change, node, change.edges, std::nullopt);
-            if(status_ != status_t::searching)
-                return true;
-            if(!next)
-                continue;
-            if(decides(next.value()))
-                return true;
-            frontier_.push_back(next.value());
-            if(add_inputs(next.value(), nodes_[next.value()].state.tock()))
-                return true;
-        }
-        return false;
-    }
-
-    void search::finish(status_t status, std::string message, std::optional<std::size_t> decided) {
+    void search::finish(status_t status, std::string message) {
         if(status_ != status_t::searching)
             return;
         status_ = status;
         message_ = std::move(message);
-        decided_ = decided;
     }
 
-    auto search::depth(std::size_t node) const -> std::size_t {
-        std::size_t result = 0;
-        for(auto parent = nodes_[node].parent; parent.has_value(); parent = nodes_[parent.value()].parent)
-            result++;
-        return result;
+    auto search::step_between(const ntta_t& from, const ntta_t& to) const -> nlohmann::json {
+        // NOTE: the searcher keeps the states of a trace, not the steps between them: a tick leads to the next state, or
+        //       else the environment changed (the tick is preferred if both do)
+        auto state = from;
+        for(auto& change : state.tick())
+            if(from + change == to)
+                return {{"label", describer_.label(change.edges)}, {"kind", "step"},
+                        {"elements", describer_.elements_of(change.edges)}};
+        expr::symbol_table_t input{};
+        for(auto& [name, value] : to.external_symbols)
+            if(auto before = from.external_symbols.find(name);
+               before == from.external_symbols.end() || value_of(before->second) != value_of(value))
+                input[name] = value;
+        return {{"label", describer_.input_label(input)}, {"kind", "input"}, {"elements", nlohmann::json::array()}};
     }
 
-    auto search::trace(std::size_t node) const -> nlohmann::json {
-        std::vector<std::size_t> path{node};
-        while(nodes_[path.back()].parent)
-            path.push_back(nodes_[path.back()].parent.value());
-        std::reverse(path.begin(), path.end());
+    auto search::trace() const -> nlohmann::json {
         auto steps = nlohmann::json::array();
-        for(auto index : path) {
-            const auto& found = nodes_[index];
-            nlohmann::json step{{"state", describer_.state(found.state)}};
-            if(found.input)
-                step["step"] = {{"label", describer_.input_label(found.input.value())}, {"kind", "input"},
-                                {"elements", nlohmann::json::array()}};
-            else if(found.parent)
-                step["step"] = {{"label", describer_.label(found.edges)}, {"kind", "step"},
-                                {"elements", describer_.elements_of(found.edges)}};
+        for(std::size_t i = 0; i < trace_.size(); i++) {
+            nlohmann::json step{{"state", describer_.state(trace_[i])}};
+            if(i > 0)
+                step["step"] = step_between(trace_[i - 1], trace_[i]);
             steps.push_back(std::move(step));
         }
         return {{"steps", steps}};
@@ -191,9 +146,9 @@ namespace aaltitoad::lsp {
     auto search::result() const -> nlohmann::json {
         auto status = status_ == status_t::satisfied ? "satisfied" : status_ == status_t::violated ? "violated" : "unknown";
         nlohmann::json result{{"status", status}, {"message", message_},
-                              {"statistics", {{"states", nodes_.size()}, {"searched", searched_}, {"transitions", transitions_}}}};
-        if(decided_)
-            result["trace"] = trace(decided_.value());
+                              {"statistics", {{"states", searcher_.passed()}, {"waiting", searcher_.waiting()}}}};
+        if(!trace_.empty())
+            result["trace"] = trace();
         return result;
     }
 }
