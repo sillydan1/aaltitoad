@@ -30,7 +30,7 @@ namespace aaltitoad::hawk {
             for(const auto &entry: std::filesystem::directory_iterator(filepath)) {
                 try {
                     if(should_ignore(entry, ignore_list)) {
-                        spdlog::trace("ignoring file {0}", entry.path().c_str());
+                        spdlog::trace("ignoring file {0}", entry.path().string());
                         continue;
                     }
 
@@ -40,15 +40,15 @@ namespace aaltitoad::hawk {
                             /* allow exceptions */ true,
                             /* ignore_comments */ true);
                     if(json_file.contains("name")) {
-                        spdlog::trace("loading file {0}", entry.path().c_str());
+                        spdlog::trace("loading file {0}", entry.path().string());
                         builder.add_template(json_file.get<model::tta_template>());
                     } else if(json_file.contains("parts")) {
-                        spdlog::trace("loading parts file {0}", entry.path().c_str());
+                        spdlog::trace("loading parts file {0}", entry.path().string());
                         builder.add_global_symbols(json_file.at("parts").get<std::vector<model::part_t>>());
                     } else
-                        spdlog::trace("ignoring file {0} (not a valid model file)", entry.path().c_str());
+                        spdlog::trace("ignoring file {0} (not a valid model file)", entry.path().string());
                 } catch (std::exception& e) {
-                    spdlog::error("unable to parse json file {0}: {1}", entry.path().c_str(), e.what());
+                    spdlog::error("unable to parse json file {0}: {1}", entry.path().string(), e.what());
                     throw;
                 }
             }
@@ -63,7 +63,7 @@ namespace aaltitoad::hawk {
     }
 
     auto should_ignore(const std::filesystem::directory_entry& entry, const std::string& ignore_regex) -> bool {
-        return std::regex_match(entry.path().c_str(), std::regex{ignore_regex});
+        return std::regex_match(entry.path().string(), std::regex{ignore_regex});
     }
 }
 
