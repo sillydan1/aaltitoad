@@ -75,8 +75,23 @@ libraries and their headers, the hawk parser plugin and the man pages:
 ```shell
 sudo apt install ./aaltitoad_1.2.1_amd64.deb
 ```
-Pushing a version tag (e.g. `v1.2.1`, the version in `CMakeLists.txt`) builds the package in CI and attaches it to the
-release of the tag.
+Pushing a version tag (e.g. `v1.2.1`, the version in `CMakeLists.txt`) builds the packages (this one, the Homebrew
+formula and the Windows installer) in CI, tries them, and attaches them to the release of the tag.
+
+## Install (macOS, Homebrew)
+The [releases](https://github.com/sillydan1/aaltitoad/releases) have a Homebrew formula (`aaltitoad.rb`) that builds
+aaltitoad from the source of the release. Homebrew installs formulae from taps, so put it in a local one:
+```shell
+brew tap-new --no-git $USER/local
+cp aaltitoad.rb "$(brew --repository $USER/local)/Formula/"
+brew install $USER/local/aaltitoad
+```
+
+## Install (Windows)
+The [releases](https://github.com/sillydan1/aaltitoad/releases) have an installer (`aaltitoad-<version>-win64.exe`)
+with the programs, the hawk parser plugin and the runtime of the compiler. It can add the programs to the `PATH`. The
+programs also need [Z3](https://github.com/Z3Prover/z3/releases), which the installer does not include: download
+`z3-<version>-x64-win.zip` and add its `bin` directory to the `PATH`.
 
 ## Compile (Linux)
 Aaltitoad is built using cmake. You must have a C++20 compatible compiler, `flex`, `bison` version 3.5+, [Z3](https://github.com/Z3Prover/z3) (e.g. `libz3-dev`) and the standard template library installed.
