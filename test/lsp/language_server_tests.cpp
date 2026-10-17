@@ -363,7 +363,7 @@ SCENARIO("the aaltitoad-ls program speaks the protocol on its standard input and
     input += message("shutdown", nullptr, true);
     input += message("exit", nullptr, false);
     directory.write_text("input", input);
-    auto command = std::string{AALTITOAD_LS_PROGRAM} + " --verbosity 0 < " + (directory.path / "input").string() + " > " +
+    auto command = std::filesystem::path{AALTITOAD_LS_PROGRAM}.make_preferred().string() + " --verbosity 0 < " + (directory.path / "input").string() + " > " +
                    (directory.path / "output").string();
     auto status = std::system(command.c_str());
     THEN("it answers every request, in order, and exits cleanly") {
@@ -405,7 +405,7 @@ SCENARIO("the aaltitoad-ls program does its work while it waits for messages", "
             json["id"] = ++id;
         return frame(json.dump());
     };
-    auto command = std::string{AALTITOAD_LS_PROGRAM} + " --verbosity 0 > " + (directory.path / "output").string();
+    auto command = std::filesystem::path{AALTITOAD_LS_PROGRAM}.make_preferred().string() + " --verbosity 0 > " + (directory.path / "output").string();
 #ifdef _WIN32
     auto* server = _popen(command.c_str(), "wb");
 #else
