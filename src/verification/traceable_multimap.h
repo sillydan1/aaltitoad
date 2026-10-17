@@ -106,7 +106,7 @@ namespace aaltitoad {
             for(auto i = 0; i < data.size()-1; i++, it++);
             return it;
         }
-        auto size() -> size_t {
+        auto size() const -> size_t {
             return data.size();
         }
     };

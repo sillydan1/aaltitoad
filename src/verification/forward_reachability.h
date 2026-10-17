@@ -34,6 +34,8 @@ namespace aaltitoad {
         // How a query is answered: a reachability query (E F p) is proven by a state where p holds (a witness), and a
         // safety query (A G p) is disproven by a state where p does not hold (a counterexample)
         enum class query_kind_t { reachability, safety };
+        // Whether the state formula of a query holds in a state
+        using predicate_t = std::function<bool(const ntta_t&)>;
         struct query_solution_t {
             compiled_query_t query;
             query_kind_t kind;
@@ -41,7 +43,12 @@ namespace aaltitoad {
             std::optional<solution_t> solution;
             // whether the whole reachable state space was searched (it was not if the search was interrupted)
             bool is_exhaustive{false};
+            // evaluates the state formula of the query (if there is none, the query is evaluated as CTL)
+            predicate_t predicate{};
             explicit query_solution_t(compiled_query_t query);
+            // A query whose state formula is evaluated by a predicate, e.g. one that names more than the CTL of
+            // aaltitoad can (the query decides whether it is a reachability or a safety query)
+            query_solution_t(compiled_query_t query, predicate_t predicate);
             // Whether the search answered the query: it found a solution, or searched the whole state space without one
             auto is_decided() const -> bool;
             // Reachability queries are satisfied once a witness is found, safety queries if the whole state space has no
@@ -57,6 +64,17 @@ namespace aaltitoad {
         auto is_reachable(const ntta_t& s0, const compiled_query_t& q) -> solutions_t;
         auto is_reachable(const ntta_t& s0, const std::vector<compiled_query_t>& q) -> solutions_t;
 
+        // Search step by step (e.g. in a program that does other work in between): start searching the states of s0 for
+        // solutions to the queries, then search one state after the other until a step says that the search ended
+        void start(const ntta_t& s0, solutions_t queries);
+        // Search the next state of the waiting list. Returns whether the search ended: every query has a solution,
+        // every reachable state was searched, or the search was interrupted
+        auto step() -> bool;
+        auto results() const -> const solutions_t&;
+        // How many states were searched (passed), and how many wait to be searched
+        auto passed() const -> size_t;
+        auto waiting() const -> size_t;
+
     private:
         traceable_multimap<ntta_t> W{}, P{};
         solutions_t solutions{};
@@ -67,6 +85,7 @@ namespace aaltitoad {
         auto is_interrupted() -> bool;
         static auto empty_solution_set(const std::vector<compiled_query_t>& q) -> solutions_t;
         auto check_satisfactions(const solution_t& s) -> bool;
+        auto all_solved() const -> bool;
         auto count_solutions() -> size_t;
         auto get_results() -> solutions_t;
     };
