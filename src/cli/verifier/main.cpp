@@ -35,8 +35,12 @@
 #include "verification/pick_strategy.h"
 #include <atomic>
 #include <csignal>
+#ifdef _WIN32
+#include "windows/search_interrupter.h"
+#else
 #include <pthread.h>
 #include <thread>
+#endif
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
 void trace_log_ntta(const aaltitoad::ntta_t& n);
@@ -47,6 +51,9 @@ namespace {
         return 128 + signal;
     }
 
+#ifdef _WIN32
+    using aaltitoad::windows::search_interrupter;
+#else
     // Interrupts the search on SIGINT or SIGTERM while it exists, so that the results found so far are printed. A second
     // signal ends the program right away. The signals are blocked and waited for by a thread of their own rather than
     // handled, since z3 replaces the SIGINT handler while it solves (to cancel only the query that it is solving)
@@ -101,6 +108,7 @@ namespace {
         std::atomic<bool> stopping{false};
         std::thread waiter{};
     };
+#endif
 }
 
 int main(int argc, char** argv) {
