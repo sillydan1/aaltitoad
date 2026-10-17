@@ -120,6 +120,7 @@ add_subdirectory(test)
 install(TARGETS ${PROJECT_NAME} expr ctl expr_lang ctl_lang verifier simulator detcheck)
 install(FILES src/man/tta.7 DESTINATION share/man/man7)
 install(DIRECTORY src/ntta src/plugin_system src/util src/verification src/parser DESTINATION include FILES_MATCHING PATTERN "*.h")
+include(cmake/Package.cmake)
 
 if(NOT WIN32)
     target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
