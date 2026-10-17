@@ -1,0 +1,62 @@
+name: aaltitoad packages
+
+# Builds the packages of aaltitoad, tries them, and attaches them to the GitHub release of a version tag (v1.2.3, which
+# must be the version in CMakeLists.txt). The release is made if the tag does not have one yet. The packages are also
+# uploaded as artifacts, e.g. when the workflow is run by hand.
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/package.yml'
+      - 'cmake/Package.cmake'
+  workflow_dispatch:
+
+jobs:
+  debian:
+    name: debian package (ubuntu-latest)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: checkout repository
+      uses: actions/checkout@v4
+    - name: check that the tag is the version
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: |
+        version=$(sed -n 's/^project(aaltitoad VERSION \([0-9.]*\))$/\1/p' CMakeLists.txt)
+        test "$GITHUB_REF_NAME" = "v$version" || { echo "the tag $GITHUB_REF_NAME is not the version v$version of CMakeLists.txt"; exit 1; }
+    - name: install dependencies
+      run: sudo apt-get update && sudo apt-get install -y flex bison make m4 cmake libfl-dev libbison-dev libz3-dev dpkg-dev
+    - name: configure
+      # NOTE: the installation prefix is the one of the package, so that the programs find their plugins
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+    - name: build
+      run: cmake --build build --config Release -j$(nproc)
+    - name: package
+      working-directory: build
+      run: cpack -G DEB
+    - name: install and try the package
+      working-directory: ${{ runner.temp }}
+      run: |
+        sudo apt-get install -y "$GITHUB_WORKSPACE"/build/aaltitoad_*.deb
+        verifier --version
+        aaltitoad-ls --version
+        verifier -L -f . -Q "E F true" | grep hawk_parser
+        verifier -f "$GITHUB_WORKSPACE/test/verification/fischer-suite/fischer-2" -i '.*\.ignore\.txt' -Q "A G ctr <= 1" -m | grep -F ": true"
+    - name: upload the package
+      uses: actions/upload-artifact@v4
+      with:
+        name: aaltitoad-deb
+        path: build/aaltitoad_*.deb
+    - name: attach the package to the release
+      if: startsWith(github.ref, 'refs/tags/v')
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+      run: |
+        gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --generate-notes
+        gh release upload "$GITHUB_REF_NAME" build/aaltitoad_*.deb --clobber

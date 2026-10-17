@@ -68,6 +68,16 @@ Such a network is called simply a **n**etwork of **t**ick **t**ock **a**utomata 
 
 ------
 
+## Install (Debian / Ubuntu)
+The [releases](https://github.com/sillydan1/aaltitoad/releases) have a Debian package (`aaltitoad_<version>_amd64.deb`,
+built on the latest Ubuntu) with the programs (`verifier`, `simulator`, `detcheck` and `aaltitoad-ls`), the aaltitoad
+libraries and their headers, the hawk parser plugin and the man pages:
+```shell
+sudo apt install ./aaltitoad_1.2.1_amd64.deb
+```
+Pushing a version tag (e.g. `v1.2.1`, the version in `CMakeLists.txt`) builds the package in CI and attaches it to the
+release of the tag.
+
 ## Compile (Linux)
 Aaltitoad is built using cmake. You must have a C++20 compatible compiler, `flex`, `bison` version 3.5+, [Z3](https://github.com/Z3Prover/z3) (e.g. `libz3-dev`) and the standard template library installed.
 All other dependencies are handled through the wonderful [CPM](https://github.com/cpm-cmake/CPM.cmake) package manager.
