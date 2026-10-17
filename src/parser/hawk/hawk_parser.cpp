@@ -18,6 +18,7 @@
 #include "hawk_parser.h"
 #include <filesystem>
 #include <fstream>
+#include <regex>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 #include "scoped_template_builder/scoped_template_builder.h"

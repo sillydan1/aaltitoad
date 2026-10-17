@@ -20,6 +20,7 @@
 #include "symbol_table.h"
 #include <ntta/tta.h>
 #include <catch2/catch_test_macros.hpp>
+#include <spdlog/spdlog.h>
 #include <utility>
 
 SCENARIO("constructing networks of TTAs", "[ntta_t-construction]") {
