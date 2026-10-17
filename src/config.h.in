@@ -24,6 +24,8 @@
 #define PROJECT_VER_MINOR @PROJECT_VERSION_MINOR@
 #define PROJECT_VER_PATCH @PROJECT_VERSION_PATCH@
 #define PROJECT_VER_SLUG "@GIT_SLUG@"
+// where the plugins (e.g. the hawk parser) are installed
+#define AALTITOAD_PLUGIN_DIR "@CMAKE_INSTALL_PREFIX@/@AALTITOAD_PLUGIN_INSTALL_DIR@"
 
 auto get_license() {
      return "                 Copyright (C) 2026  Asger Gitz-Johansen\n"

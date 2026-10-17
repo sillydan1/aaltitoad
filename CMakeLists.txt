@@ -20,6 +20,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CXX_STANDARD_REQUIRED ON)
 set(SPDLOG_BUILD_SHARED)
 set(CONFIG_IN_FILE src/config.h.in)
+# where the plugins (e.g. the hawk parser) are installed, relative to the installation prefix
+set(AALTITOAD_PLUGIN_INSTALL_DIR lib)
 set(CONFIG_OUT_FILE config.h)
 include(cmake/CPM.cmake)
 include(cmake/VER.cmake) # TODO: yalibs candidate
@@ -114,9 +116,11 @@ add_subdirectory(src/lsp)
 add_subdirectory(src/cli/language-server)
 add_subdirectory(test)
 
-install(TARGETS ${PROJECT_NAME} expr_lang ctl_lang verifier simulator detcheck)
-install(FILES src/man/tta.7 DESTINATION man/man7)
+# NOTE: expr and ctl are the shared libraries of the expr and ctl-expr dependencies, which the programs link with
+install(TARGETS ${PROJECT_NAME} expr ctl expr_lang ctl_lang verifier simulator detcheck)
+install(FILES src/man/tta.7 DESTINATION share/man/man7)
 install(DIRECTORY src/ntta src/plugin_system src/util src/verification src/parser DESTINATION include FILES_MATCHING PATTERN "*.h")
+include(cmake/Package.cmake)
 
 if(NOT WIN32)
     target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)
