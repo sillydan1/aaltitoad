@@ -20,6 +20,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CXX_STANDARD_REQUIRED ON)
 set(SPDLOG_BUILD_SHARED)
 set(CONFIG_IN_FILE src/config.h.in)
+# where the plugins (e.g. the hawk parser) are installed, relative to the installation prefix
+set(AALTITOAD_PLUGIN_INSTALL_DIR lib)
 set(CONFIG_OUT_FILE config.h)
 include(cmake/CPM.cmake)
 include(cmake/VER.cmake) # TODO: yalibs candidate
