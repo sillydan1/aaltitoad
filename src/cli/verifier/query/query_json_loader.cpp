@@ -17,6 +17,8 @@
  */
 #include <ctl_syntax_tree.h>
 #include <nlohmann/json.hpp>
+#include <spdlog/spdlog.h>
+#include <fstream>
 #include <variant>
 #include "expr-wrappers/ctl-interpreter.h"
 #include "expr-wrappers/interpreter.h"

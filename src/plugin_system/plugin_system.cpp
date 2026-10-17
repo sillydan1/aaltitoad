@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <cctype>
 #include <set>
+#include <spdlog/spdlog.h>
 #include <util/warnings.h>
 #include "plugin_system.h"
 #ifdef _WIN32

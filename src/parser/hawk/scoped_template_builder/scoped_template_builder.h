@@ -22,6 +22,7 @@
 #include <ntta/tta.h>
 #include <util/tarjan.h>
 #include <ntta/builder/ntta_builder.h>
+#include <regex>
 
 namespace aaltitoad::hawk {
     // An instance of a template in a network that a scoped_template_builder built
