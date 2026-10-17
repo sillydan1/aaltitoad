@@ -171,8 +171,8 @@ the agent api), in the CTL of the `verifier`:
 `Main.lamp(1).on`), or a location id. Locations are also named `<instance>@<location>` in expressions, by their
 nickname or their id: `E F Main.lamp(1)@on && !button.1`. Like the `verifier`, the search takes the ticks of the
 network and the changes of its environment that the interesting tocker finds (values of the external variables that
-make the guards of the current locations hold or not); unlike it, the environment may also stay as it is after a tick.
-The states are searched breadth first, so the traces are as short as possible; a trace is shown in graphedit's debugger,
+make the guards of the current locations hold or not), and the environment may also stay as it is after a tick. The
+states are searched breadth first, so the traces are as short as possible; a trace is shown in graphedit's debugger,
 with the changes of the environment as steps of the kind input. The option `maxStates` of a query (default 100000)
 bounds the search: a query whose answer needs more states is answered unknown.
 

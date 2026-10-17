@@ -84,7 +84,9 @@ namespace aaltitoad {
                 return get_results();
             /// Select the next state to search
             auto s = W.pop(strategy);
-            auto s_it = P.add(s.parent, s.data);
+            /// states that were passed when they were found (see below) are not passed again
+            auto passed = P.find(s.data);
+            auto s_it = passed ? passed.value() : P.add(s.parent, s.data);
             if(check_satisfactions(s_it))
                 return get_results();
             /// Add successors
@@ -106,6 +108,9 @@ namespace aaltitoad {
                 auto sn_it = P.add(s_it, sn);
                 if(check_satisfactions(sn_it))
                     return get_results();
+                /// the environment may also stay as it is: sn is searched further as well (the tock that changes
+                /// nothing leads to sn, which is passed already)
+                W.add_if_not_contains(s_it, sn);
                 for(auto& so : sn_tocks) {
                     auto sp = sn + so;
                     if(!P.contains(sp))

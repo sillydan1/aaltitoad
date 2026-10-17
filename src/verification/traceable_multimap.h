@@ -63,6 +63,14 @@ namespace aaltitoad {
                 return;
             add(parent, v);
         }
+        // The element that equals v, if there is one
+        auto find(const T& v) -> std::optional<iterator_t> {
+            auto range = data.equal_range(std::hash<T>{}(v));
+            for(auto it = range.first; it != range.second; it++)
+                if(it->second.data == v)
+                    return it;
+            return {};
+        }
         auto contains(const T& v) const -> bool {
             return contains(std::hash<T>{}(v), v);
         }
