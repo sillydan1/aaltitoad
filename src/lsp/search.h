@@ -30,9 +30,9 @@ namespace aaltitoad::lsp {
     // Answers a query about a network by forward reachability, as aaltitoad's verifier does: it searches the states that
     // the network reaches by its ticks and by the changes of its environment that the interesting tocker finds (values of
     // the external variables that make the guards of the current locations hold or not), until a state decides the query
-    // (see query_t::decides) or every reachable state was searched. Unlike the verifier, the environment may also stay as
-    // it is after a tick. The states are searched breadth first, so that the
-    // traces are as short as possible, and in slices (see run), so that the server keeps handling messages meanwhile.
+    // (see query_t::decides) or every reachable state was searched. As in the verifier, the environment may also stay as
+    // it is after a tick. The states are searched breadth first, so that the traces are as short as possible, and in
+    // slices (see run), so that the server keeps handling messages meanwhile.
     class search {
     public:
         enum class status_t {

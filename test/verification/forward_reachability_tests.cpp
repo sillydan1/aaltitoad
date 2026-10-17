@@ -19,6 +19,7 @@
 #include "expr-wrappers/ctl-interpreter.h"
 #include <ntta/tta.h>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <ntta/builder/ntta_builder.h>
 #include <verification/forward_reachability.h>
 
@@ -315,6 +316,41 @@ SCENARIO("interrupting the search", "[frs]") {
                     REQUIRE(result.is_decided());
                     REQUIRE(result.is_satisfied());
                 }
+            }
+        }
+    }
+}
+
+SCENARIO("the environment may stay as it is after a tick", "[frs]") {
+    GIVEN("one tta that needs an external variable to stay true for two ticks") {
+        aaltitoad::ntta_builder builder{};
+        aaltitoad::expression_driver compiler{builder.symbols, builder.external_symbols};
+        auto n = builder
+                .add_symbols({{"x", 0}})
+                .add_external_symbol({"b", false})
+                .add_tta("A", aaltitoad::tta_builder{&compiler}
+                        .add_locations({"L0", "L1", "L2"})
+                        .set_starting_location("L0")
+                        .add_edges({{"L0", "L1", "b", ""}, {"L1", "L2", "b", "x := 1"}}))
+                .build_with_interesting_tocker();
+        auto s = n.symbols + n.external_symbols;
+        auto strategy = GENERATE(aaltitoad::pick_strategy::first, aaltitoad::pick_strategy::last);
+        WHEN("searching for L2 with forward reachability search") {
+            aaltitoad::forward_reachability_searcher frs{strategy};
+            auto results = frs.is_reachable(n, aaltitoad::ctl_interpreter{s}.compile("E F L2"));
+            THEN("L2 is reached, b being true in both ticks") {
+                REQUIRE(results.begin()->solution.has_value());
+                auto& state = results.begin()->solution.value()->second.data;
+                REQUIRE(state.components["A"].current_location->first == "L2");
+                REQUIRE(std::get<bool>(state.external_symbols.at("b")));
+            }
+        }
+        WHEN("checking that the edge into L2 is never taken 'A G x == 0'") {
+            aaltitoad::forward_reachability_searcher frs{strategy};
+            auto results = frs.is_reachable(n, aaltitoad::ctl_interpreter{s}.compile("A G x == 0"));
+            THEN("the query is not satisfied") {
+                REQUIRE_FALSE(results.begin()->is_satisfied());
+                REQUIRE(results.begin()->solution.has_value());
             }
         }
     }
