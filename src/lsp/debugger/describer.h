@@ -15,8 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef AALTITOAD_DEBUGGER_DESCRIBER_H
-#define AALTITOAD_DEBUGGER_DESCRIBER_H
+#ifndef AALTITOAD_LSP_DEBUGGER_DESCRIBER_H
+#define AALTITOAD_LSP_DEBUGGER_DESCRIBER_H
 #include <parser/graphedit/network.h>
 #include <nlohmann/json.hpp>
 #include <map>
@@ -78,4 +78,4 @@ namespace aaltitoad::debugger {
     };
 }
 
-#endif //AALTITOAD_DEBUGGER_DESCRIBER_H
+#endif //AALTITOAD_LSP_DEBUGGER_DESCRIBER_H

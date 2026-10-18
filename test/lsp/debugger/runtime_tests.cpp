@@ -15,8 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "../graphedit/model_builder.h"
-#include <debugger/runtime.h>
+#include "../../graphedit/model_builder.h"
+#include <lsp/debugger/runtime.h>
 #include <catch2/catch_test_macros.hpp>
 
 using namespace aaltitoad::debugger;
