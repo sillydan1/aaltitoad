@@ -20,6 +20,7 @@
 #include <ntta/interesting_tocker.h>
 #include <ntta/async_tocker.h>
 #include <catch2/catch_test_macros.hpp>
+#include <spdlog/spdlog.h>
 
 SCENARIO("interesting tocker", "[interesting-tocker]") {
     spdlog::set_level(spdlog::level::trace);

@@ -18,8 +18,14 @@ project(aaltitoad VERSION 1.2.1)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CXX_STANDARD_REQUIRED ON)
-set(SPDLOG_BUILD_SHARED)
 set(CONFIG_IN_FILE src/config.h.in)
+# where the plugins (e.g. the hawk parser) are installed, relative to the installation prefix (on windows, next to the
+# programs, which find them there and link with the hawk parser)
+if(WIN32)
+    set(AALTITOAD_PLUGIN_INSTALL_DIR bin)
+else()
+    set(AALTITOAD_PLUGIN_INSTALL_DIR lib)
+endif()
 set(CONFIG_OUT_FILE config.h)
 include(cmake/CPM.cmake)
 include(cmake/VER.cmake) # TODO: yalibs candidate
@@ -48,7 +54,15 @@ CPMAddPackage("gh:yalibs/yauuid@1.0.1")
 CPMAddPackage("gh:yalibs/yasetwrappers@1.0.0")
 CPMAddPackage("gh:yalibs/yapermutation@1.1.2")
 
-CPMAddPackage("gh:gabime/spdlog@1.12.0")
+# NOTE: with the header-only spdlog, every DLL on windows would have a logger registry of its own (so the programs could
+#       not configure the logging of the libraries, e.g. aaltitoad-ls, which logs to the standard error), so spdlog is a
+#       shared library there (and header-only elsewhere, where the shared libraries share the registry)
+if(WIN32)
+    set(AALTITOAD_SHARED_SPDLOG ON)
+else()
+    set(AALTITOAD_SHARED_SPDLOG OFF)
+endif()
+CPMAddPackage(NAME spdlog VERSION 1.15.3 GITHUB_REPOSITORY gabime/spdlog OPTIONS "SPDLOG_BUILD_SHARED ${AALTITOAD_SHARED_SPDLOG}")
 CPMAddPackage("gh:nlohmann/json@3.11.2")
 CPMAddPackage("gh:neargye/magic_enum@0.9.3")
 
@@ -72,7 +86,11 @@ if(${CODE_COVERAGE})
     target_link_options(${PROJECT_NAME} PUBLIC --coverage)
     target_compile_options(${PROJECT_NAME} PUBLIC --coverage)
 endif()
-target_link_libraries(${PROJECT_NAME} PUBLIC expr_lang dl pthread ctl_lang)
+find_package(Threads REQUIRED)
+target_link_libraries(${PROJECT_NAME} PUBLIC expr_lang ${CMAKE_DL_LIBS} Threads::Threads ctl_lang)
+if(AALTITOAD_SHARED_SPDLOG)
+    target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
+endif()
 target_include_directories(${PROJECT_NAME} PUBLIC
         ${CMAKE_BINARY_DIR}
         ${CMAKE_CURRENT_BINARY_DIR}
@@ -114,9 +132,11 @@ add_subdirectory(src/lsp)
 add_subdirectory(src/cli/language-server)
 add_subdirectory(test)
 
-install(TARGETS ${PROJECT_NAME} expr_lang ctl_lang verifier simulator detcheck)
-install(FILES src/man/tta.7 DESTINATION man/man7)
+# NOTE: expr and ctl are the shared libraries of the expr and ctl-expr dependencies, which the programs link with
+install(TARGETS ${PROJECT_NAME} expr ctl expr_lang ctl_lang verifier simulator detcheck)
+install(FILES src/man/tta.7 DESTINATION share/man/man7)
 install(DIRECTORY src/ntta src/plugin_system src/util src/verification src/parser DESTINATION include FILES_MATCHING PATTERN "*.h")
+include(cmake/Package.cmake)
 
 if(NOT WIN32)
     target_precompile_headers(${PROJECT_NAME} PUBLIC src/aaltitoadpch.h)

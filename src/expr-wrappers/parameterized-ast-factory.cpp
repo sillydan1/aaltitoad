@@ -17,6 +17,8 @@
  */
 #include "parameterized-ast-factory.h"
 #include "ast-factory.h"
+#include <util/string_extensions.h>
+#include <regex>
 
 namespace aaltitoad {
     parameterized_ast_factory::parameterized_ast_factory(const std::string& scope_prefix, const expr::symbol_table_t& paramargs, const std::vector<std::string>& local_names)

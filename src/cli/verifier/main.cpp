@@ -35,8 +35,18 @@
 #include "verification/pick_strategy.h"
 #include <atomic>
 #include <csignal>
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX // NOTE: the libstdc++ of mingw defines it
+#define NOMINMAX
+#endif
+#include <windows.h>
+#else
 #include <pthread.h>
 #include <thread>
+#endif
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t;
 void trace_log_ntta(const aaltitoad::ntta_t& n);
@@ -47,6 +57,45 @@ namespace {
         return 128 + signal;
     }
 
+#ifdef _WIN32
+    // Interrupts the search on ctrl-c (or ctrl-break) while it exists, so that the results found so far are printed. A
+    // second one ends the program right away. Console control handlers are called from the last one that was added, so
+    // the handler of the C runtime (which calls the SIGINT handlers, e.g. the one of z3 that cancels only the query that
+    // it is solving) is added first, and this one after it
+    class search_interrupter {
+    public:
+        search_interrupter() {
+            std::signal(SIGINT, std::signal(SIGINT, SIG_IGN));
+            instance = this;
+            SetConsoleCtrlHandler(on_control, TRUE);
+        }
+        search_interrupter(const search_interrupter&) = delete;
+        auto operator=(const search_interrupter&) -> search_interrupter& = delete;
+        ~search_interrupter() {
+            SetConsoleCtrlHandler(on_control, FALSE);
+            instance = nullptr;
+        }
+        // the signal that interrupted the search (0 if it was not interrupted)
+        auto received() const -> int {
+            return signal;
+        }
+
+    private:
+        static auto WINAPI on_control(DWORD event) -> BOOL {
+            auto* interrupter = instance.load();
+            if(interrupter == nullptr || (event != CTRL_C_EVENT && event != CTRL_BREAK_EVENT))
+                return FALSE;
+            if(interrupter->signal != 0)
+                std::_Exit(signal_exit_status(SIGINT));
+            spdlog::warn("ctrl-c received: interrupting the search (press it again to quit right away)");
+            interrupter->signal = SIGINT;
+            return TRUE;
+        }
+
+        static inline std::atomic<search_interrupter*> instance{nullptr};
+        std::atomic<int> signal{0};
+    };
+#else
     // Interrupts the search on SIGINT or SIGTERM while it exists, so that the results found so far are printed. A second
     // signal ends the program right away. The signals are blocked and waited for by a thread of their own rather than
     // handled, since z3 replaces the SIGINT handler while it solves (to cancel only the query that it is solving)
@@ -101,6 +150,7 @@ namespace {
         std::atomic<bool> stopping{false};
         std::thread waiter{};
     };
+#endif
 }
 
 int main(int argc, char** argv) {
@@ -226,7 +276,7 @@ int main(int argc, char** argv) {
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t {
     auto rpath = std::getenv("AALTITOAD_LIBPATH");
-    std::vector<std::string> look_dirs = { ".", "lib", "plugins" };
+    std::vector<std::string> look_dirs = { ".", "lib", "plugins", installed_plugin_directory() };
     if(rpath)
         look_dirs.emplace_back(rpath);
     auto provided_dirs = cli_arguments["plugin-dir"].as_list_or_default({});

@@ -67,8 +67,10 @@ namespace {
         }
         // Wait for the work that is due, and do it
         void work() {
+            // NOTE: sleep_until can wake up a little before the steady clock reaches the time (e.g. on windows)
             if(auto due = server.next_work())
-                std::this_thread::sleep_until(due.value());
+                while(std::chrono::steady_clock::now() < due.value())
+                    std::this_thread::sleep_until(due.value());
             server.work();
         }
         void initialize(const std::filesystem::path& project = {}) {
@@ -363,13 +365,17 @@ SCENARIO("the aaltitoad-ls program speaks the protocol on its standard input and
     input += message("shutdown", nullptr, true);
     input += message("exit", nullptr, false);
     directory.write_text("input", input);
-    auto command = std::string{AALTITOAD_LS_PROGRAM} + " --verbosity 0 < " + (directory.path / "input").string() + " > " +
+    auto command = std::filesystem::path{AALTITOAD_LS_PROGRAM}.make_preferred().string() + " --verbosity 0 < " + (directory.path / "input").string() + " > " +
                    (directory.path / "output").string();
     auto status = std::system(command.c_str());
     THEN("it answers every request, in order, and exits cleanly") {
+#ifdef _WIN32
+        REQUIRE(status == 0);
+#else
         REQUIRE(WIFEXITED(status));
         REQUIRE(WEXITSTATUS(status) == 0);
-        std::ifstream file{directory.path / "output"};
+#endif
+        std::ifstream file{directory.path / "output", std::ios::binary};
         std::string output{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
         message_reader reader{};
         reader.feed(output);
@@ -389,6 +395,58 @@ SCENARIO("the aaltitoad-ls program speaks the protocol on its standard input and
         }
         REQUIRE(responses[0].at("result").at("language") == "NTTA");
         REQUIRE(notifications == std::vector<std::string>{"debug/stopped", "debug/stopped"});
+    }
+}
+
+SCENARIO("the aaltitoad-ls program does its work while it waits for messages", "[lsp]") {
+    aaltitoad::test::temporary_directory_t directory{};
+    auto id = 0;
+    auto message = [&id](const std::string& method, const nlohmann::json& params, bool request) {
+        nlohmann::json json{{"jsonrpc", "2.0"}, {"method", method}, {"params", params}};
+        if(request)
+            json["id"] = ++id;
+        return frame(json.dump());
+    };
+    auto command = std::filesystem::path{AALTITOAD_LS_PROGRAM}.make_preferred().string() + " --verbosity 0 > " + (directory.path / "output").string();
+#ifdef _WIN32
+    auto* server = _popen(command.c_str(), "wb");
+#else
+    auto* server = popen(command.c_str(), "w");
+#endif
+    REQUIRE(server != nullptr);
+    auto send = [server](const std::string& data) {
+        std::fwrite(data.data(), 1, data.size(), server);
+        std::fflush(server);
+    };
+    auto output = [&directory]() {
+        std::ifstream file{directory.path / "output", std::ios::binary};
+        return std::string{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
+    };
+    WHEN("a runtime runs with a delay between its steps, and no message arrives") {
+        send(message("initialize", {{"processId", 1}, {"capabilities", nlohmann::json::object()}}, true));
+        send(message("initialized", nlohmann::json::object(), false));
+        send(message("debug/launch", launch_params(light_buffers(), false, {{"delay", 100}}), true));
+        // NOTE: the light network is stuck after three steps (300ms)
+        auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
+        while(output().find("debug/stopped") == std::string::npos && std::chrono::steady_clock::now() < deadline)
+            std::this_thread::sleep_for(std::chrono::milliseconds{50});
+        auto stopped = output().find("debug/stopped") != std::string::npos;
+        send(message("shutdown", nullptr, true));
+        send(message("exit", nullptr, false));
+#ifdef _WIN32
+        auto status = _pclose(server);
+#else
+        auto status = pclose(server);
+#endif
+        THEN("the runtime takes its steps until it stops, and the program exits cleanly") {
+            REQUIRE(stopped);
+#ifdef _WIN32
+            REQUIRE(status == 0);
+#else
+            REQUIRE(WIFEXITED(status));
+            REQUIRE(WEXITSTATUS(status) == 0);
+#endif
+        }
     }
 }
 #endif

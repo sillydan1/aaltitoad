@@ -24,6 +24,15 @@
 #include <sstream>
 
 namespace {
+#ifdef _WIN32
+    // NOTE: on windows only .dll files are libraries (LoadLibrary adds .dll to names without an extension)
+    constexpr auto plugin_name = "hawk.dll";
+    constexpr auto library_name = "not-a-plugin.dll";
+#else
+    constexpr auto plugin_name = "hawk.plugin";
+    constexpr auto library_name = "libnot-a-plugin.so";
+#endif
+
     // Collects what is logged while it exists
     struct captured_log_t {
         std::ostringstream text{};
@@ -43,8 +52,8 @@ namespace {
 SCENARIO("loading plugins", "[plugin_system]") {
     aaltitoad::warnings::enable_all();
     aaltitoad::test::temporary_directory_t directory{};
-    GIVEN("a plugin whose file name does not look like a shared library") {
-        std::filesystem::copy_file(AALTITOAD_HAWK_PARSER_PLUGIN, directory.path / "hawk.plugin");
+    GIVEN("a plugin whose file name does not look like a shared library (except for its .dll extension on windows)") {
+        std::filesystem::copy_file(AALTITOAD_HAWK_PARSER_PLUGIN, directory.path / plugin_name);
         WHEN("loading the plugins of the directory") {
             auto plugins = aaltitoad::plugins::load({directory.path.string()});
             THEN("the plugin is loaded") {
@@ -53,9 +62,22 @@ SCENARIO("loading plugins", "[plugin_system]") {
             }
         }
     }
+    GIVEN("a plugin in a directory that is given twice (with different paths)") {
+        std::filesystem::copy_file(AALTITOAD_HAWK_PARSER_PLUGIN, directory.path / plugin_name);
+        WHEN("loading the plugins of the directories") {
+            captured_log_t log{};
+            auto plugins = aaltitoad::plugins::load({directory.path.string(), (directory.path / "." ).string()});
+            THEN("the plugin is loaded once, and nothing is warned about") {
+                REQUIRE(plugins.size() == 1);
+                REQUIRE(plugins.contains("hawk_parser"));
+                INFO(log.text.str());
+                REQUIRE(log.text.str().find("[warning]") == std::string::npos);
+            }
+        }
+    }
     GIVEN("files that are not plugins, although their names contain '.so'") {
         directory.write_text("notes.so.txt", "not a shared library");
-        std::filesystem::copy_file(AALTITOAD_NON_PLUGIN_LIBRARY, directory.path / "libnot-a-plugin.so");
+        std::filesystem::copy_file(AALTITOAD_NON_PLUGIN_LIBRARY, directory.path / library_name);
         WHEN("loading the plugins of the directory") {
             captured_log_t log{};
             auto plugins = aaltitoad::plugins::load({directory.path.string()});

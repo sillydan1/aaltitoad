@@ -1,0 +1,172 @@
+name: aaltitoad packages
+
+# Builds the packages of aaltitoad (a debian package, a homebrew formula and a windows installer), tries them, and
+# uploads them as artifacts. For a version tag (v1.2.3, which must be the version in CMakeLists.txt) it attaches them to
+# the GitHub release of the tag (made if the tag does not have one yet), with the homebrew formula of the tag's source.
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/package.yml'
+      - 'cmake/**'
+      - 'CMakeLists.txt'
+      - 'Formula/**'
+      - 'src/**'
+  workflow_dispatch:
+
+jobs:
+  debian:
+    name: debian package (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout repository
+      uses: actions/checkout@v4
+    - name: install dependencies
+      run: sudo apt-get update && sudo apt-get install -y flex bison make m4 cmake libfl-dev libbison-dev libz3-dev dpkg-dev
+    - name: configure
+      # NOTE: the installation prefix is the one of the package, so that the programs find their plugins
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+    - name: build
+      run: cmake --build build --config Release -j$(nproc)
+    - name: package
+      working-directory: build
+      run: cpack -G DEB
+    - name: install and try the package
+      working-directory: ${{ runner.temp }}
+      run: |
+        sudo apt-get install -y "$GITHUB_WORKSPACE"/build/aaltitoad_*.deb
+        verifier --version
+        aaltitoad-ls --version
+        verifier -L -f . -Q "E F true" | grep hawk_parser
+        verifier -f "$GITHUB_WORKSPACE/test/verification/fischer-suite/fischer-2" -i '.*\.ignore\.txt' -Q "A G ctr <= 1" -m | grep -F ": true"
+    - name: upload the package
+      uses: actions/upload-artifact@v4
+      with:
+        name: aaltitoad-deb
+        path: build/aaltitoad_*.deb
+
+  homebrew:
+    name: homebrew formula (macos-latest)
+    runs-on: macos-latest
+    steps:
+    - name: checkout repository
+      uses: actions/checkout@v4
+    - name: tap the formula, with the source of this checkout
+      run: |
+        version=$(sed -n 's/^project(aaltitoad VERSION \([0-9.]*\))$/\1/p' CMakeLists.txt)
+        # NOTE: homebrew finds the version of the formula in the name of the archive
+        archive="$RUNNER_TEMP/aaltitoad-$version.tar.gz"
+        git archive --format=tar.gz --prefix="aaltitoad-$version/" -o "$archive" HEAD
+        sha=$(shasum -a 256 "$archive" | cut -d' ' -f1)
+        brew tap-new --no-git local/aaltitoad
+        sed -e "s|^  url .*|  url \"file://$archive\"|" -e "s|^  sha256 .*|  sha256 \"$sha\"|" \
+            Formula/aaltitoad.rb > "$(brew --repository local/aaltitoad)/Formula/aaltitoad.rb"
+    - name: install the formula
+      run: brew install --build-from-source --verbose local/aaltitoad/aaltitoad
+    - name: test the formula
+      run: brew test local/aaltitoad/aaltitoad
+    - name: try the programs
+      working-directory: ${{ runner.temp }}
+      run: |
+        verifier -f "$GITHUB_WORKSPACE/test/verification/fischer-suite/fischer-2" -i '.*\.ignore\.txt' -Q "A G ctr <= 1" -m | grep -F ": true"
+
+  windows:
+    name: windows installer (windows-latest)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - name: check out the sources with their line endings
+      # NOTE: otherwise the git of msys2 finds the checkout (with CRLF line endings) changed, and the version is "dirty"
+      shell: pwsh
+      run: git config --global core.autocrlf false
+    - name: checkout repository
+      uses: actions/checkout@v4
+    - name: install msys2 and the dependencies
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: >-
+          flex
+          bison
+          git
+        pacboy: >-
+          gcc:p
+          cmake:p
+          ninja:p
+          z3:p
+          nsis:p
+    - name: configure
+      # NOTE: the scanners of the dependencies need FlexLexer.h, which the flex of msys2 installs among the headers of
+      #       msys2 (rather than of ucrt64), so it is given from a directory of its own
+      run: |
+        mkdir -p flex-include && cp /usr/include/FlexLexer.h flex-include/
+        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+              -DFLEX_INCLUDE_DIR="$(cygpath -m "$PWD/flex-include")"
+    - name: build
+      # NOTE: -k 0 reports every error of the build, rather than only the first
+      run: cmake --build build -- -k 0
+    - name: test
+      working-directory: build
+      run: ./aaltitoad_tests.exe
+    - name: package
+      working-directory: build
+      run: cpack -G NSIS
+    - name: install and try the installer, outside of msys2
+      shell: pwsh
+      run: |
+        $installer = (Get-ChildItem build/aaltitoad-*-win64.exe | Select-Object -First 1).FullName
+        Start-Process -FilePath $installer -ArgumentList '/S', '/D=C:\aaltitoad' -Wait
+        Set-Location $env:RUNNER_TEMP
+        $verifier = 'C:\aaltitoad\bin\verifier.exe'
+        & $verifier --version
+        if ($LASTEXITCODE -ne 0) { exit 1 }
+        & 'C:\aaltitoad\bin\aaltitoad-ls.exe' --version
+        if ($LASTEXITCODE -ne 0) { exit 1 }
+        $plugins = & $verifier -L -f . -Q 'E F true' | Out-String
+        if ($plugins -notmatch 'hawk_parser') { Write-Error "the hawk parser was not found: $plugins"; exit 1 }
+        $result = & $verifier -f "$env:GITHUB_WORKSPACE\test\verification\fischer-suite\fischer-2" -i '.*\.ignore\.txt' -Q 'A G ctr <= 1' -m | Out-String
+        if ($result -notmatch ': true') { Write-Error "unexpected result: $result"; exit 1 }
+    - name: upload the installer
+      uses: actions/upload-artifact@v4
+      with:
+        name: aaltitoad-windows
+        path: build/aaltitoad-*-win64.exe
+
+  release:
+    name: attach the packages to the release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [debian, homebrew, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: checkout repository
+      uses: actions/checkout@v4
+    - name: check that the tag is the version
+      run: |
+        version=$(sed -n 's/^project(aaltitoad VERSION \([0-9.]*\))$/\1/p' CMakeLists.txt)
+        test "$GITHUB_REF_NAME" = "v$version" || { echo "the tag $GITHUB_REF_NAME is not the version v$version of CMakeLists.txt"; exit 1; }
+    - name: download the packages
+      uses: actions/download-artifact@v4
+      with:
+        path: packages
+        merge-multiple: true
+    - name: make the homebrew formula of the tag's source
+      run: |
+        url="https://github.com/$GITHUB_REPOSITORY/archive/refs/tags/$GITHUB_REF_NAME.tar.gz"
+        sha=$(curl -sSfL "$url" | sha256sum | cut -d' ' -f1)
+        sed -e "s|^  url .*|  url \"$url\"|" -e "s|^  sha256 .*|  sha256 \"$sha\"|" Formula/aaltitoad.rb > packages/aaltitoad.rb
+    - name: attach the packages to the release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+      run: |
+        gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --generate-notes
+        gh release upload "$GITHUB_REF_NAME" packages/* --clobber

@@ -75,7 +75,7 @@ auto get_ntta(std::map<std::string, argument_t>& cli_arguments) -> std::unique_p
 
 auto load_plugins(std::map<std::string, argument_t>& cli_arguments) -> plugin_map_t {
     auto rpath = std::getenv("AALTITOAD_LIBPATH");
-    std::vector<std::string> look_dirs = { ".", "lib", "plugins" };
+    std::vector<std::string> look_dirs = { ".", "lib", "plugins", installed_plugin_directory() };
     if(rpath)
         look_dirs.emplace_back(rpath);
     auto provided_dirs = cli_arguments["plugin-dir"].as_list_or_default({});
