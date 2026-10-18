@@ -28,7 +28,7 @@ add_executable(${PROJECT_NAME}
         parser/scoped_template_builder_tests.cpp
         graphedit/ntta_model_tests.cpp
         graphedit/network_tests.cpp
-        debugger/runtime_tests.cpp
+        lsp/debugger/runtime_tests.cpp
         lsp/project_tests.cpp
         lsp/language_server_tests.cpp
         lsp/verification_tests.cpp
