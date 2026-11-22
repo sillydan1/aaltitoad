@@ -10,17 +10,17 @@ aaltitoad-ls \- tick tock automata language server for graphedit
 [\fB\-v\fI level\fR]
 
 .SH DESCRIPTION
-This program is the language server of the NTTA models of graphedit (see tta(7)). graphedit, with its NTTA plugin
-(graphedit\-ntta), runs it when the environment variable \fBAALTITOAD_LANGUAGE_SERVER\fR names it, and speaks the graph
-language server protocol of graphedit with it: JSON\-RPC messages with content lengths on the standard input and output.
-The program is not meant to be run by hand.
+This program is the language server of the NTTA models of graphedit (see tta(7)).
 
-The server reads the models of the project (the model files, and the open models as they are edited), builds their
-network as aaltitoad would run it, and reports what keeps aaltitoad from running it (the \fBAALTITOAD\-...\fR
-diagnostics), for example guards that cannot be parsed, subcomponents that do not match their templates and variables
-that are used but not declared. Models without vertices declare the variables of the environment
-(\fBextern bool button := false\fR). It also debugs networks (see \fBDEBUGGING\fR) and answers queries about them (see
-\fBQUERIES\fR).
+The server speaks the graph language server protocol of graphedit based on JSON\-RPC messages with content
+lengths on the standard input and output.
+
+The server reads the models of the project, builds their network as aaltitoad would run it, and reports what keeps
+aaltitoad from running it (see \fDIAGNOSTICS\fR).
+
+It also debugs networks (see \fBDEBUGGING\fR) and can answer queries about them (see \fBQUERIES\fR).
+
+This program is not meant to be run by hand.
 
 .SH OPTIONS
 .TP
@@ -35,7 +35,8 @@ set the verbosity of the log on the standard error to \fIlevel\fR (6 for max ver
 
 .SH DEBUGGING
 A debug session starts a runtime that stops before its first tick. When a tick can take several sets of edges, those
-sets are the choices of the step. Breakpoints go on locations and edges, with optional conditions and hit counts.
+sets are the choices of the step.
+Breakpoints can be placed on locations and edges, with optional conditions and hit counts.
 While the runtime is stopped, variables can be changed, instances can be put into other locations and earlier states
 can be restored. Instances are named after their scope, e.g. \fBMain.lamp(1)\fR.
 
@@ -56,8 +57,7 @@ milliseconds between two steps when the runtime runs (default 0: as fast as poss
 how many states can be restored (default 1000).
 
 .SH QUERIES
-The server answers the queries of graphedit (the Queries panel, \fBgraphedit\-cli verify\fR and the \fBverify.*\fR
-methods of its agent api) in the computation tree logic (CTL) of verifier(1):
+The server answers safety- and reachability-queries in the computation tree logic (CTL) format as described in verifier(1):
 .TP
 .BI "E F " p
 can a state in which \fIp\fR holds be reached? (also written \fBE<>\fR \fIp\fR). If it can, the result has a trace to
@@ -69,20 +69,17 @@ trace to a state in which \fIp\fR does not hold (a counterexample).
 .PP
 The predicate \fIp\fR is an expression over the variables of the network, or a location id. Private variables are named
 after their instance (\fBMain.lamp(1).on\fR). Locations are named \fIinstance\fB@\fIlocation\fR in expressions, by
-their nickname or their id, since the dot already names the private variables:
-\fBE F Main.lamp(1)@on && !button.1\fR asks whether the instance \fBMain.lamp(1)\fR can be in its location \fBon\fR
-while \fBbutton.1\fR is false.
+their nickname or their id, since the dot already names the private variables. For example:
+.TP
+.BI "\fBE F Main.lamp(1)@on && !button.1\fR"
+asks whether the instance \fBMain.lamp(1)\fR can be in its location \fBon\fR while \fBbutton.1\fR is false.
 
-The queries are answered with the forward reachability search of verifier(1): it searches the states that the network
-reaches by its ticks and by the changes of its environment that the interesting tocker finds (values of the external
-variables that make the guards of the current locations hold or not), until a state answers the query or every
-reachable state was searched. The environment may also stay as it is after a tick. The traces are not necessarily the
-shortest ones. A trace is shown in the debugger of graphedit, with the changes of the environment as steps of the kind
-\fIinput\fR.
+.PP
+The queries are answered with the forward reachability search of verifier(1). If found, a trace is provided.
 
 The search runs step by step, so that the server keeps reading messages: a query can be cancelled, and the server
 reports how many states it searched. It answers one query at a time. The option \fBmaxStates\fR of a query (default
-100000) bounds the search: a query whose answer needs more states is answered \fIunknown\fR.
+100000) bounds the search: a query whose answer needs more states is reported as \fIunknown\fR.
 
 .SH EXAMPLES
 Edit the models of a project in graphedit, with aaltitoad\-ls as the language server of its NTTA models:
@@ -96,6 +93,53 @@ Answer the queries of the project on the command line (the exit code is 1 unless
 .RS
 AALTITOAD_LANGUAGE_SERVER=aaltitoad\-ls graphedit\-cli \-\-project my\-project/ verify
 .RE
+
+.SH DIAGNOSTICS
+The server reports the following diagnostic codes. Codes that start with \fBAALTITOAD\-E\fR are errors, codes that start
+with \fBAALTITOAD\-W\fR are warnings.
+.TP
+.B AALTITOAD\-E001
+no template is the main template (\fBis_main\fR).
+.TP
+.B AALTITOAD\-E002
+several templates are the main template.
+.TP
+.B AALTITOAD\-E003
+several models have the same name.
+.TP
+.B AALTITOAD\-E004
+a template does not have exactly one initial and one final location.
+.TP
+.B AALTITOAD\-E005
+a connection leads into or out of a subcomponent.
+.TP
+.B AALTITOAD\-E006
+an edge does not arrive at a location (a nail leads nowhere, to several vertices or in a circle).
+.TP
+.B AALTITOAD\-E007
+aaltitoad cannot parse an expression (a guard, an update, declarations or the arguments of an invocation).
+.TP
+.B AALTITOAD\-E008
+a template has extern or persistent declarations.
+.TP
+.B AALTITOAD\-E009
+a subcomponent names a template that does not exist.
+.TP
+.B AALTITOAD\-E010
+the arguments of a subcomponent do not match the parameters of its template.
+.TP
+.B AALTITOAD\-E011
+templates instantiate each other in a circle.
+.TP
+.B AALTITOAD\-E012
+an expression uses a variable that is not declared.
+.TP
+.B AALTITOAD\-E013
+aaltitoad cannot build the network for another reason.
+.TP
+.B AALTITOAD\-W001
+a model file that aaltitoad cannot read (e.g. of graphedit 1.x).
+
 
 .SH AUTHOR
 Asger Gitz\-Johansen <asger.gitz@hotmail.com>.
