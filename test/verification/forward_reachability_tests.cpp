@@ -471,3 +471,26 @@ SCENARIO("the operators of the predicates of queries have their usual precedence
         }
     }
 }
+
+SCENARIO("the operators of the guards and the updates of models have their usual precedence", "[frs]") {
+    GIVEN("one tta that takes an edge whose guard and update multiply before they add") {
+        aaltitoad::ntta_builder builder{};
+        aaltitoad::expression_driver compiler{builder.symbols, builder.external_symbols};
+        auto n = builder
+                .add_symbols({{"x", 0}})
+                .add_tta("A", aaltitoad::tta_builder{&compiler}
+                        .add_locations({"L0", "L1"})
+                        .set_starting_location("L0")
+                        .add_edges({{"L0", "L1", "1 + 2 * 3 == 7", "x := 1 + 2 * 3"}}))
+                .build_with_interesting_tocker();
+        auto s = n.symbols + n.external_symbols;
+        WHEN("searching for 'E F x == 7'") {
+            aaltitoad::forward_reachability_searcher frs{};
+            auto results = frs.is_reachable(n, aaltitoad::ctl_interpreter{s}.compile("E F x == 7"));
+            THEN("the edge is taken, and x is 7") {
+                REQUIRE(results.size() == 1);
+                REQUIRE(results.begin()->is_satisfied());
+            }
+        }
+    }
+}
