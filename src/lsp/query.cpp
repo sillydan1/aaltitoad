@@ -163,8 +163,8 @@ namespace aaltitoad::lsp {
             if(!answered)
                 throw fail("aaltitoad-ls answers E F p (can p become true?) and A G p (does p always hold?)");
             const auto& predicate = path.children().at(0);
-            // NOTE: ctl-expr builds the operators between queries as expressions with the queries as children, which
-            //       aaltitoad::is_satisfied cannot evaluate (it aborts)
+            // NOTE: the operators between queries (e.g. the && of (E F a) && (E F b)) have the queries as children, and
+            //       the verifier does not answer queries in queries
             if(!predicate.children().empty())
                 throw fail("aaltitoad-ls does not answer queries in queries: the predicate is an expression or a location");
             return predicate;
