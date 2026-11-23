@@ -42,7 +42,7 @@ find_package(FLEX REQUIRED)
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
 # NOTE: the forks of expr and ctl-expr fix them (e.g. the precedence of their operators), see their histories. Until
 #       gtz-agent/expr#1 and gtz-agent/ctl-expr#1 are merged and tagged, their commits are pinned
-CPMAddPackage(NAME expr VERSION 3.1.0 GIT_REPOSITORY https://git.gtz.dk/gtz-agent/expr.git GIT_TAG e5ca752d26c1a4ea3732926bde54a3802d8fd00a OPTIONS "ENABLE_Z3 ON")
+CPMAddPackage(NAME expr VERSION 3.1.0 GIT_REPOSITORY https://git.gtz.dk/gtz-agent/expr.git GIT_TAG c6c3796ef4b8cfcf5cd7572c2252828df68d11d4 OPTIONS "ENABLE_Z3 ON")
 CPMAddPackage("gh:sillydan1/argvparse@1.2.3")
 CPMAddPackage(NAME ctl-expr VERSION 2.1.0 GIT_REPOSITORY https://git.gtz.dk/gtz-agent/ctl-expr.git GIT_TAG 43934427a6e42baf438c75fb21bb92d8aedadb0b)
 
