@@ -17,8 +17,8 @@
  */
 #ifndef AALTITOAD_LSP_SEARCH_H
 #define AALTITOAD_LSP_SEARCH_H
-#include "query.h"
 #include "debugger/describer.h"
+#include <parser/graphedit/network.h>
 #include <verification/forward_reachability.h>
 #include <nlohmann/json.hpp>
 #include <chrono>
@@ -42,7 +42,7 @@ namespace aaltitoad::lsp {
         };
 
         // Search the states of the network (which must have been built) for the query, at most max_states of them
-        search(graphedit::network_t network, query_t query, std::size_t max_states);
+        search(graphedit::network_t network, forward_reachability_searcher::query_solution_t query, std::size_t max_states);
         search(const search&) = delete;
         search(search&&) = delete;
         auto operator=(const search&) -> search& = delete;
@@ -71,7 +71,7 @@ namespace aaltitoad::lsp {
         graphedit::network_t network_;
         // NOTE: after the network, which it describes
         debugger::describer describer_;
-        query_t query_;
+        forward_reachability_searcher::query_solution_t query_;
         std::size_t max_states_;
         forward_reachability_searcher searcher_{};
         bool started_{false};

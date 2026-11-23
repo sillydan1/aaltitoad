@@ -24,6 +24,8 @@ using namespace aaltitoad::lsp;
 using aaltitoad::test::model_builder;
 
 namespace {
+    using kind_t = aaltitoad::forward_reachability_searcher::query_kind_t;
+
     auto lights() -> aaltitoad::graphedit::network_t {
         return aaltitoad::graphedit::build_network(aaltitoad::test::light_models());
     }
@@ -40,7 +42,7 @@ namespace {
     // Why a query cannot be compiled (empty if it can)
     auto error_of(const std::string& query) -> std::string {
         try {
-            query_t::compile(query, lights());
+            compile_query(query, lights());
         } catch(const std::invalid_argument& e) {
             return e.what();
         }
@@ -50,7 +52,7 @@ namespace {
     // Answer a query about the network of lights
     auto answer(const std::string& text, std::size_t max_states = 100000) -> nlohmann::json {
         auto network = lights();
-        auto query = query_t::compile(text, network);
+        auto query = compile_query(text, network);
         search s{std::move(network), std::move(query), max_states};
         while(!s.run(std::chrono::steady_clock::now() + std::chrono::seconds{1}));
         REQUIRE(s.status() != search::status_t::failed);
@@ -72,21 +74,37 @@ namespace {
 SCENARIO("compiling queries about networks", "[lsp][verification]") {
     THEN("E F and A G queries over the variables compile, also in the notation of UPPAAL") {
         auto network = lights();
-        CHECK(query_t::compile("E F count == 3", network).kind() == query_t::kind_t::reachability);
-        CHECK(query_t::compile("A G count <= 3", network).kind() == query_t::kind_t::safety);
-        CHECK(query_t::compile("E<> count == 3", network).kind() == query_t::kind_t::reachability);
-        CHECK(query_t::compile("  A[] count >= 0", network).kind() == query_t::kind_t::safety);
-        CHECK(query_t::compile("E F button.1 && count > 0", network).kind() == query_t::kind_t::reachability);
+        CHECK(compile_query("E F count == 3", network).kind == kind_t::reachability);
+        CHECK(compile_query("A G count <= 3", network).kind == kind_t::safety);
+        CHECK(compile_query("E<> count == 3", network).kind == kind_t::reachability);
+        CHECK(compile_query("  A[] count >= 0", network).kind == kind_t::safety);
+        CHECK(compile_query("E F button.1 && count > 0", network).kind == kind_t::reachability);
     }
     THEN("locations are named <instance>@<location>, by their nicknames or their ids, also in parentheses") {
         auto network = lights();
-        auto on = query_t::compile("E F Main.lamp(1)@on", network);
-        auto lit = query_t::compile("E F Main.lamp(1)@lit", network);
-        CHECK_FALSE(on.holds(*network.automata));
-        CHECK(query_t::compile("A G (Main.lamp(1)@off || Main.lamp(1)@on) && count >= 0", network).holds(*network.automata));
-        CHECK(query_t::compile("E F Main@start", network).holds(*network.automata));
+        auto on = compile_query("E F Main.lamp(1)@on", network);
+        auto lit = compile_query("E F Main.lamp(1)@lit", network);
+        CHECK_FALSE(on.is_solution(*network.automata));
+        // NOTE: the solution of A G p is a state in which p does not hold
+        CHECK_FALSE(compile_query("A G (Main.lamp(1)@off || Main.lamp(1)@on) && count >= 0", network).is_solution(*network.automata));
+        CHECK(compile_query("E F Main@start", network).is_solution(*network.automata));
         // the private variable "on" of the instance is a variable, not a location
-        CHECK_FALSE(query_t::compile("E F Main.lamp(1).on", network).holds(*network.automata));
+        CHECK_FALSE(compile_query("E F Main.lamp(1).on", network).is_solution(*network.automata));
+    }
+    THEN("queries in the language of ctl-expr are left to the verifier to evaluate") {
+        auto main = model_builder{"main.json", "Main", true}
+                .declarations("public int x := 0")
+                .location("L0", "start", "initial").location("L1", "", "final")
+                .edge("e", "L0", "L1", "", "x := 1");
+        auto network = aaltitoad::graphedit::build_network({{"main.json", main.model()}});
+        for(const auto* text : {"E F x == 0", "E<> x == 0", "E F L0"}) {
+            auto query = compile_query(text, network);
+            CHECK_FALSE(query.predicate);
+            CHECK(query.is_solution(*network.automata));
+        }
+        CHECK_FALSE(compile_query("E F L1", network).is_solution(*network.automata));
+        CHECK(compile_query("A G L1", network).is_solution(*network.automata));
+        CHECK(compile_query("E F Main@start", network).predicate);
     }
     THEN("what aaltitoad-ls does not answer is refused with the reason") {
         CHECK(error_of("count == 3").starts_with("the query is not valid"));
@@ -161,7 +179,7 @@ SCENARIO("answering queries about networks", "[lsp][verification]") {
     }
     THEN("the search runs in slices") {
         auto network = counter(500);
-        auto query = query_t::compile("E F x == 500", network);
+        auto query = compile_query("E F x == 500", network);
         search s{std::move(network), std::move(query), 100000};
         CHECK_FALSE(s.run(std::chrono::steady_clock::now()));
         CHECK(s.status() == search::status_t::searching);

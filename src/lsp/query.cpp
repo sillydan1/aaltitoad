@@ -17,15 +17,21 @@
  */
 #include "query.h"
 #include <expr-wrappers/ctl-interpreter.h>
-#include <expr-wrappers/interpreter.h>
+#include <verification/ctl/ctl_sat.h>
 #include <algorithm>
 #include <cctype>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <stdexcept>
+#include <utility>
+#include <vector>
 
 namespace aaltitoad::lsp {
     namespace {
+        // the instances and the locations in which a named location holds
+        using places_t = std::vector<std::pair<std::string, std::string>>;
+
         // Captures what is written to std::cerr while it lives (the parsers of aaltitoad report syntax errors there)
         class cerr_capture {
         public:
@@ -120,7 +126,7 @@ namespace aaltitoad::lsp {
         }
 
         // The locations of an instance with a nickname or an id
-        auto locations_of(const graphedit::network_t& network, const named_location_t& named) -> std::vector<std::pair<std::string, std::string>> {
+        auto locations_of(const graphedit::network_t& network, const named_location_t& named) -> places_t {
             auto instance = network.instances.find(named.instance);
             if(instance == network.instances.end()) {
                 std::string names{};
@@ -132,7 +138,7 @@ namespace aaltitoad::lsp {
                     names += ", ...";
                 throw fail("the network has no instance '" + named.instance + "' (instances are named after their scope: " + names + ")");
             }
-            std::vector<std::pair<std::string, std::string>> result{};
+            places_t result{};
             for(auto& location : network.models.at(instance->second.model).locations)
                 if(location.id == named.location || location.nickname == named.location)
                     result.emplace_back(named.instance, location.id);
@@ -141,26 +147,47 @@ namespace aaltitoad::lsp {
             return result;
         }
 
-        // Whether a predicate is an expression or a location (and not a combination of queries)
-        auto predicate_of(const ctl::syntax_tree_t& tree) -> std::variant<expr::syntax_tree_t, std::string> {
-            const auto& node = static_cast<const ctl::underlying_syntax_node_t&>(tree.node);
-            // NOTE: the CTL library builds the operators that combine queries as expressions too, whose operands are
-            //       the queries (the children of the CTL tree); expressions of predicates have no such children
-            if(const auto* expression = std::get_if<expr::syntax_tree_t>(&node); expression != nullptr && tree.children().empty())
-                return *expression;
-            if(const auto* location = std::get_if<ctl::location_t>(&node))
-                return location->location_name;
-            if(std::holds_alternative<expr::root_t>(node) && tree.children().size() == 1)
-                return predicate_of(tree.children()[0]);
-            throw fail("aaltitoad-ls does not answer queries in queries: the predicate is an expression or a location");
+        auto node_of(const ctl::syntax_tree_t& tree) -> const ctl::underlying_syntax_node_t& {
+            return tree.node;
+        }
+
+        // The predicate p of E F p or A G p, as ctl-expr parsed it (root, modal, quantifier, p)
+        auto predicate_of(const ctl::syntax_tree_t& tree) -> const ctl::syntax_tree_t& {
+            const auto& query = tree.children().at(0);
+            const auto& path = query.children().at(0);
+            const auto* modal = std::get_if<ctl::modal_t>(&node_of(query));
+            const auto* quantifier = std::get_if<ctl::quantifier_t>(&node_of(path));
+            auto answered = modal != nullptr && quantifier != nullptr &&
+                    ((modal->operator_type == ctl::modal_op_t::E && quantifier->operator_type == ctl::quantifier_op_t::F) ||
+                     (modal->operator_type == ctl::modal_op_t::A && quantifier->operator_type == ctl::quantifier_op_t::G));
+            if(!answered)
+                throw fail("aaltitoad-ls answers E F p (can p become true?) and A G p (does p always hold?)");
+            const auto& predicate = path.children().at(0);
+            // NOTE: ctl-expr builds the operators between queries as expressions with the queries as children, which
+            //       aaltitoad::is_satisfied cannot evaluate (it aborts)
+            if(!predicate.children().empty())
+                throw fail("aaltitoad-ls does not answer queries in queries: the predicate is an expression or a location");
+            return predicate;
+        }
+
+        // Evaluates a query that names locations as the verifier does, with their identifiers bound to whether they hold
+        auto with_bound_locations(ctl::syntax_tree_t tree, std::map<std::string, places_t> locations) -> forward_reachability_searcher::predicate_t {
+            return [tree = std::move(tree), locations = std::move(locations)](const ntta_t& state) {
+                auto bound = state;
+                for(auto& [identifier, places] : locations)
+                    bound.symbols[identifier] = expr::symbol_value_t{
+                            std::any_of(places.begin(), places.end(), [&state](const auto& place) {
+                                return state.components.at(place.first).current_location->first == place.second;
+                            })};
+                return aaltitoad::is_satisfied(tree, bound);
+            };
         }
     }
 
-    auto query_t::compile(const std::string& text, const graphedit::network_t& network) -> query_t {
+    auto compile_query(const std::string& text, const graphedit::network_t& network) -> forward_reachability_searcher::query_solution_t {
         if(!network.automata)
             throw fail("aaltitoad cannot build the network");
         const auto& automata = *network.automata;
-        query_t result{};
         std::map<std::string, named_location_t> named{};
         auto translated = with_location_identifiers(with_aaltitoad_quantifiers(text), named);
 
@@ -179,81 +206,36 @@ namespace aaltitoad::lsp {
             }
         }
 
-        // E F p or A G p
-        const auto* query = &tree;
-        while(std::holds_alternative<expr::root_t>(static_cast<const ctl::underlying_syntax_node_t&>(query->node)) &&
-              query->children().size() == 1)
-            query = &query->children()[0];
-        const auto* modal = std::get_if<ctl::modal_t>(&static_cast<const ctl::underlying_syntax_node_t&>(query->node));
-        const ctl::quantifier_t* quantifier = nullptr;
-        if(modal != nullptr && query->children().size() == 1)
-            quantifier = std::get_if<ctl::quantifier_t>(&static_cast<const ctl::underlying_syntax_node_t&>(query->children()[0].node));
-        auto reachability = modal != nullptr && quantifier != nullptr && modal->operator_type == ctl::modal_op_t::E &&
-                            quantifier->operator_type == ctl::quantifier_op_t::F;
-        auto safety = modal != nullptr && quantifier != nullptr && modal->operator_type == ctl::modal_op_t::A &&
-                      quantifier->operator_type == ctl::quantifier_op_t::G;
-        if(!reachability && !safety)
-            throw fail("aaltitoad-ls answers E F p (can p become true?) and A G p (does p always hold?)");
-        const auto& path = query->children()[0];
-        if(path.children().size() != 1)
-            throw fail("aaltitoad-ls answers E F p (can p become true?) and A G p (does p always hold?)");
-        result.kind_ = reachability ? kind_t::reachability : kind_t::safety;
-        result.tree_ = tree;
-        result.predicate_ = predicate_of(path.children()[0]);
-
+        const auto& predicate = predicate_of(tree);
+        std::map<std::string, places_t> locations{};
         for(auto& [identifier, location] : named)
-            result.locations_[identifier] = locations_of(network, location);
+            locations[identifier] = locations_of(network, location);
 
-        if(const auto* location = std::get_if<std::string>(&result.predicate_)) {
-            // a location id of the grammar of aaltitoad: some instance is in it
-            auto found = std::any_of(network.models.begin(), network.models.end(), [&location](const auto& model) {
-                return model.second.find_location(*location) != nullptr;
+        if(const auto* location = std::get_if<ctl::location_t>(&node_of(predicate))) {
+            // a location id of the grammar of ctl-expr: some instance is in it
+            auto found = std::any_of(network.models.begin(), network.models.end(), [location](const auto& model) {
+                return model.second.find_location(location->location_name) != nullptr;
             });
             if(!found)
-                throw fail("no template has the location '" + *location + "'");
-            return result;
+                throw fail("no template has the location '" + location->location_name + "'");
+            return forward_reachability_searcher::query_solution_t{tree};
         }
 
         // the expression reads variables of the network and the locations that it names, and is a boolean
-        const auto& expression = std::get<expr::syntax_tree_t>(result.predicate_);
-        for(auto& identifier : graphedit::identifiers_of(expression))
+        for(auto& identifier : graphedit::identifiers_of(std::get<expr::syntax_tree_t>(node_of(predicate))))
             if(!automata.symbols.contains(identifier) && !automata.external_symbols.contains(identifier) &&
-               !result.locations_.contains(identifier))
+               !locations.contains(identifier))
                 throw fail("'" + identifier + "' is not a variable of the network (locations are named "
                            "<instance>@<location>, e.g. Main.lamp(1)@on)");
+        auto query = locations.empty() ? forward_reachability_searcher::query_solution_t{tree}
+                                       : forward_reachability_searcher::query_solution_t{tree, with_bound_locations(tree, locations)};
         try {
-            result.holds(automata);
+            query.is_solution(automata);
         } catch(const std::bad_variant_access&) {
             throw fail("the predicate is not a boolean expression");
         } catch(const std::exception& e) {
             throw fail(std::string{"the predicate cannot be evaluated: "} + e.what());
         }
-        return result;
+        return query;
     }
-
-    auto query_t::kind() const -> kind_t {
-        return kind_;
-    }
-
-    auto query_t::tree() const -> const ctl::syntax_tree_t& {
-        return tree_;
-    }
-
-    auto query_t::holds(const ntta_t& state) const -> bool {
-        auto in = [&state](const places_t& places) {
-            return std::any_of(places.begin(), places.end(), [&state](const auto& place) {
-                return state.components.at(place.first).current_location->first == place.second;
-            });
-        };
-        if(const auto* location = std::get_if<std::string>(&predicate_))
-            return std::any_of(state.components.begin(), state.components.end(), [location](const auto& component) {
-                return component.second.current_location->first == *location;
-            });
-        auto environment = state.symbols + state.external_symbols;
-        for(auto& [identifier, places] : locations_)
-            environment[identifier] = expr::symbol_value_t{in(places)};
-        return std::get<bool>(static_cast<const expr::underlying_symbol_value_t&>(
-                expression_driver{environment}.evaluate(std::get<expr::syntax_tree_t>(predicate_))));
-    }
-
 }
