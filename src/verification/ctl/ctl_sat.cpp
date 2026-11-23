@@ -18,13 +18,26 @@
 #include "ctl_sat.h"
 #include "expr-wrappers/interpreter.h"
 #include "symbol_table.h"
+#include <algorithm>
 #include <ctl_syntax_tree.h>
+#include <stdexcept>
 #include <variant>
 
 namespace aaltitoad {
+    namespace {
+        // Whether a state formula holds a query (e.g. the E F a of (E F a) && b)
+        auto has_query(const ctl::syntax_tree_t& formula) -> bool {
+            const auto& node = static_cast<const ctl::underlying_syntax_node_t&>(formula.node);
+            if(std::holds_alternative<ctl::modal_t>(node) || std::holds_alternative<ctl::quantifier_t>(node))
+                return true;
+            return std::any_of(formula.children().begin(), formula.children().end(), has_query);
+        }
+    }
+
     auto is_satisfied(const ctl::syntax_tree_t& ast, const ntta_t& state) -> bool {
         // NOTE: This only evaluates the state formula of a query in the given state. The forward reachability searcher
-        //       handles the path formulas 'E F' and 'A G' (other path formulas are searched for like 'E F')
+        //       handles the path formulas 'E F' and 'A G' (other path formulas are searched for like 'E F'), and the
+        //       path formulas in the state formula are not supported
         return std::visit(ya::overload(
                               [&](const expr::syntax_tree_t& v) -> bool {
                                   auto s = state.symbols + state.external_symbols;
@@ -47,6 +60,8 @@ namespace aaltitoad {
                                       default: throw std::logic_error("not a valid CTL modal");
                                   }},
                               [&](const ctl::quantifier_t &v) -> bool {
+                                  if(std::any_of(ast.children().begin(), ast.children().end(), has_query))
+                                      throw std::invalid_argument("queries in queries are not supported (e.g. E F (E F a) && b)");
                                   switch(v.operator_type) {
                                       case ctl::quantifier_op_t::X: return is_satisfied(ast.children()[0], state);
                                       case ctl::quantifier_op_t::F: return is_satisfied(ast.children()[0], state);
@@ -62,6 +77,7 @@ namespace aaltitoad {
                                       case expr::operator_type_t::_xor:     return is_satisfied(ast.children()[0], state) != is_satisfied(ast.children()[1], state);
                                       case expr::operator_type_t::_implies: return !is_satisfied(ast.children()[0], state) || is_satisfied(ast.children()[1], state);
                                       case expr::operator_type_t::_not:     return !is_satisfied(ast.children()[0], state);
+                                      case expr::operator_type_t::parentheses: return is_satisfied(ast.children()[0], state);
                                       default: throw std::logic_error("not a valid CTL operator");
                                   }},
                               [](auto&&) -> bool { throw std::logic_error("unsupported CTL syntax_tree node type"); }

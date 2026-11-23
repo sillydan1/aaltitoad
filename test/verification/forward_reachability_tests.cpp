@@ -22,6 +22,7 @@
 #include <catch2/generators/catch_generators.hpp>
 #include <ntta/builder/ntta_builder.h>
 #include <verification/forward_reachability.h>
+#include <stdexcept>
 
 SCENARIO("basic reachability", "[frs]") {
     spdlog::set_level(spdlog::level::trace);
@@ -405,6 +406,29 @@ SCENARIO("searching step by step", "[frs]") {
                 REQUIRE(frs.results().begin()->kind == aaltitoad::forward_reachability_searcher::query_kind_t::safety);
                 REQUIRE(frs.results().begin()->solution.has_value());
                 REQUIRE(std::get<bool>(frs.results().begin()->solution.value()->second.data.symbols.at("x") == 5));
+            }
+        }
+    }
+}
+
+SCENARIO("queries in queries are refused", "[frs]") {
+    GIVEN("one tta with a simple count-down loop from 5") {
+        aaltitoad::ntta_builder builder{};
+        aaltitoad::expression_driver compiler{builder.symbols, builder.external_symbols};
+        auto n = builder
+                .add_symbols({{"x", 5}})
+                .add_tta("A", aaltitoad::tta_builder{&compiler}
+                        .add_locations({"L0", "L1"})
+                        .set_starting_location("L0")
+                        .add_edges({{"L0", "L1", "x > 0", "x := x - 1"}, {"L1", "L0"}}))
+                .build_with_interesting_tocker();
+        auto s = n.symbols + n.external_symbols;
+        auto text = GENERATE("E F (E F x == 0)", "E F (E F x == 0) && (E F x == 1)", "A G (E F x == 0) || (A G x > 0)");
+        WHEN(std::string{"searching for '"} + text + "'") {
+            auto query = aaltitoad::ctl_interpreter{s}.compile(text);
+            aaltitoad::forward_reachability_searcher frs{};
+            THEN("the search refuses the query, since only the path formula of a query is searched for") {
+                REQUIRE_THROWS_AS(frs.is_reachable(n, query), std::invalid_argument);
             }
         }
     }
