@@ -38,7 +38,7 @@ namespace aaltitoad::lsp {
         }
     }
 
-    search::search(graphedit::network_t network, query_t query, std::size_t max_states)
+    search::search(graphedit::network_t network, forward_reachability_searcher::query_solution_t query, std::size_t max_states)
             : network_{std::move(network)}, describer_{network_}, query_{std::move(query)}, max_states_{max_states} {
         if(!network_.automata)
             throw std::invalid_argument("aaltitoad could not build the network");
@@ -67,8 +67,7 @@ namespace aaltitoad::lsp {
                 // the environment changes as the interesting tocker of aaltitoad's verifier finds
                 auto initial = *network_.automata;
                 initial.add_tocker(std::make_shared<interesting_tocker>());
-                auto holds = [this](const ntta_t& state) { return query_.holds(state); };
-                searcher_.start(initial, {forward_reachability_searcher::query_solution_t{query_.tree(), holds}});
+                searcher_.start(initial, {query_});
             }
             while(status_ == status_t::searching) {
                 if(searcher_.step())

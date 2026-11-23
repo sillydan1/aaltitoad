@@ -30,7 +30,7 @@ namespace aaltitoad::lsp {
     // that aaltitoad finds in the network of a project (its model files, and the open models as they are edited),
     // debugs networks (docs/debugging.md of graphedit): it launches runtimes for them, which take the steps of the
     // network, stop at breakpoints, and change and restore states, and answers queries about networks
-    // (docs/verification.md of graphedit, see query_t and search).
+    // (docs/verification.md of graphedit, see compile_query and search).
     //
     // The server does not wait for anything: messages are handled as they arrive, and the work that is due (analyzing
     // the models after they changed, taking the steps of a runtime that runs, searching the states for the answer to a

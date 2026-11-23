@@ -18,54 +18,20 @@
 #ifndef AALTITOAD_LSP_QUERY_H
 #define AALTITOAD_LSP_QUERY_H
 #include <parser/graphedit/network.h>
-#include <ctl_syntax_tree.h>
-#include <map>
+#include <verification/forward_reachability.h>
 #include <string>
-#include <utility>
-#include <variant>
-#include <vector>
 
 namespace aaltitoad::lsp {
-    // A query about a network (the queries of graphedit, docs/verification.md of graphedit), in the CTL of aaltitoad's
-    // verifier: E F p (can a state be reached in which p holds?) or A G p (does p hold in every state that can be
-    // reached?), where p is an expression over the variables of the network or a location id (the id of a vertex: an
-    // instance of its template is in it). The UPPAAL notation E<> p and A[] p is understood as well.
+    // Compile a query about a network (which must have been built) for the verifier's search: ctl-expr parses it, and
+    // the verifier decides its kind and evaluates it, as for the queries of verifier(1). Only E F p and A G p are
+    // answered. Throws std::invalid_argument with a message for the user for the others.
     //
-    // Locations can also be named in expressions as <instance>@<location>, e.g. "Main.lamp(1)@on": the instance (named
-    // after its scope, as the debugger names it) is in the location with that nickname (or id). The dot cannot separate
-    // them, since it separates the private variables of an instance ("Main.lamp(1).on" is the variable "on" of
-    // "Main.lamp(1)").
-    class query_t {
-    public:
-        enum class kind_t {
-            // E F p: a state in which p holds proves it (a witness)
-            reachability,
-            // A G p: a state in which p does not hold disproves it (a counterexample)
-            safety
-        };
-
-        // Compile a query about a network (which must have been built). Throws std::invalid_argument with a message for
-        // the user if it is not a query that aaltitoad-ls answers.
-        static auto compile(const std::string& text, const graphedit::network_t& network) -> query_t;
-
-        auto kind() const -> kind_t;
-        // The query in the CTL of aaltitoad (with placeholders for the locations that the predicate names), for the
-        // verifier's search, which evaluates the predicate with holds
-        auto tree() const -> const ctl::syntax_tree_t&;
-        // Whether the predicate (p) holds in a state of the network. Throws if it cannot be evaluated.
-        auto holds(const ntta_t& state) const -> bool;
-
-    private:
-        // the instances and the locations in which a location of the predicate holds
-        using places_t = std::vector<std::pair<std::string, std::string>>;
-
-        kind_t kind_{kind_t::reachability};
-        ctl::syntax_tree_t tree_{};
-        // the predicate: an expression, or a location id
-        std::variant<expr::syntax_tree_t, std::string> predicate_{};
-        // the identifiers that stand for the locations that the predicate names (<instance>@<location>)
-        std::map<std::string, places_t> locations_{};
-    };
+    // aaltitoad-ls adds two notations to the language of ctl-expr, which are translated before it parses the query:
+    //  - E<> p and A[] p are E F p and A G p.
+    //  - <instance>@<location> (e.g. "Main.lamp(1)@on") holds when that instance is in the location with that nickname
+    //    or id. The locations of ctl-expr hold when any instance is in them, and cannot be operands of expressions. The
+    //    dot cannot separate the two names, since "Main.lamp(1).on" is the private variable "on" of "Main.lamp(1)".
+    auto compile_query(const std::string& text, const graphedit::network_t& network) -> forward_reachability_searcher::query_solution_t;
 }
 
 #endif //AALTITOAD_LSP_QUERY_H

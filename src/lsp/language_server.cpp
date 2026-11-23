@@ -17,6 +17,7 @@
  */
 #include "language_server.h"
 #include "json_rpc.h"
+#include "query.h"
 #include <parser/graphedit/problems.h>
 #include <spdlog/spdlog.h>
 #include <limits>
@@ -351,9 +352,9 @@ namespace aaltitoad::lsp {
                 max_states = it->get<std::size_t>();
             }
         auto network = network_of(params);
-        std::optional<query_t> query{};
+        std::optional<forward_reachability_searcher::query_solution_t> query{};
         try {
-            query = query_t::compile(text, network);
+            query = compile_query(text, network);
         } catch(const std::invalid_argument& e) {
             throw request_error(invalid_params, e.what());
         }
