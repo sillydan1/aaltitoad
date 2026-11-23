@@ -19,7 +19,6 @@
 #include <expr-wrappers/ctl-interpreter.h>
 #include <verification/ctl/ctl_sat.h>
 #include <algorithm>
-#include <cctype>
 #include <iostream>
 #include <map>
 #include <sstream>
@@ -49,69 +48,11 @@ namespace aaltitoad::lsp {
             return std::invalid_argument{message};
         }
 
-        auto is_name_character(char c) -> bool {
-            return std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '.';
-        }
-
-        auto is_location_character(char c) -> bool {
-            return std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '-';
-        }
-
         // A location that a query names (<instance>@<location>)
         struct named_location_t {
             std::string instance{};
             std::string location{};
         };
-
-        // The query with the locations that it names (outside of string literals) replaced by identifiers
-        auto with_location_identifiers(const std::string& text, std::map<std::string, named_location_t>& named) -> std::string {
-            std::string result{};
-            for(std::size_t i = 0; i < text.size();) {
-                if(text[i] == '"') {
-                    auto end = i + 1;
-                    while(end < text.size() && text[end] != '"')
-                        end += text[end] == '\\' ? 2 : 1;
-                    end = std::min(end + 1, text.size());
-                    result += text.substr(i, end - i);
-                    i = end;
-                    continue;
-                }
-                if(text[i] != '@') {
-                    result += text[i++];
-                    continue;
-                }
-                // the instance is the name before the @ (which was copied already), the location the name after it.
-                // NOTE: parentheses belong to the name when they are balanced (e.g. "(Main.lamp(1)@on" is "Main.lamp(1)")
-                auto instance_start = result.size();
-                auto depth = 0;
-                while(instance_start > 0) {
-                    auto c = result[instance_start - 1];
-                    if(c == ')')
-                        depth++;
-                    else if(c == '(' && depth == 0)
-                        break;
-                    else if(c == '(')
-                        depth--;
-                    else if(!is_name_character(c) && !(depth > 0 && (c == ',' || c == ' ')))
-                        break;
-                    instance_start--;
-                }
-                if(depth != 0)
-                    throw fail("the parentheses of the instance before the @ do not match");
-                auto location_end = i + 1;
-                while(location_end < text.size() && is_location_character(text[location_end]))
-                    location_end++;
-                auto instance = result.substr(instance_start);
-                auto location = text.substr(i + 1, location_end - i - 1);
-                if(instance.empty() || location.empty())
-                    throw fail("a location is named <instance>@<location> (e.g. Main.lamp(1)@on)");
-                auto identifier = "__location_" + std::to_string(named.size());
-                named[identifier] = {instance, location};
-                result.replace(instance_start, std::string::npos, identifier);
-                i = location_end;
-            }
-            return result;
-        }
 
         // The locations of an instance with a nickname or an id
         auto locations_of(const graphedit::network_t& network, const named_location_t& named) -> places_t {
@@ -176,16 +117,13 @@ namespace aaltitoad::lsp {
         if(!network.automata)
             throw fail("aaltitoad cannot build the network");
         const auto& automata = *network.automata;
-        std::map<std::string, named_location_t> named{};
-        auto translated = with_location_identifiers(text, named);
-
         // the query in the CTL of aaltitoad
         ctl::syntax_tree_t tree{};
         {
             cerr_capture capture{};
             try {
                 auto environment = automata.symbols;
-                tree = ctl_interpreter{environment}.compile(translated);
+                tree = ctl_interpreter{environment}.compile(text);
             } catch(const std::exception& e) {
                 auto reported = capture.text();
                 auto line = reported.substr(0, reported.find('\n'));
@@ -195,10 +133,6 @@ namespace aaltitoad::lsp {
         }
 
         const auto& predicate = predicate_of(tree);
-        std::map<std::string, places_t> locations{};
-        for(auto& [identifier, location] : named)
-            locations[identifier] = locations_of(network, location);
-
         if(const auto* location = std::get_if<ctl::location_t>(&node_of(predicate))) {
             // a location id of the grammar of ctl-expr: some instance is in it
             auto found = std::any_of(network.models.begin(), network.models.end(), [location](const auto& model) {
@@ -209,12 +143,18 @@ namespace aaltitoad::lsp {
             return forward_reachability_searcher::query_solution_t{tree};
         }
 
-        // the expression reads variables of the network and the locations that it names, and is a boolean
-        for(auto& identifier : graphedit::identifiers_of(std::get<expr::syntax_tree_t>(node_of(predicate))))
-            if(!automata.symbols.contains(identifier) && !automata.external_symbols.contains(identifier) &&
-               !locations.contains(identifier))
+        // the expression reads variables of the network and the locations that it names (the identifiers
+        // <instance>@<location> of ctl-expr), and is a boolean
+        std::map<std::string, places_t> locations{};
+        for(auto& identifier : graphedit::identifiers_of(std::get<expr::syntax_tree_t>(node_of(predicate)))) {
+            if(automata.symbols.contains(identifier) || automata.external_symbols.contains(identifier))
+                continue;
+            auto at = identifier.rfind('@');
+            if(at == std::string::npos)
                 throw fail("'" + identifier + "' is not a variable of the network (locations are named "
                            "<instance>@<location>, e.g. Main.lamp(1)@on)");
+            locations[identifier] = locations_of(network, {identifier.substr(0, at), identifier.substr(at + 1)});
+        }
         auto query = locations.empty() ? forward_reachability_searcher::query_solution_t{tree}
                                        : forward_reachability_searcher::query_solution_t{tree, with_bound_locations(tree, locations)};
         try {

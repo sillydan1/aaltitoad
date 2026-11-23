@@ -42,8 +42,9 @@ find_package(FLEX REQUIRED)
 add_compile_definitions(DEFAULT_EXPRESSION_VALUE="true")
 CPMAddPackage(NAME expr VERSION 3.0.7 GITHUB_REPOSITORY sillydan1/expr OPTIONS "ENABLE_Z3 ON")
 CPMAddPackage("gh:sillydan1/argvparse@1.2.3")
-# NOTE: the fork of ctl-expr fixes 2.0.0 (e.g. the precedence of its operators), see its history
-CPMAddPackage(NAME ctl-expr VERSION 2.1.0 GIT_REPOSITORY https://git.gtz.dk/gtz-agent/ctl-expr.git GIT_TAG v2.1.0)
+# NOTE: the fork of ctl-expr fixes 2.0.0 (e.g. the precedence of its operators), see its history. Until
+#       gtz-agent/ctl-expr#1 is merged and tagged, its commit is pinned
+CPMAddPackage(NAME ctl-expr VERSION 2.1.0 GIT_REPOSITORY https://git.gtz.dk/gtz-agent/ctl-expr.git GIT_TAG 43934427a6e42baf438c75fb21bb92d8aedadb0b)
 
 CPMAddPackage("gh:yalibs/yatimer@1.0.0")
 CPMAddPackage("gh:yalibs/yaoverload@1.0.0")
