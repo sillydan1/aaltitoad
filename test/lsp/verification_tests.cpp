@@ -90,6 +90,17 @@ SCENARIO("compiling queries about networks", "[lsp][verification]") {
         // the private variable "on" of the instance is a variable, not a location
         CHECK_FALSE(compile_query("E F Main.lamp(1).on", network).is_solution(*network.automata));
     }
+    THEN("the locations and the variables of instances with any arguments can be named") {
+        auto main = model_builder{"main.json", "Main", true}
+                .location("m0", "start", "initial").location("m1", "", "final")
+                .subcomponent("wire", "Wire(n, side)", "w(-1, \"left\")");
+        auto wire = model_builder{"wire.json", "Wire(n, side)"}
+                .declarations("private int x := n")
+                .location("idle", "idle", "initial").location("done", "", "final");
+        auto network = aaltitoad::graphedit::build_network({{"main.json", main.model()}, {"wire.json", wire.model()}});
+        CHECK(compile_query("E F Main.w(-1, \"left\")@idle", network).is_solution(*network.automata));
+        CHECK(compile_query("E F Main.w(-1, \"left\").x == -1", network).is_solution(*network.automata));
+    }
     THEN("queries in the language of ctl-expr are left to the verifier to evaluate") {
         auto main = model_builder{"main.json", "Main", true}
                 .declarations("public int x := 0")
@@ -118,7 +129,7 @@ SCENARIO("compiling queries about networks", "[lsp][verification]") {
         CHECK(error_of("E F nothing > 1").starts_with("'nothing' is not a variable of the network"));
         CHECK(error_of("E F Main.lamp(3)@on").starts_with("the network has no instance 'Main.lamp(3)'"));
         CHECK(error_of("E F Main.lamp(1)@blue") == "'Main.lamp(1)' has no location 'blue' (a nickname or an id)");
-        CHECK(error_of("E F @on").starts_with("a location is named <instance>@<location>"));
+        CHECK(error_of("E F @on").starts_with("the query is not valid: invalid character: @"));
         CHECK(error_of("E F count + 1") == "the predicate is not a boolean expression");
         CHECK(error_of("E F 00000000-0000-0000-0000-000000000000").starts_with("no template has the location"));
     }

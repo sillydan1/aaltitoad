@@ -26,10 +26,10 @@ namespace aaltitoad::lsp {
     // the verifier decides its kind and evaluates it, as for the queries of verifier(1). Only E F p and A G p are
     // answered. Throws std::invalid_argument with a message for the user for the others.
     //
-    // aaltitoad-ls adds a notation to the language of ctl-expr, which is translated before it parses the query:
-    // <instance>@<location> (e.g. "Main.lamp(1)@on") holds when that instance is in the location with that nickname or
-    // id. The locations of ctl-expr hold when any instance is in them, and cannot be operands of expressions. The dot
-    // cannot separate the two names, since "Main.lamp(1).on" is the private variable "on" of "Main.lamp(1)".
+    // The identifiers <instance>@<location> of ctl-expr (e.g. "Main.lamp(1)@on") hold when that instance is in the
+    // location with that nickname or id. The locations of ctl-expr (e.g. L0) hold when any instance is in them, and
+    // cannot be operands of expressions. The dot cannot separate the two names, since "Main.lamp(1).on" is the private
+    // variable "on" of "Main.lamp(1)".
     auto compile_query(const std::string& text, const graphedit::network_t& network) -> forward_reachability_searcher::query_solution_t;
 }
 
