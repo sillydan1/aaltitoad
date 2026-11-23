@@ -72,12 +72,11 @@ namespace {
 }
 
 SCENARIO("compiling queries about networks", "[lsp][verification]") {
-    THEN("E F and A G queries over the variables compile, also in the notation of UPPAAL") {
+    THEN("E F and A G queries over the variables compile") {
         auto network = lights();
         CHECK(compile_query("E F count == 3", network).kind == kind_t::reachability);
         CHECK(compile_query("A G count <= 3", network).kind == kind_t::safety);
-        CHECK(compile_query("E<> count == 3", network).kind == kind_t::reachability);
-        CHECK(compile_query("  A[] count >= 0", network).kind == kind_t::safety);
+        CHECK(compile_query("  A G count >= 0", network).kind == kind_t::safety);
         CHECK(compile_query("E F button.1 && count > 0", network).kind == kind_t::reachability);
     }
     THEN("locations are named <instance>@<location>, by their nicknames or their ids, also in parentheses") {
@@ -97,7 +96,7 @@ SCENARIO("compiling queries about networks", "[lsp][verification]") {
                 .location("L0", "start", "initial").location("L1", "", "final")
                 .edge("e", "L0", "L1", "", "x := 1");
         auto network = aaltitoad::graphedit::build_network({{"main.json", main.model()}});
-        for(const auto* text : {"E F x == 0", "E<> x == 0", "E F L0"}) {
+        for(const auto* text : {"E F x == 0", "E F L0"}) {
             auto query = compile_query(text, network);
             CHECK_FALSE(query.predicate);
             CHECK(query.is_solution(*network.automata));
@@ -109,6 +108,9 @@ SCENARIO("compiling queries about networks", "[lsp][verification]") {
     THEN("what aaltitoad-ls does not answer is refused with the reason") {
         CHECK(error_of("count == 3").starts_with("the query is not valid"));
         CHECK(error_of("E G count == 3").starts_with("aaltitoad-ls answers E F p"));
+        // the notation of UPPAAL (E<> p and A[] p) is not the language of ctl-expr
+        CHECK(error_of("E<> count == 3").starts_with("the query is not valid"));
+        CHECK(error_of("A[] count >= 0").starts_with("the query is not valid"));
         CHECK(error_of("A F count == 3").starts_with("aaltitoad-ls answers E F p"));
         CHECK(error_of("E F (E F count == 1) && (E F count == 2)").starts_with("aaltitoad-ls does not answer queries in queries"));
         CHECK(error_of("count == 3") == "the query is not valid: syntax error (queries are E F p or A G p, where p is an "

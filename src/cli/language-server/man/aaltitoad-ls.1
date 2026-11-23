@@ -60,12 +60,11 @@ how many states can be restored (default 1000).
 The server answers safety- and reachability-queries in the computation tree logic (CTL) format as described in verifier(1):
 .TP
 .BI "E F " p
-can a state in which \fIp\fR holds be reached? (also written \fBE<>\fR \fIp\fR). If it can, the result has a trace to
-such a state (a witness).
+can a state in which \fIp\fR holds be reached? If it can, the result has a trace to such a state (a witness).
 .TP
 .BI "A G " p
-does \fIp\fR hold in every state that can be reached? (also written \fBA[]\fR \fIp\fR). If it does not, the result has a
-trace to a state in which \fIp\fR does not hold (a counterexample).
+does \fIp\fR hold in every state that can be reached? If it does not, the result has a trace to a state in which
+\fIp\fR does not hold (a counterexample).
 .PP
 The predicate \fIp\fR is an expression over the variables of the network, or a location id. Private variables are named
 after their instance (\fBMain.lamp(1).on\fR). Locations are named \fIinstance\fB@\fIlocation\fR in expressions, by
