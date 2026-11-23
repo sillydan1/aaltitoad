@@ -433,3 +433,41 @@ SCENARIO("queries in queries are refused", "[frs]") {
         }
     }
 }
+
+SCENARIO("the operators of the predicates of queries have their usual precedence", "[frs]") {
+    GIVEN("one tta with a simple count-down loop from 5") {
+        aaltitoad::ntta_builder builder{};
+        aaltitoad::expression_driver compiler{builder.symbols, builder.external_symbols};
+        auto n = builder
+                .add_symbols({{"x", 5}})
+                .add_tta("A", aaltitoad::tta_builder{&compiler}
+                        .add_locations({"L0", "L1"})
+                        .set_starting_location("L0")
+                        .add_edges({{"L0", "L1", "x > 0", "x := x - 1"}, {"L1", "L0"}}))
+                .build_with_interesting_tocker();
+        auto s = n.symbols + n.external_symbols;
+        GIVEN("'E F 1 + x * 2 == 11', which multiplies before it adds") {
+            auto query = aaltitoad::ctl_interpreter{s}.compile("E F 1 + x * 2 == 11");
+            WHEN("searching through the state-space with forward reachability search") {
+                aaltitoad::forward_reachability_searcher frs{};
+                auto results = frs.is_reachable(n, query);
+                THEN("the query is satisfied when x is 5") {
+                    REQUIRE(results.size() == 1);
+                    REQUIRE(results.begin()->is_satisfied());
+                    REQUIRE(std::get<bool>(results.begin()->solution.value()->second.data.symbols.at("x") == 5));
+                }
+            }
+        }
+        GIVEN("'A G x > 5 => false', which compares before it implies") {
+            auto query = aaltitoad::ctl_interpreter{s}.compile("A G x > 5 => false");
+            WHEN("searching through the state-space with forward reachability search") {
+                aaltitoad::forward_reachability_searcher frs{};
+                auto results = frs.is_reachable(n, query);
+                THEN("the query is satisfied, since x is never greater than 5") {
+                    REQUIRE(results.size() == 1);
+                    REQUIRE(results.begin()->is_satisfied());
+                }
+            }
+        }
+    }
+}
