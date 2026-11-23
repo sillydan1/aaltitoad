@@ -377,7 +377,7 @@ SCENARIO("verifying with the language server", "[lsp][verification]") {
         REQUIRE(answer.at("result").at("trace").at("steps").size() >= 4);
         REQUIRE_FALSE(client.server.is_verifying());
         THEN("a safety query that holds has no trace") {
-            auto safe = verify(run("r2", "A[] count <= 3", light_buffers()));
+            auto safe = verify(run("r2", "A G count <= 3", light_buffers()));
             REQUIRE(safe.at("result").at("status") == "satisfied");
             REQUIRE_FALSE(safe.at("result").contains("trace"));
         }

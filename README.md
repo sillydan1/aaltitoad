@@ -139,8 +139,8 @@ the agent api), in the CTL of the `verifier`:
 
 | Query     | Asks                                                        | Trace                                               |
 |-----------|-------------------------------------------------------------|-----------------------------------------------------|
-| `E F p`   | Can a state in which `p` holds be reached? (also `E<> p`)   | a witness: a run to such a state                    |
-| `A G p`   | Does `p` hold in every state that can be reached? (also `A[] p`) | a counterexample: a run to a state where `p` does not hold |
+| `E F p`   | Can a state in which `p` holds be reached?                  | a witness: a run to such a state                    |
+| `A G p`   | Does `p` hold in every state that can be reached?           | a counterexample: a run to a state where `p` does not hold |
 
 `p` is an expression over the variables of the network, in which locations are named `<instance>@<location>`:
 `E F Main.lamp(1)@on && !button.1`. The forward reachability search of the `verifier` answers the queries; the manual

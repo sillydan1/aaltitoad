@@ -57,18 +57,6 @@ namespace aaltitoad::lsp {
             return std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '-';
         }
 
-        // The UPPAAL notation of the quantifiers (E<>, A[]) in the notation of aaltitoad (E F, A G)
-        auto with_aaltitoad_quantifiers(std::string text) -> std::string {
-            auto start = text.find_first_not_of(" \t\r\n");
-            if(start == std::string::npos)
-                return text;
-            if(text.compare(start, 3, "E<>") == 0)
-                text.replace(start, 3, "E F ");
-            else if(text.compare(start, 3, "A[]") == 0)
-                text.replace(start, 3, "A G ");
-            return text;
-        }
-
         // A location that a query names (<instance>@<location>)
         struct named_location_t {
             std::string instance{};
@@ -189,7 +177,7 @@ namespace aaltitoad::lsp {
             throw fail("aaltitoad cannot build the network");
         const auto& automata = *network.automata;
         std::map<std::string, named_location_t> named{};
-        auto translated = with_location_identifiers(with_aaltitoad_quantifiers(text), named);
+        auto translated = with_location_identifiers(text, named);
 
         // the query in the CTL of aaltitoad
         ctl::syntax_tree_t tree{};
