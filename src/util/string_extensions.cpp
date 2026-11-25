@@ -17,6 +17,7 @@
  */
 #include <aaltitoadpch.h>
 #include <cctype>
+#include <cstdarg>
 #include <regex>
 #include <util/string_extensions.h>
 

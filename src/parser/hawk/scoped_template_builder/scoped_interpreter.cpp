@@ -23,6 +23,8 @@
 #include "language-builder.h"
 #include "operations/symbol-operator.h"
 #include "symbol_table.h"
+#include <util/string_extensions.h>
+#include <regex>
 #include <utility>
 #include <vector>
 

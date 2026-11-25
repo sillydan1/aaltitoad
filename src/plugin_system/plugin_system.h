@@ -17,8 +17,8 @@
  */
 #ifndef AALTITOAD_PLUGIN_SYSTEM_H
 #define AALTITOAD_PLUGIN_SYSTEM_H
-#include <dlfcn.h>
 #include <ntta/tta.h>
+#include <filesystem>
 
 //// ===== aaltitoad plugin system =====
 //// must implement the following extern
@@ -61,6 +61,10 @@ std::ostream& operator<<(std::ostream&, const plugin_map_t&);
 
 namespace aaltitoad::plugins {
     plugin_map_t load(const std::vector<std::string> &search_directories);
+#ifdef _WIN32
+    // The directory of the program that runs (where the plugins are installed on windows)
+    auto executable_directory() -> std::filesystem::path;
+#endif
 }
 
 #endif //AALTITOAD_PLUGIN_SYSTEM_H

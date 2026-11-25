@@ -17,6 +17,8 @@
  */
 #include "warnings.h"
 #include <magic_enum.hpp>
+#include <spdlog/spdlog.h>
+#include <sstream>
 
 namespace aaltitoad {
     static bool default_value = false;

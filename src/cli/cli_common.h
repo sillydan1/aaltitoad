@@ -23,6 +23,18 @@
 #include <config.h>
 #include <magic_enum.hpp>
 #include <util/warnings.h>
+#include <plugin_system/plugin_system.h>
+#include <spdlog/spdlog.h>
+
+// Where the plugins are installed: next to the programs on windows (wherever they were installed), and in the plugin
+// directory of the installation prefix elsewhere
+std::string installed_plugin_directory() {
+#ifdef _WIN32
+    return aaltitoad::plugins::executable_directory().string();
+#else
+    return AALTITOAD_PLUGIN_DIR;
+#endif
+}
 
 int print_required_args() {
     std::cout << "Required arguments:\n";
