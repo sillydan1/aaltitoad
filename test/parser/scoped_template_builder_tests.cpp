@@ -125,6 +125,20 @@ SCENARIO("building networks of scoped templates", "[scoped_template_builder]") {
             REQUIRE_FALSE(identifiers.contains("Main.lamp(1)."));
         }
     }
+    GIVEN("a template that declares variables of the environment") {
+        auto light = light_template();
+        light.declarations = "private bool on := false; bool button.id := false";
+        light.external_identifiers = {"button.id"};
+        scoped_template_builder builder{};
+        builder.add_template(main_template()).add_template(light);
+        std::unique_ptr<aaltitoad::ntta_t> n{builder.build_heap()};
+        THEN("they are external symbols, with the parameters of the instances") {
+            REQUIRE(n->external_symbols.contains("button.1"));
+            REQUIRE(n->external_symbols.contains("button.2"));
+            REQUIRE_FALSE(n->symbols.contains("button.1"));
+            REQUIRE(n->symbols.contains("Main.lamp(1).on"));
+        }
+    }
     GIVEN("a guard that is not an expression") {
         auto light = light_template();
         light.edges[0].guard = "on := true";

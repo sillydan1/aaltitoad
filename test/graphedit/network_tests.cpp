@@ -156,9 +156,24 @@ SCENARIO("building the network of a project", "[graphedit]") {
             REQUIRE(network.automata == nullptr);
         }
     }
-    GIVEN("a template with an extern declaration") {
-        auto network = build_network(with(aaltitoad::test::light_models(), light("button.id").declarations("extern bool on := false")));
-        THEN("it is reported, since templates of aaltitoad only declare internal variables") {
+    GIVEN("a template with extern declarations") {
+        auto light_model = light("button.id").declarations("private bool on := false;\nextern bool button.id := true;\nextern int dimmer := 2");
+        auto models = with(aaltitoad::test::light_models(), light_model);
+        models.erase("io.json");
+        auto network = build_network(models);
+        THEN("they declare variables of the environment, with the parameters of the instances") {
+            REQUIRE(network.problems.at("light.json").empty());
+            REQUIRE(network.automata != nullptr);
+            REQUIRE(network.external_symbols == std::set<std::string>{"button.1", "button.2", "dimmer"});
+            REQUIRE(std::get<bool>(network.automata->external_symbols.at("button.1")));
+            REQUIRE(std::get<int>(network.automata->external_symbols.at("dimmer")) == 2);
+            REQUIRE_FALSE(network.automata->symbols.contains("button.1"));
+            REQUIRE(network.automata->symbols.contains("Main.lamp(1).on"));
+        }
+    }
+    GIVEN("a template with a persistent declaration") {
+        auto network = build_network(with(aaltitoad::test::light_models(), light("button.id").declarations("persistent extern bool on := false")));
+        THEN("it is reported, since aaltitoad does not know persistent variables") {
             REQUIRE(identifiers_of(network, "light.json") == std::set<std::string>{ids::unsupported_declaration});
             REQUIRE(network.automata == nullptr);
         }
@@ -234,6 +249,13 @@ SCENARIO("expressions of graphedit models", "[graphedit]") {
         REQUIRE(found);
         REQUIRE(declarations == "bool a := false;\nstring s := \"extern \\\" persistent\";");
         REQUIRE_FALSE(strip_environment_modifiers("public int externals := 1").second);
+    }
+    THEN("the identifiers of extern declarations are found") {
+        auto split = split_environment_modifiers("extern bool a.id := false; private int b := 1;\npublic extern c := \"x := y\"; persistent int d := 2");
+        REQUIRE(split.external_identifiers == std::set<std::string>{"a.id", "c"});
+        REQUIRE(split.has_extern);
+        REQUIRE(split.has_persistent);
+        REQUIRE(split.declarations == "bool a.id := false; private int b := 1;\npublic c := \"x := y\"; int d := 2");
     }
     THEN("syntax errors are explained") {
         auto parsed = parse_expression("x := ");
