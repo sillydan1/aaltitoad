@@ -147,12 +147,13 @@ namespace aaltitoad::graphedit {
         }
 
         void check_expressions(network_t& network, const ntta_model_t& model) {
-            auto [declarations, environment] = strip_environment_modifiers(model.declarations);
-            if(environment)
+            auto environment = split_environment_modifiers(model.declarations);
+            const auto& declarations = environment.declarations;
+            if(environment.has_persistent)
                 add_problem(network, model.key, {problems::unsupported_declaration, severity_t::error,
-                                                 "aaltitoad does not know extern and persistent declarations",
-                                                 "Templates of aaltitoad declare internal variables only: declare the "
-                                                 "variables of the environment in a model without vertices", {}});
+                                                 "aaltitoad does not know persistent declarations",
+                                                 "Templates of aaltitoad declare internal variables, and variables of "
+                                                 "the environment with extern", {}});
             else if(auto parsed = parse_expression(declarations); !parsed.result)
                 add_problem(network, model.key, invalid_expression("aaltitoad cannot parse the declarations", parsed.error, {}));
             else if(parsed.result->expression)
@@ -270,9 +271,10 @@ namespace aaltitoad::graphedit {
         }
 
         auto to_hawk(const ntta_model_t& model) -> hawk::model::tta_template {
-            hawk::model::tta_template result{.name=model.name, .declarations=model.declarations, .is_main=model.is_main,
+            auto environment = split_environment_modifiers(model.declarations);
+            hawk::model::tta_template result{.name=model.name, .declarations=environment.declarations, .is_main=model.is_main,
                                              .locations={}, .edges={}, .initial_location={}, .final_location={},
-                                             .instances={}};
+                                             .instances={}, .external_identifiers=environment.external_identifiers};
             for(auto& l : model.locations) {
                 hawk::model::location_t location{.id=l.id, .nickname=l.nickname, .invariant="",
                                                  .urgency=l.immediate ? hawk::model::urgency_t::urgent : hawk::model::urgency_t::normal};
@@ -367,9 +369,11 @@ namespace aaltitoad::graphedit {
         }
     }
 
-    auto strip_environment_modifiers(const std::string& declarations) -> std::pair<std::string, bool> {
-        std::string result{};
-        auto found = false;
+    auto split_environment_modifiers(const std::string& declarations) -> environment_declarations_t {
+        environment_declarations_t result{};
+        // the last word of a declaration before := is its identifier
+        auto in_extern_declaration = false;
+        std::string last_word{};
         auto is_word = [](char c){ return std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '.' || c == '(' || c == ')'; };
         for(std::size_t i = 0; i < declarations.size();) {
             auto c = declarations[i];
@@ -379,12 +383,16 @@ namespace aaltitoad::graphedit {
                 while(end < declarations.size() && declarations[end] != '"')
                     end += declarations[end] == '\\' ? 2 : 1;
                 end = std::min(end + 1, declarations.size());
-                result += declarations.substr(i, end - i);
+                result.declarations += declarations.substr(i, end - i);
                 i = end;
                 continue;
             }
             if(!is_word(c)) {
-                result += c;
+                if(c == ':' && i + 1 < declarations.size() && declarations[i + 1] == '=' && in_extern_declaration) {
+                    result.external_identifiers.insert(last_word);
+                    in_extern_declaration = false;
+                }
+                result.declarations += c;
                 i++;
                 continue;
             }
@@ -393,15 +401,26 @@ namespace aaltitoad::graphedit {
                 end++;
             auto word = declarations.substr(i, end - i);
             if(word == "extern" || word == "persistent") {
-                found = true;
+                if(word == "extern") {
+                    result.has_extern = true;
+                    in_extern_declaration = true;
+                } else {
+                    result.has_persistent = true;
+                }
                 while(end < declarations.size() && std::isspace(static_cast<unsigned char>(declarations[end])))
                     end++;
             } else {
-                result += word;
+                result.declarations += word;
+                last_word = word;
             }
             i = end;
         }
-        return {result, found};
+        return result;
+    }
+
+    auto strip_environment_modifiers(const std::string& declarations) -> std::pair<std::string, bool> {
+        auto result = split_environment_modifiers(declarations);
+        return {result.declarations, result.has_extern || result.has_persistent};
     }
 
     auto identifiers_of(const expr::syntax_tree_t& expression) -> std::set<std::string> {

@@ -61,7 +61,8 @@ namespace aaltitoad::graphedit {
         // the instances by their scoped names, and the edges of the network by their identifiers
         std::map<std::string, instance_t> instances{};
         std::map<std::string, instance_edge_t> edges{};
-        // the names of the symbols that the models without vertices declare (the environment)
+        // the names of the symbols of the environment (declared by the models without vertices, and by the extern
+        // declarations of templates)
         std::set<std::string> external_symbols{};
 
         // Whether one of the problems is an error
@@ -85,8 +86,17 @@ namespace aaltitoad::graphedit {
     // std::cerr: the result, or what went wrong
     auto parse_with(const std::function<expression_driver::language_result()>& parse) -> parse_result_t;
 
-    // Declarations without the modifiers extern and persistent (which aaltitoad does not know), and whether there were
-    // any. String literals are left as they are.
+    // Declarations without the modifiers extern and persistent (which the expression language of aaltitoad does not
+    // know): the identifiers that are declared extern (variables of the environment, as they are written), and whether
+    // there were any modifiers. String literals are left as they are.
+    struct environment_declarations_t {
+        std::string declarations{};
+        std::set<std::string> external_identifiers{};
+        bool has_extern{false};
+        bool has_persistent{false};
+    };
+    auto split_environment_modifiers(const std::string& declarations) -> environment_declarations_t;
+    // Declarations without the modifiers extern and persistent, and whether there were any
     auto strip_environment_modifiers(const std::string& declarations) -> std::pair<std::string, bool>;
     // The identifiers that an expression reads
     auto identifiers_of(const expr::syntax_tree_t& expression) -> std::set<std::string>;

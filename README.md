@@ -139,7 +139,8 @@ AALTITOAD_LANGUAGE_SERVER="aaltitoad-ls" graphedit my-project/
 network as aaltitoad would run it, and reports what keeps aaltitoad from running it on the models and their elements
 (the `AALTITOAD-...` diagnostics, see `src/parser/graphedit/problems.h` and the documentation of graphedit-ntta): for
 example guards that it cannot parse, subcomponents that do not match their templates, and variables that are used but
-not declared. Models without vertices declare the variables of the environment (`extern bool button := false`).
+not declared. Templates declare the variables of the environment with `extern` (`extern bool button.id := false`, with
+the parameters of the template substituted; they are global), and so do models without vertices.
 
 It also debugs networks: **Debug > Start Debugging** in graphedit starts a runtime that stops before its first tick.
 When a tick can take several sets of edges, those sets are the choices of the step. Breakpoints go on locations and
