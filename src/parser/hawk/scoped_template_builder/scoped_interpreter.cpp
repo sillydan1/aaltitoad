@@ -90,13 +90,13 @@ namespace aaltitoad::hawk {
     }
 
     // This function is used to evaluate the declaration expression during TTA template instantiation
-    auto scoped_interpreter::parse_declarations(const std::string &expression, const std::set<std::string>& external_identifiers) -> scoped_declarations_t {
+    auto scoped_interpreter::parse_declarations(const std::string &expression) -> scoped_declarations_t {
         auto res = parse_with_local_identifiers(expression, {});
         scoped_declarations_t result{};
         for(auto& decl : res.declarations) {
             auto ident = get_parameterized_identifier(decl.first);
-            // the variables of the environment are global, whatever their access modifiers
-            if(external_identifiers.contains(trim_copy(decl.first))) {
+            // the variables of the environment (declared extern) are global
+            if(decl.second.access_modifier == expr::symbol_access_modifier_t::_extern) {
                 result.external[ident] = evaluate(decl.second.tree);
                 continue;
             }

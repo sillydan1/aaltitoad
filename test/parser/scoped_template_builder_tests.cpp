@@ -127,8 +127,7 @@ SCENARIO("building networks of scoped templates", "[scoped_template_builder]") {
     }
     GIVEN("a template that declares variables of the environment") {
         auto light = light_template();
-        light.declarations = "private bool on := false; bool button.id := false";
-        light.external_identifiers = {"button.id"};
+        light.declarations = "private bool on := false; extern bool button.id := false";
         scoped_template_builder builder{};
         builder.add_template(main_template()).add_template(light);
         std::unique_ptr<aaltitoad::ntta_t> n{builder.build_heap()};

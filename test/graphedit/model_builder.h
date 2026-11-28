@@ -105,7 +105,7 @@ namespace aaltitoad::test {
                 .edge("le1", "off", "lit", "button.id", "on := true")
                 .edge("le2", "lit", "off", "!button.id", "on := false");
         auto io = model_builder{"io.json", "io"}
-                .declarations("extern bool button.1 := false;\nextern bool button.2 := false;\npersistent extern int setting := 3;");
+                .declarations("extern bool button.1 := false;\nextern bool button.2 := false;\nextern int setting := 3;");
         return {{"main.json", main.model()}, {"light.json", light.model()}, {"io.json", io.model()}};
     }
 }

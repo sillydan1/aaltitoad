@@ -18,7 +18,6 @@
 #ifndef AALTITOAD_MODEL_H
 #define AALTITOAD_MODEL_H
 #include <nlohmann/json.hpp>
-#include <set>
 
 namespace aaltitoad::hawk::model {
     enum class urgency_t {
@@ -55,9 +54,6 @@ namespace aaltitoad::hawk::model {
         location_t initial_location;
         location_t final_location;
         std::vector<tta_instance_t> instances;
-        // the identifiers of the declarations that declare variables of the environment (as they are written in the
-        // declarations, before the parameters are substituted)
-        std::set<std::string> external_identifiers{};
     };
 
     struct part_t {

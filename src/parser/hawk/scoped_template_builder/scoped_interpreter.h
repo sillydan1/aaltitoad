@@ -20,7 +20,6 @@
 #include "driver/evaluator.h"
 #include "expr-wrappers/interpreter.h"
 #include <cwchar>
-#include <set>
 #include <symbol_table.h>
 
 namespace aaltitoad::hawk {
@@ -48,9 +47,8 @@ namespace aaltitoad::hawk {
         scoped_interpreter(const expr::symbol_table_ref_collection_t& environments, const std::string& prefix);
         ~scoped_interpreter() override = default;
         auto parse_raw(const std::string& expression) -> expr::symbol_value_t;
-        // The declarations of identifiers in external_identifiers (as they are written) declare variables of the
-        // environment, which are global
-        auto parse_declarations(const std::string& expression, const std::set<std::string>& external_identifiers = {}) -> scoped_declarations_t;
+        // The extern declarations declare variables of the environment, which are global
+        auto parse_declarations(const std::string& expression) -> scoped_declarations_t;
         auto find(const std::string& identifier) const -> expr::symbol_table_t::const_iterator override;
         auto get_local_identifiers() -> std::vector<std::string>;
     private:
