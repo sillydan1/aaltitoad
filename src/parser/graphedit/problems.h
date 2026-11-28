@@ -35,8 +35,8 @@ namespace aaltitoad::graphedit::problems {
     inline constexpr auto broken_edge = "AALTITOAD-E006";
     // aaltitoad cannot parse an expression (a guard, an update, declarations or the arguments of an invocation)
     inline constexpr auto invalid_expression = "AALTITOAD-E007";
-    // A template has persistent declarations
-    inline constexpr auto unsupported_declaration = "AALTITOAD-E008";
+    // AALTITOAD-E008 (declarations with modifiers that aaltitoad does not know) is no longer reported: the declarations
+    // are parsed by expr, which reports such modifiers as syntax errors (AALTITOAD-E007). Do not reuse it
     // A subcomponent names a template that does not exist
     inline constexpr auto unknown_template = "AALTITOAD-E009";
     // The arguments of a subcomponent do not match the parameters of its template

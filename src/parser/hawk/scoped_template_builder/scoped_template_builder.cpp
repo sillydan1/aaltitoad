@@ -88,7 +88,7 @@ namespace aaltitoad::hawk {
 
             // FIX: An instantiation cannot have a declaration that references a parent's declaration(s) - which _should_ be a feature of the hawk language, but is considered out of scope for aaltitoad v1.1.0
             auto interpreter = construct_interpreter_from_scope(instance, scoped_name);
-            auto decls = interpreter.parse_declarations(instance_template.declarations, instance_template.external_identifiers);
+            auto decls = interpreter.parse_declarations(instance_template.declarations);
             local_identifiers[scoped_name] = interpreter.get_local_identifiers();
             if(internal_symbols.is_overlapping(decls.internal))
                 warnings::warn(parser_warning, "double declaration detected");
